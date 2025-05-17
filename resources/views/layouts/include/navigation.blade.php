@@ -23,7 +23,21 @@
     <hr class="sidebar-divider">
 
     <!-- Nav Item - Pages Collapse Menu -->
+
+    <!-- Nav Item - Charts -->
     <li class="nav-item">
+        <a class="nav-link" href="{{route('admin.category.index')}}">
+            <i class="fas fa-fw fa-chart-area"></i>
+            <span>Danh mục sản phẩm</span></a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{{route('admin.sub_category.index')}}">
+            <i class="fas fa-fw fa-chart-area"></i>
+            <span>Danh mục phụ</span></a>
+    </li>
+
+
+    {{-- <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
             aria-expanded="true" aria-controls="collapseTwo">
             <i class="fas fa-fw fa-cog"></i>
@@ -35,8 +49,20 @@
                 <a class="collapse-item" href="{{route('admin.category.create')}}">Thêm danh mục</a>
             </div>
         </div>
-    </li>
-
+    </li> --}}
+    {{-- <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
+            aria-expanded="true" aria-controls="collapseTwo">
+            <i class="fas fa-fw fa-cog"></i>
+            <span>Danh mục phụ</span>
+        </a>
+        <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <a class="collapse-item" href="{{route('admin.category.index')}}">Danh sách danh mục</a>
+                <a class="collapse-item" href="{{route('admin.category.create')}}">Thêm danh mục</a>
+            </div>
+        </div>
+    </li> --}}
     <!-- Nav Item - Utilities Collapse Menu -->
     <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities"

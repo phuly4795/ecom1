@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\HomeController;
+use App\Http\Controllers\Admin\SubCategoryController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -33,9 +34,23 @@ Route::middleware('auth','verified', 'checkRole')->group(function () {
             Route::post('category', [CategoryController::class, 'storeOrUpdate'])->name('store');
             Route::put('category/{id}', [CategoryController::class, 'storeOrUpdate'])->name('update');
 
+            Route::delete('/mass-destroy', [CategoryController::class, 'massDestroy'])->name('massDestroy');
             Route::delete('/{category}', [CategoryController::class, 'destroy'])->name('destroy');
 
             Route::post('/upload-image', [CategoryController::class, 'uploadImage'])->name('uploadImage');
+        });
+
+        Route::prefix('sub_category')->name('sub_category.')->group(function () {
+            Route::get('/', [SubCategoryController::class, 'index'])->name('index');
+            Route::get('/data', [SubCategoryController::class, 'data'])->name('data');
+            Route::get('/create', [SubCategoryController::class, 'create'])->name('create');
+            Route::get('/{sub_category}/edit', [SubCategoryController::class, 'edit'])->name('edit');
+
+            Route::post('sub_category', [SubCategoryController::class, 'storeOrUpdate'])->name('store');
+            Route::put('sub_category/{id}', [SubCategoryController::class, 'storeOrUpdate'])->name('update');
+
+            Route::delete('/mass-destroy', [SubCategoryController::class, 'massDestroy'])->name('massDestroy');
+            Route::delete('/{sub_category}', [SubCategoryController::class, 'destroy'])->name('destroy');
         });
 
     });

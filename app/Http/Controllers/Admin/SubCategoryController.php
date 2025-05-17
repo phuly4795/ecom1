@@ -4,27 +4,28 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\SubCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 use Yajra\DataTables\DataTables;
-use Illuminate\Support\Str;
 
-class CategoryController extends Controller
+class SubCategoryController extends Controller
 {
     public function index()
     {
-        return view('layouts.pages.admin.category.index');
+        return view('layouts.pages.admin.sub_category.index');
     }
 
     public function data()
     {
-        $query = Category::query();
+        $query = SubCategory::with('category'); // Thêm eager loading
+
         return DataTables::of($query)
             ->addIndexColumn()
-            ->addColumn('actions', function ($category) {
-                $editUrl = route('admin.category.edit', $category);
-                $deleteUrl = route('admin.category.destroy', $category);
+            ->addColumn('actions', function ($sub_category) {
+                $editUrl = route('admin.sub_category.edit', $sub_category);
+                $deleteUrl = route('admin.sub_category.destroy', $sub_category);
 
                 $html = '<div class="d-flex gap-2">';
                 $html .= '<a href="' . $editUrl . '" class="btn btn-sm btn-warning mr-2">Sửa</a>';
@@ -37,24 +38,30 @@ class CategoryController extends Controller
 
                 return new HtmlString($html);
             })
-            ->editColumn('created_at', function ($category) {
-                return $category->created_at->format('d/m/Y');
+            ->editColumn('created_at', function ($sub_category) {
+                return $sub_category->created_at->format('d/m/Y');
             })
-            ->editColumn('status', function ($category) {
-                return $category->status == 1
+            ->editColumn('status', function ($sub_category) {
+                return $sub_category->status == 1
                     ? '<i class="fa-solid fa-circle-check text-success" style="font-size: 22px"></i>'
                     : '<i class="fa-regular fa-circle-xmark text-danger" style="font-size: 22px"></i>';
+            })
+            ->editColumn('category', function ($sub_category) {
+                return $sub_category->category->name;
             })
             ->rawColumns(['actions', 'status'])
             ->make(true);
     }
+
     public function create()
     {
-        return view('layouts.pages.admin.category.upsert');
+        $category = Category::orderBy('name', 'ASC')->get();
+        return view('layouts.pages.admin.sub_category.upsert', compact('category'));
     }
-    public function edit(Category $category)
+    public function edit(SubCategory $subCategory)
     {
-        return view('layouts.pages.admin.category.upsert', compact('category'));
+        $category = Category::orderBy('name', 'ASC')->get();
+        return view('layouts.pages.admin.sub_category.upsert', compact('subCategory', 'category'));
     }
 
     public function storeOrUpdate(Request $request, $id = null)
@@ -63,12 +70,12 @@ class CategoryController extends Controller
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:categories,slug,' . $id,
             'status' => 'required|in:0,1',
-            'image' => 'nullable|string', // đường dẫn ảnh
+            'category_id' =>  'required',
         ], [
-            'slug.unique' => 'Slug này đã tồn tại, vui lòng chọn tên khác.',
+            'slug.unique' => 'Slug này đã tồn tại, vui lòng chọn tên khác.'
         ]);
 
-        Category::updateOrCreate(
+        SubCategory::updateOrCreate(
             ['id' => $id],
             $validated
         );

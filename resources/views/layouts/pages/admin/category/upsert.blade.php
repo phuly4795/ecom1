@@ -26,17 +26,14 @@
                 @endif
 
                 <div class="row mb-3">
-                    <!-- Name -->
                     <div class="col-md-6">
-                        <label for="name" class="form-label">Name</label>
+                        <label for="name" class="form-label">Tên danh mục</label>
                         <input type="text" name="name" id="name" class="form-control" required
                             placeholder="Name" value="{{ old('name', $category->name ?? '') }}">
                         @error('name')
                             <span class="text-danger">{{ $message }}</span>
                         @enderror
                     </div>
-
-                    <!-- Slug -->
                     <div class="col-md-6">
                         <label for="slug" class="form-label">Slug</label>
                         <input type="text" id="slug" class="form-control" readonly placeholder="Slug"
@@ -47,10 +44,8 @@
                 </div>
 
                 <div class="row mb-3">
-
-                    <!-- Image Dropzone -->
                     <div class="col-md-6">
-                        <label for="image-dropzone" class="form-label">Image</label>
+                        <label for="image-dropzone" class="form-label">Hình ảnh</label>
                         <div class="dropzone" id="image-dropzone"></div>
                         <input type="hidden" name="image" id="image-hidden"
                             value="{{ old('image', $category->image ?? '') }}">
@@ -60,7 +55,7 @@
                     </div>
                     <!-- Status -->
                     <div class="col-md-6">
-                        <label for="status" class="form-label">Status</label>
+                        <label for="status" class="form-label">Trạng thái</label>
                         <select name="status" id="status" class="form-control">
                             <option value="1" {{ old('status', $category->status ?? '') == 1 ? 'selected' : '' }}>
                                 Hiển thị</option>
@@ -105,28 +100,54 @@
         Dropzone.autoDiscover = false;
         const dropzone = new Dropzone("#image-dropzone", {
             url: "{{ route('admin.category.uploadImage') }}",
+            method: 'post',
+            paramName: 'file',
             maxFiles: 1,
             acceptedFiles: 'image/*',
             addRemoveLinks: true,
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },
-            init: function () {
-                @if(!empty(old('image', $category->image ?? '')))
-                    var mockFile = { name: "Image", size: 12345 };
+            init: function() {
+                @if (!empty(old('image', $category->image ?? '')))
+                    var mockFile = {
+                        name: "Image",
+                        size: 12345
+                    };
                     this.emit("addedfile", mockFile);
-                    this.emit("thumbnail", mockFile, "{{ asset('storage/' . old('image', $category->image ?? '')) }}");
+                    this.emit("thumbnail", mockFile,
+                        "{{ asset('storage/' . old('image', $category->image ?? '')) }}");
                     this.emit("complete", mockFile);
                     this.files.push(mockFile);
                 @endif
             },
-            success: function (file, response) {
+            success: function(file, response) {
                 document.getElementById('image-hidden').value = response.filePath;
+                this.emit("thumbnail", file, response.url);
             },
-            removedfile: function (file) {
+            removedfile: function(file) {
                 file.previewElement.remove();
                 document.getElementById('image-hidden').value = '';
             }
         });
     </script>
+    <style>
+        #image-dropzone .dz-image {
+            width: 150px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 1px dashed #ccc;
+            background: #fafafa;
+        }
+        #image-dropzone .dz-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 0.5rem;
+            background-color: #f8f9fa;
+        }
+    </style>
 </x-app-layout>

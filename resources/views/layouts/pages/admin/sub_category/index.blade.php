@@ -1,11 +1,11 @@
 <x-app-layout>
     <div class="container-fluid">
-        <h1 class="h3 mb-4 text-gray-800">Danh sách danh mục</h1>
+        <h1 class="h3 mb-4 text-gray-800">Danh sách danh mục phụ</h1>
         <div class="action" id="action">
-            <a href="{{ route('admin.category.create') }}" class="btn btn-primary mb-3">Thêm danh mục</a>
+            <a href="{{ route('admin.sub_category.create') }}" class="btn btn-primary mb-3">Thêm danh mục phụ</a>
             <div class="btn-group mb-3" id="bulk-delete" style="display: none;">
                 <button type="button" class="btn btn-primary">
-                    <span class="visually-hidden"><i class="fa-solid fa-eraser"></i> Xóa danh mục</span>
+                    <span class="visually-hidden"><i class="fa-solid fa-eraser"></i> Xóa danh mục phụ</span>
                 </button>
             </div>
         </div>
@@ -16,7 +16,8 @@
                         <tr>
                             <th width="20px"><input type="checkbox" id="select-all"></th>
                             <th>ID</th>
-                            <th>Tên danh mục</th>
+                            <th>Tên danh mục phụ</th>
+                            <th>Danh mục cha</th>
                             <th>Slug</th>
                             <th>Ngày tạo</th>
                             <th>Trạng thái</th>
@@ -34,7 +35,7 @@
                 var table = $('#categories-table').DataTable({
                     processing: true,
                     serverSide: true,
-                    ajax: '{{ route('admin.category.data') }}',
+                    ajax: '{{ route('admin.sub_category.data') }}',
                     columns: [
                         {
                             data: 'checkbox',
@@ -52,6 +53,10 @@
                         {
                             data: 'name',
                             name: 'name'
+                        },
+                        {
+                            data: 'category',
+                            name: 'category'
                         },
                         {
                             data: 'slug',

@@ -19,5 +19,19 @@
 <!-- DataTables -->
 <link href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet" />
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    function showAlertModal(message, type = 'success') {
+        Swal.fire({
+            title: type === 'success' ? 'Thành công!' : 'Lỗi!',
+            text: message,
+            icon: type,
+            confirmButtonText: 'OK',
+            buttonsStyling: false,
+            customClass: {
+                confirmButton: `btn btn-${type}`
+            }
+        });
+    }
+</script>
 @stack('scripts')
