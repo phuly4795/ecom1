@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\SubCategoryController;
@@ -51,6 +52,19 @@ Route::middleware('auth','verified', 'checkRole')->group(function () {
 
             Route::delete('/mass-destroy', [SubCategoryController::class, 'massDestroy'])->name('massDestroy');
             Route::delete('/{sub_category}', [SubCategoryController::class, 'destroy'])->name('destroy');
+        });
+
+        Route::prefix('brand')->name('brand.')->group(function () {
+            Route::get('/', [BrandController::class, 'index'])->name('index');
+            Route::get('/data', [BrandController::class, 'data'])->name('data');
+            Route::get('/create', [BrandController::class, 'create'])->name('create');
+            Route::get('/{brand}/edit', [BrandController::class, 'edit'])->name('edit');
+
+            Route::post('brand', [BrandController::class, 'storeOrUpdate'])->name('store');
+            Route::put('brand/{id}', [BrandController::class, 'storeOrUpdate'])->name('update');
+
+            Route::delete('/mass-destroy', [BrandController::class, 'massDestroy'])->name('massDestroy');
+            Route::delete('/{brand}', [BrandController::class, 'destroy'])->name('destroy');
         });
 
     });

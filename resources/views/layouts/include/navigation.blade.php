@@ -35,49 +35,17 @@
             <i class="fas fa-fw fa-chart-area"></i>
             <span>Danh mục phụ</span></a>
     </li>
-
-
-    {{-- <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
-            aria-expanded="true" aria-controls="collapseTwo">
-            <i class="fas fa-fw fa-cog"></i>
-            <span>Danh mục sản phẩm</span>
-        </a>
-        <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
-            <div class="bg-white py-2 collapse-inner rounded">
-                <a class="collapse-item" href="{{route('admin.category.index')}}">Danh sách danh mục</a>
-                <a class="collapse-item" href="{{route('admin.category.create')}}">Thêm danh mục</a>
-            </div>
-        </div>
-    </li> --}}
-    {{-- <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
-            aria-expanded="true" aria-controls="collapseTwo">
-            <i class="fas fa-fw fa-cog"></i>
-            <span>Danh mục phụ</span>
-        </a>
-        <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
-            <div class="bg-white py-2 collapse-inner rounded">
-                <a class="collapse-item" href="{{route('admin.category.index')}}">Danh sách danh mục</a>
-                <a class="collapse-item" href="{{route('admin.category.create')}}">Thêm danh mục</a>
-            </div>
-        </div>
-    </li> --}}
-    <!-- Nav Item - Utilities Collapse Menu -->
     <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities"
-            aria-expanded="true" aria-controls="collapseUtilities">
-            <i class="fas fa-fw fa-wrench"></i>
-            <span>Sản phẩm</span>
-        </a>
-        <div id="collapseUtilities" class="collapse" aria-labelledby="headingUtilities"
-            data-parent="#accordionSidebar">
-            <div class="bg-white py-2 collapse-inner rounded">
-                <a class="collapse-item" href="utilities-color.html">Danh sách sản phẩm</a>
-                <a class="collapse-item" href="utilities-border.html">Thêm sản phẩm</a>
-            </div>
-        </div>
+        <a class="nav-link" href="{{route('admin.brand.index')}}">
+            <i class="fas fa-fw fa-chart-area"></i>
+            <span>Thương hiệu</span></a>
     </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{{route('admin.brand.index')}}">
+            <i class="fas fa-fw fa-chart-area"></i>
+            <span>Sản phẩm</span></a>
+    </li>
+
 
     <!-- Divider -->
     <hr class="sidebar-divider">

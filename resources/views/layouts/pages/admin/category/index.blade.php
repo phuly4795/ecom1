@@ -108,7 +108,6 @@
                 // Xóa hàng loạt
                 $('#bulk-delete').click(function(e) {
                     e.preventDefault();
-                    console.log("{{ route("admin.category.massDestroy") }}");
                     
                     var ids = [];
                     $('.row-checkbox:checked').each(function() {

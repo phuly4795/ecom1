@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Brand;
 use App\Models\Category;
 use App\Models\SubCategory;
 use Illuminate\Http\Request;
@@ -10,22 +11,22 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 use Yajra\DataTables\DataTables;
 
-class SubCategoryController extends Controller
+class BrandController extends Controller
 {
     public function index()
     {
-        return view('layouts.pages.admin.sub_category.index');
+        return view('layouts.pages.admin.brand.index');
     }
 
     public function data()
     {
-        $query = SubCategory::with('category'); // Thêm eager loading
+        $query = Brand::query(); // Thêm eager loading
 
         return DataTables::of($query)
             ->addIndexColumn()
-            ->addColumn('actions', function ($sub_category) {
-                $editUrl = route('admin.sub_category.edit', $sub_category);
-                $deleteUrl = route('admin.sub_category.destroy', $sub_category);
+            ->addColumn('actions', function ($brand) {
+                $editUrl = route('admin.brand.edit', $brand);
+                $deleteUrl = route('admin.brand.destroy', $brand);
 
                 $html = '<div class="d-flex gap-2">';
                 $html .= '<a href="' . $editUrl . '" class="btn btn-sm btn-warning mr-2">Sửa</a>';
@@ -38,16 +39,13 @@ class SubCategoryController extends Controller
 
                 return new HtmlString($html);
             })
-            ->editColumn('created_at', function ($sub_category) {
-                return $sub_category->created_at->format('d/m/Y');
+            ->editColumn('created_at', function ($brand) {
+                return $brand->created_at->format('d/m/Y');
             })
-            ->editColumn('status', function ($sub_category) {
-                return $sub_category->status == 1
+            ->editColumn('status', function ($brand) {
+                return $brand->status == 1
                     ? '<i class="fa-solid fa-circle-check text-success" style="font-size: 22px"></i>'
                     : '<i class="fa-regular fa-circle-xmark text-danger" style="font-size: 22px"></i>';
-            })
-            ->editColumn('category', function ($sub_category) {
-                return $sub_category->category->name;
             })
             ->rawColumns(['actions', 'status'])
             ->make(true);
@@ -55,27 +53,25 @@ class SubCategoryController extends Controller
 
     public function create()
     {
-        $category = Category::orderBy('name', 'ASC')->get();
-        return view('layouts.pages.admin.sub_category.upsert', compact('category'));
+
+        return view('layouts.pages.admin.brand.upsert');
     }
-    public function edit(SubCategory $subCategory)
+    public function edit(Brand $brand)
     {
-        $category = Category::orderBy('name', 'ASC')->get();
-        return view('layouts.pages.admin.sub_category.upsert', compact('subCategory', 'category'));
+        return view('layouts.pages.admin.brand.upsert', compact('brand'));
     }
 
     public function storeOrUpdate(Request $request, $id = null)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:sub_categories,slug,' . $id,
+            'slug' => 'required|string|max:255|unique:brands,slug,' . $id,
             'status' => 'required|in:0,1',
-            'category_id' =>  'required',
         ], [
             'slug.unique' => 'Slug này đã tồn tại, vui lòng chọn tên khác.'
         ]);
 
-        SubCategory::updateOrCreate(
+        Brand::updateOrCreate(
             ['id' => $id],
             $validated
         );
@@ -84,10 +80,10 @@ class SubCategoryController extends Controller
     }
 
 
-    public function destroy(SubCategory $subCategory)
+    public function destroy(Brand $brand)
     {
-        $subCategory->delete();
-        return redirect()->route('admin.sub_category.index')->with(['status' => 'success', 'message' => 'Xóa thành công']);
+        $brand->delete();
+        return redirect()->route('admin.brand.index')->with(['status' => 'success', 'message' => 'Xóa thành công']);
     }
 
     // CategoryController.php
@@ -95,10 +91,10 @@ class SubCategoryController extends Controller
     {
         $request->validate([
             'ids' => 'required|array',
-            'ids.*' => 'exists:sub_categories,id'
+            'ids.*' => 'exists:brands,id'
         ]);
 
-        SubCategory::whereIn('id', $request->ids)->delete();
+        brand::whereIn('id', $request->ids)->delete();
 
         return response()->json([
             'success' => 'success',

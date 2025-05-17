@@ -1,10 +1,10 @@
 <x-app-layout>
     <div class="container-fluid">
         <div class="card p-4 bg-white shadow-sm rounded">
-            @if (isset($subCategory->id))
-                <h1 class="h3 mb-4 text-gray-800">Cập nhật danh mục phụ</h1>
+            @if (isset($brand->id))
+                <h1 class="h3 mb-4 text-gray-800">Cập nhật thương hiệu</h1>
             @else
-                <h1 class="h3 mb-4 text-gray-800">Thêm danh mục phụ</h1>
+                <h1 class="h3 mb-4 text-gray-800">Thêm thương hiệu</h1>
             @endif
 
             @if ($errors->any())
@@ -18,18 +18,18 @@
             @endif
 
             <form
-                action="{{ isset($subCategory->id) ? route('admin.sub_category.update', $subCategory->id) : route('admin.sub_category.store') }}"
+                action="{{ isset($brand->id) ? route('admin.brand.update', $brand->id) : route('admin.brand.store') }}"
                 method="POST" enctype="multipart/form-data">
                 @csrf
-                @if (isset($subCategory->id))
+                @if (isset($brand->id))
                     @method('PUT')
                 @endif
 
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <label for="name" class="form-label">Tên danh mục phụ</label>
+                        <label for="name" class="form-label">Tên thương hiệu</label>
                         <input type="text" name="name" id="name" class="form-control" required
-                            placeholder="Name" value="{{ old('name', $subCategory->name ?? '') }}">
+                            placeholder="Name" value="{{ old('name', $brand->name ?? '') }}">
                         @error('name')
                             <span class="text-danger">{{ $message }}</span>
                         @enderror
@@ -37,34 +37,21 @@
                     <div class="col-md-6">
                         <label for="slug" class="form-label">Slug</label>
                         <input type="text" id="slug" class="form-control" readonly placeholder="Slug"
-                            value="{{ old('slug', $subCategory->slug ?? '') }}">
+                            value="{{ old('slug', $brand->slug ?? '') }}">
                         <input type="hidden" name="slug" id="slug-hidden"
-                            value="{{ old('slug', $subCategory->slug ?? '') }}">
+                            value="{{ old('slug', $brand->slug ?? '') }}">
                     </div>
                 </div>
                 <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="category_id" class="form-label">Danh mục cha</label>
-                        <select name="category_id" id="category_id" class="form-control">
-                            @foreach ($category as $cate)
-                                <option value="{{ $cate->id }}"
-                                    {{ old('category_id', $cate->id ?? '') == (isset($subCategory->id) ? $subCategory->category_id : '') ? 'selected' : '' }}>
-                                    {{ $cate->name }}</option>
-                            @endforeach
-                        </select>
-                        @error('status')
-                            <span class="text-danger">{{ $message }}</span>
-                        @enderror
-                    </div>
                     <!-- Status -->
                     <div class="col-md-6">
                         <label for="status" class="form-label">Trạng thái</label>
                         <select name="status" id="status" class="form-control">
                             <option value="1"
-                                {{ old('status', $subCategory->status ?? '') == 1 ? 'selected' : '' }}>
+                                {{ old('status', $brand->status ?? '') == 1 ? 'selected' : '' }}>
                                 Hiển thị</option>
                             <option value="0"
-                                {{ old('status', $subCategory->status ?? '') == 0 ? 'selected' : '' }}>
+                                {{ old('status', $brand->status ?? '') == 0 ? 'selected' : '' }}>
                                 Ẩn</option>
                         </select>
                         @error('status')
@@ -74,8 +61,8 @@
                 </div>
 
                 <button type="submit" class="btn btn-primary">
-                    {{ isset($subCategory->id) ? 'Cập nhật' : 'Thêm mới' }}</button>
-                <a href="{{ route('admin.sub_category.index') }}" class="btn btn-secondary">Trở về</a>
+                    {{ isset($brand->id) ? 'Cập nhật' : 'Thêm mới' }}</button>
+                <a href="{{ route('admin.brand.index') }}" class="btn btn-secondary">Trở về</a>
             </form>
         </div>
     </div>
