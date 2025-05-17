@@ -13,6 +13,7 @@ Route::middleware('auth','verified', 'checkRole')->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+        Route::put('/update-info', [ProfileController::class, 'updateInfo'])->name('profile.updateInfo');
         Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
         Route::get('/dashboard', [HomeController::class, 'index'])->name('dashboard');
         Route::get('/createUserRole', [HomeController::class, 'createCustomer'])->name('createCustomer');
