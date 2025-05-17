@@ -1,0 +1,132 @@
+<x-app-layout>
+    <div class="container-fluid">
+        <div class="card p-4 bg-white shadow-sm rounded">
+            @if (isset($category->id))
+                <h1 class="h3 mb-4 text-gray-800">Cập nhật danh mục</h1>
+            @else
+                <h1 class="h3 mb-4 text-gray-800">Thêm danh mục</h1>
+            @endif
+
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <form
+                action="{{ isset($category->id) ? route('admin.category.update', $category->id) : route('admin.category.store') }}"
+                method="POST" enctype="multipart/form-data">
+                @csrf
+                @if (isset($category->id))
+                    @method('PUT')
+                @endif
+
+                <div class="row mb-3">
+                    <!-- Name -->
+                    <div class="col-md-6">
+                        <label for="name" class="form-label">Name</label>
+                        <input type="text" name="name" id="name" class="form-control" required
+                            placeholder="Name" value="{{ old('name', $category->name ?? '') }}">
+                        @error('name')
+                            <span class="text-danger">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <!-- Slug -->
+                    <div class="col-md-6">
+                        <label for="slug" class="form-label">Slug</label>
+                        <input type="text" id="slug" class="form-control" readonly placeholder="Slug"
+                            value="{{ old('slug', $category->slug ?? '') }}">
+                        <input type="hidden" name="slug" id="slug-hidden"
+                            value="{{ old('slug', $category->slug ?? '') }}">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+
+                    <!-- Image Dropzone -->
+                    <div class="col-md-6">
+                        <label for="image-dropzone" class="form-label">Image</label>
+                        <div class="dropzone" id="image-dropzone"></div>
+                        <input type="hidden" name="image" id="image-hidden"
+                            value="{{ old('image', $category->image ?? '') }}">
+                        @error('image')
+                            <span class="text-danger">{{ $message }}</span>
+                        @enderror
+                    </div>
+                    <!-- Status -->
+                    <div class="col-md-6">
+                        <label for="status" class="form-label">Status</label>
+                        <select name="status" id="status" class="form-control">
+                            <option value="1" {{ old('status', $category->status ?? '') == 1 ? 'selected' : '' }}>
+                                Hiển thị</option>
+                            <option value="0" {{ old('status', $category->status ?? '') == 0 ? 'selected' : '' }}>
+                                Ẩn</option>
+                        </select>
+                        @error('status')
+                            <span class="text-danger">{{ $message }}</span>
+                        @enderror
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    {{ isset($category->id) ? 'Cập nhật' : 'Thêm mới' }}</button>
+                <a href="{{ route('admin.category.index') }}" class="btn btn-secondary">Trở về</a>
+            </form>
+        </div>
+    </div>
+    {{-- Dropzone CSS & JS --}}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.js"></script>
+
+    <script>
+        function slugify(str) {
+            return str
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .trim()
+                .replace(/[^a-z0-9\s-]/g, '')
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-');
+        }
+
+        document.getElementById('name').addEventListener('input', function() {
+            const nameValue = this.value;
+            const slugValue = slugify(nameValue);
+            document.getElementById('slug').value = slugValue;
+            document.getElementById('slug-hidden').value = slugValue;
+        });
+
+        Dropzone.autoDiscover = false;
+        const dropzone = new Dropzone("#image-dropzone", {
+            url: "{{ route('admin.category.uploadImage') }}",
+            maxFiles: 1,
+            acceptedFiles: 'image/*',
+            addRemoveLinks: true,
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            init: function () {
+                @if(!empty(old('image', $category->image ?? '')))
+                    var mockFile = { name: "Image", size: 12345 };
+                    this.emit("addedfile", mockFile);
+                    this.emit("thumbnail", mockFile, "{{ asset('storage/' . old('image', $category->image ?? '')) }}");
+                    this.emit("complete", mockFile);
+                    this.files.push(mockFile);
+                @endif
+            },
+            success: function (file, response) {
+                document.getElementById('image-hidden').value = response.filePath;
+            },
+            removedfile: function (file) {
+                file.previewElement.remove();
+                document.getElementById('image-hidden').value = '';
+            }
+        });
+    </script>
+</x-app-layout>

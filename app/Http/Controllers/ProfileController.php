@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\District;
+use App\Models\Province;
+use App\Models\Ward;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,8 +19,10 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
+        $provinces = Province::all();
         return view('profile.edit', [
             'user' => $request->user(),
+            'provinces' => $provinces
         ]);
     }
 

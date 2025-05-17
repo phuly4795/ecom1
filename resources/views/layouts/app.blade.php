@@ -12,18 +12,20 @@
     <body id="page-top">
         <div id="wrapper">
             @include('layouts.include.navigation')
-            <!-- Page Content -->
-            <main>
-                {{ $slot }}
-            </main>
+            <div id="content-wrapper" class="d-flex flex-column">
+                @include('layouts.include.topBar')
+                <main>
+                    {{ $slot }}
+                </main>
+            </div>
         </div>
 
         <!-- Scroll to Top Button-->
         <a class="scroll-to-top rounded" href="#page-top">
             <i class="fas fa-angle-up"></i>
         </a>
-       @include('layouts.include.modal')
-
-    @include('layouts.include.script')
+        
+        @include('layouts.include.modal')
+        @include('layouts.include.script')
     </body>
 </html>
