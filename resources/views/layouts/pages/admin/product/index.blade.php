@@ -1,4 +1,5 @@
 <x-app-layout>
+    @section('title', 'Danh sách sản phẩm')
     <div class="container-fluid">
         <h1 class="h3 mb-4 text-gray-800">Danh sách sản phẩm</h1>
         <div class="action" id="action">
@@ -16,9 +17,11 @@
                         <tr>
                             <th width="20px"><input type="checkbox" id="select-all"></th>
                             <th>ID</th>
+                            <th>Hình ảnh</th>
                             <th>Tên sản phẩm</th>
-                            <th>Slug</th>
-                            <th>Ngày tạo</th>
+                            <th>Giá sản phẩm</th>
+                            <th>Số lượng</th>
+                            <th>SKU</th>
                             <th>Trạng thái</th>
                             <th>Hành động</th>
                         </tr>
@@ -35,8 +38,7 @@
                     processing: true,
                     serverSide: true,
                     ajax: '{{ route('admin.product.data') }}',
-                    columns: [
-                        {
+                    columns: [{
                             data: 'checkbox',
                             name: 'checkbox',
                             orderable: false,
@@ -50,16 +52,24 @@
                             searchable: false
                         },
                         {
-                            data: 'name',
-                            name: 'name'
+                            data: 'image',
+                            name: 'image'
                         },
                         {
-                            data: 'slug',
-                            name: 'slug'
+                            data: 'title',
+                            name: 'title'
                         },
                         {
-                            data: 'created_at',
-                            name: 'created_at'
+                            data: 'price',
+                            name: 'price'
+                        },
+                        {
+                            data: 'qty',
+                            name: 'qty'
+                        },
+                        {
+                            data: 'sku',
+                            name: 'sku'
                         },
                         {
                             data: 'status',
@@ -73,14 +83,12 @@
                             searchable: false
                         },
                     ],
-                    columnDefs: [
-                        {
-                            targets: 0,
-                            render: function(data, type, row) {
-                                return '<input type="checkbox" class="row-checkbox" value="' + row.id + '">';
-                            }
+                    columnDefs: [{
+                        targets: 0,
+                        render: function(data, type, row) {
+                            return '<input type="checkbox" class="row-checkbox" value="' + row.id +'">';
                         }
-                    ]
+                    }]
                 });
 
                 // Chọn tất cả/bỏ chọn tất cả
@@ -104,11 +112,11 @@
                         $('#bulk-delete').hide();
                     }
                 }
-                
+
                 // Xóa hàng loạt
                 $('#bulk-delete').click(function(e) {
                     e.preventDefault();
-                    
+
                     var ids = [];
                     $('.row-checkbox:checked').each(function() {
                         ids.push($(this).val());
@@ -121,7 +129,7 @@
 
                     if (confirm('Bạn có chắc chắn muốn xóa các sản phẩm đã chọn?')) {
                         $.ajax({
-                            url: '{{ route("admin.product.massDestroy") }}',
+                            url: '{{ route('admin.product.massDestroy') }}',
                             type: 'DELETE',
                             data: {
                                 ids: ids,
@@ -155,11 +163,11 @@
             justify-content: space-between;
             align-items: center;
         }
-        
+
         #bulk-actions {
             gap: 5px;
         }
-        
+
         .dropdown-menu {
             margin-top: 0 !important;
         }

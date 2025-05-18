@@ -10,7 +10,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Models\Role;
 
-Route::middleware('auth','verified', 'checkRole')->group(function () {
+Route::middleware('auth', 'verified', 'checkRole')->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -75,18 +75,17 @@ Route::middleware('auth','verified', 'checkRole')->group(function () {
             Route::get('/create', [ProductController::class, 'create'])->name('create');
             Route::get('/{product}/edit', [ProductController::class, 'edit'])->name('edit');
 
-            Route::post('product', [ProductController::class, 'storeOrUpdate'])->name('store');
-            Route::put('product/{id}', [ProductController::class, 'storeOrUpdate'])->name('update');
+            Route::post('/', [ProductController::class, 'storeOrUpdate'])->name('store');
+            Route::put('/{product}', [ProductController::class, 'storeOrUpdate'])->name('update');
 
             Route::delete('/mass-destroy', [ProductController::class, 'massDestroy'])->name('massDestroy');
             Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
 
             Route::post('/upload-image', [ProductController::class, 'uploadImage'])->name('uploadImage');
+
+            Route::get('/get-subcategories/{category_id}', [ProductController::class, 'getSubcategories'])->name('getSubcategories');
         });
-
     });
-
-    
 });
 Route::fallback(function () {
     return view('layouts.pages.404');
