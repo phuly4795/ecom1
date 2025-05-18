@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\HomeController;
+use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\SubCategoryController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\ProfileController;
@@ -66,6 +67,21 @@ Route::middleware('auth','verified', 'checkRole')->group(function () {
 
             Route::delete('/mass-destroy', [BrandController::class, 'massDestroy'])->name('massDestroy');
             Route::delete('/{brand}', [BrandController::class, 'destroy'])->name('destroy');
+        });
+
+        Route::prefix('product')->name('product.')->group(function () {
+            Route::get('/', [ProductController::class, 'index'])->name('index');
+            Route::get('/data', [ProductController::class, 'data'])->name('data');
+            Route::get('/create', [ProductController::class, 'create'])->name('create');
+            Route::get('/{product}/edit', [ProductController::class, 'edit'])->name('edit');
+
+            Route::post('product', [ProductController::class, 'storeOrUpdate'])->name('store');
+            Route::put('product/{id}', [ProductController::class, 'storeOrUpdate'])->name('update');
+
+            Route::delete('/mass-destroy', [ProductController::class, 'massDestroy'])->name('massDestroy');
+            Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
+
+            Route::post('/upload-image', [ProductController::class, 'uploadImage'])->name('uploadImage');
         });
 
     });

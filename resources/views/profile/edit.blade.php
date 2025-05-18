@@ -3,10 +3,6 @@
     <div class="rounded bg-white">
         <div class="row">
             <div class="col-md-3 border-right">
-                {{-- <form id="update-form" enctype="multipart/form-data">
-                    @csrf
-                    @method('PUT') --}}
-                
                     <!-- Phần hiển thị avatar -->
                     <div class="d-flex flex-column align-items-center text-center p-3 py-5">
                         <img id="preview-avatar" class="rounded-circle mt-5" width="150px"
@@ -15,8 +11,6 @@
                         <span class="text-muted small">Chỉ chấp nhận ảnh PNG, JPG, JPEG (tối đa 2MB)</span>
                     </div>
                 
-                    <!-- Các input khác như tên, email, địa chỉ, v.v. -->
-                </form>
             </div>
             <div class="col-md-5 border-right">
                 @method('PUT')
@@ -207,31 +201,33 @@
 <script>
     $('.profile-button').click(function(e) {
         e.preventDefault();
+        var formData = new FormData();
 
-        // Lấy tất cả dữ liệu từ form
-        var formData = {
-            name: $('input[name="name"]').val(),
-            email: $('input[name="email"]').val(),
-            phone: $('input[name="phone"]').val(),
-            birthday: $('input[name="birthday"]').val(),
-            province_id: $('#province').val(),
-            district_id: $('#district').val(),
-            ward_id: $('#ward').val(),
-            address: $('input[name="address"]').val(),
-            is_active: $('#status').val(),
-            user_roles: $('#role').val(),
-            _token: '{{ csrf_token() }}',
-            _method: 'PUT'
-        };
-
+        formData.append('name', $('input[name="name"]').val());
+        formData.append('email', $('input[name="email"]').val());
+        formData.append('phone', $('input[name="phone"]').val());
+        formData.append('birthday', $('input[name="birthday"]').val());
+        formData.append('province_id', $('#province').val());
+        formData.append('district_id', $('#district').val());
+        formData.append('ward_id', $('#ward').val());
+        formData.append('address', $('input[name="address"]').val());
+        formData.append('is_active', $('#status').val());
+        formData.append('user_roles', $('#role').val());
+        formData.append('_token', '{{ csrf_token() }}');
+        formData.append('_method', 'PUT');
+        const avatarFile = $('#avatar')[0].files[0];
+        if (avatarFile) {
+            formData.append('avatar', avatarFile);
+        }
         $.ajax({
             url: '{{ route('admin.profile.updateInfo') }}',
-            type: 'POST', // Sử dụng POST với method spoofing
+            type: 'POST',
             data: formData,
+            processData: false, // Bắt buộc khi dùng FormData
+            contentType: false, // Bắt buộc khi dùng FormData
             success: function(response) {
                 if (response.success) {
                     showAlertModal(response.message, 'success');
-                    // Có thể reload trang hoặc cập nhật thông tin ngay lập tức
                     setTimeout(() => {
                         location.reload();
                     }, 1500);

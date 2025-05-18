@@ -73,7 +73,7 @@ class ProfileController extends Controller
             $path = $request->file('avatar')->store('avatars', 'public');
             $validated['avatar'] = $path;
         }
-        
+
         User::where('id', $user->id)->update($validated);
 
         return response()->json([

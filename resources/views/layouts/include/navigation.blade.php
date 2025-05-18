@@ -40,14 +40,15 @@
             <span>Thương hiệu</span></a>
     </li>
 
-    {{-- <li class="nav-item {{ request()->routeIs('admin.product.*') ? 'active' : '' }}">
-        <a class="nav-link" href="{{ route('admin.product.index') }}">
-            <i class="fas fa-fw fa-box"></i>
-            <span>Sản phẩm</span></a>
-    </li> --}}
-
     <!-- Divider -->
     <hr class="sidebar-divider">
+
+    <li class="nav-item {{ request()->routeIs('admin.product.*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('admin.product.index') }}">
+            <i class="fas fa-fw fa-tags"></i>
+            <span>Sản phẩm</span></a>
+    </li>
+
 
     <!-- Sidebar Toggler (Sidebar) -->
     <div class="text-center d-none d-md-inline">
