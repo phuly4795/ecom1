@@ -15,7 +15,8 @@ class Category extends Model
         'name',
         'slug',
         'image',
-        'status'
+        'status',
+        'sort'
     ];
 
     public function subCategories(): HasMany

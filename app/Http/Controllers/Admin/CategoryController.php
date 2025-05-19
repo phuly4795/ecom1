@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 use Yajra\DataTables\DataTables;
-use Illuminate\Support\Str;
 
 class CategoryController extends Controller
 {
@@ -19,7 +18,7 @@ class CategoryController extends Controller
 
     public function data()
     {
-        $query = Category::query();
+        $query = Category::query()->orderBy('sort');
         return DataTables::of($query)
             ->addIndexColumn()
             ->addColumn('actions', function ($category) {
@@ -45,16 +44,25 @@ class CategoryController extends Controller
                     ? '<i class="fa-solid fa-circle-check text-success" style="font-size: 22px"></i>'
                     : '<i class="fa-regular fa-circle-xmark text-danger" style="font-size: 22px"></i>';
             })
-            ->rawColumns(['actions', 'status'])
+            ->addColumn('sort', function ($category) {
+                return $category->sort;
+            })
+            ->rawColumns(['actions', 'status', 'sort'])
             ->make(true);
     }
+
     public function create()
     {
-        return view('layouts.pages.admin.category.upsert');
+        $categoriesCount = Category::count();
+        $maxPosition = isset($category) ? $categoriesCount : $categoriesCount + 1;
+        return view('layouts.pages.admin.category.upsert', compact('maxPosition'));
     }
     public function edit(Category $category)
     {
-        return view('layouts.pages.admin.category.upsert', compact('category'));
+        $categoriesCount = Category::count();
+        $maxPosition = isset($category) ? $categoriesCount : $categoriesCount + 1;
+
+        return view('layouts.pages.admin.category.upsert', compact('category', 'maxPosition'));
     }
 
     public function storeOrUpdate(Request $request, $id = null)
@@ -63,19 +71,45 @@ class CategoryController extends Controller
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:categories,slug,' . $id,
             'status' => 'required|in:0,1',
-            'image' => 'nullable|string', // đường dẫn ảnh
+            'image' => 'nullable|string',
+            'sort' => 'required|integer|min:1',
         ], [
             'slug.unique' => 'Slug này đã tồn tại, vui lòng chọn tên khác.',
+            'sort.required' => 'Vui lòng chọn vị trí.',
         ]);
 
-        Category::updateOrCreate(
-            ['id' => $id],
-            $validated
-        );
+        if ($id) {
+            $category = Category::find($id);
+            $oldSort = $category->sort;
+            $newSort = $validated['sort'];
 
-        return redirect()->back()->with(['status' => 'success', 'message' => $id ? 'Cập nhật thành công' : 'Thêm mới thành công']);
+            if ($oldSort != $newSort) {
+                // Di chuyển các danh mục khác để nhường chỗ
+                if ($newSort < $oldSort) {
+                    // Di chuyển lên trên (số nhỏ hơn)
+                    Category::where('sort', '>=', $newSort)
+                        ->where('sort', '<', $oldSort)
+                        ->increment('sort');
+                } else {
+                    // Di chuyển xuống dưới (số lớn hơn)
+                    Category::where('sort', '>', $oldSort)
+                        ->where('sort', '<=', $newSort)
+                        ->decrement('sort');
+                }
+            }
+
+            // Cập nhật danh mục
+            $category->update($validated);
+            $message = 'Cập nhật danh mục thành công.';
+        } else {
+            $sort = $validated['sort'];
+            Category::where('sort', '>=', $sort)->increment('sort');
+            Category::create($validated);
+            $message = 'Thêm danh mục thành công.';
+        }
+
+        return redirect()->back()->with(['status' => 'success', 'message' => $message]);
     }
-
 
     public function destroy(Category $category)
     {
@@ -126,6 +160,28 @@ class CategoryController extends Controller
                 'error' => 'Upload failed',
                 'message' => $e->getMessage(),
             ], 500);
+        }
+    }
+
+    public function updateOrder(Request $request)
+    {
+        $order = $request->input('order');
+
+        foreach ($order as $item) {
+            Category::where('id', $item['id'])->update(['sort' => $item['position']]);
+        }
+
+        // Sắp xếp lại để đảm bảo không có khoảng trống
+        $this->reorderCategories();
+
+        return response()->json(['success' => true, 'message' => 'Cập nhật vị trí thành công']);
+    }
+
+    private function reorderCategories()
+    {
+        $categories = Category::orderBy('sort')->get();
+        foreach ($categories as $index => $category) {
+            $category->update(['sort' => $index + 1]);
         }
     }
 }

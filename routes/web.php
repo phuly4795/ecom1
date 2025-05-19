@@ -1,8 +1,6 @@
 <?php
 
-
-use App\Http\Controllers\Guest\HomeController;
-use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Guest\CategoryController;
 use Illuminate\Support\Facades\Route;
 use App\Models\Role;
 
@@ -19,9 +17,10 @@ use App\Models\Role;
 
 Route::get('/', function () {
     return view('layouts.pages.guest.home');
-});
+})->name('home');
 
 
+Route::get('/category/{slug}', [CategoryController::class, 'index'])->name('category.show');
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/admin.php';

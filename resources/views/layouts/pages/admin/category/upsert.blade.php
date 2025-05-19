@@ -1,4 +1,6 @@
 <x-app-layout>
+    <?php $title = isset($category->id) ? 'Cập nhật danh mục' : 'Thêm danh mục'; ?>
+    @section('title', $title)
     <div class="container-fluid">
         <div class="card p-4 bg-white shadow-sm rounded">
             @if (isset($category->id))
@@ -56,16 +58,24 @@
                     <!-- Status -->
                     <div class="col-md-6">
                         <label for="status" class="form-label">Trạng thái</label>
-                        <select name="status" id="status" class="form-control">
+                        <select name="status" id="status" class="form-control mb-3">
                             <option value="1" {{ old('status', $category->status ?? '') == 1 ? 'selected' : '' }}>
                                 Hiển thị</option>
                             <option value="0" {{ old('status', $category->status ?? '') == 0 ? 'selected' : '' }}>
                                 Ẩn</option>
                         </select>
-                        @error('status')
-                            <span class="text-danger">{{ $message }}</span>
-                        @enderror
+
+                        <label for="status" class="form-label">Vị trí hiển thị</label>
+                        <select name="sort" id="sort" class="form-control" required>
+                            @for ($i = 1; $i <= $maxPosition; $i++)
+                                <option value="{{ $i }}"
+                                    {{ old('sort', $category->sort ?? $maxPosition) == $i ? 'selected' : '' }}>
+                                    Vị trí {{ $i }}
+                                </option>
+                            @endfor
+                        </select>
                     </div>
+
                 </div>
 
                 <button type="submit" class="btn btn-primary">
@@ -74,18 +84,20 @@
             </form>
         </div>
     </div>
-    
+
     <script>
         function slugify(str) {
             return str
+                .toLowerCase()
+                .replace(/đ/g, 'd')
                 .normalize('NFD')
                 .replace(/[\u0300-\u036f]/g, '')
-                .toLowerCase()
                 .trim()
                 .replace(/[^a-z0-9\s-]/g, '')
                 .replace(/\s+/g, '-')
                 .replace(/-+/g, '-');
         }
+
 
         document.getElementById('name').addEventListener('input', function() {
             const nameValue = this.value;
@@ -139,6 +151,7 @@
             border: 1px dashed #ccc;
             background: #fafafa;
         }
+
         #image-dropzone .dz-image img {
             width: 100%;
             height: 100%;

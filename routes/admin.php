@@ -41,6 +41,7 @@ Route::middleware('auth', 'verified', 'checkRole')->group(function () {
             Route::delete('/{category}', [CategoryController::class, 'destroy'])->name('destroy');
 
             Route::post('/upload-image', [CategoryController::class, 'uploadImage'])->name('uploadImage');
+            Route::post('update-order', [CategoryController::class, 'updateOrder'])->name('updateOrder');
         });
 
         Route::prefix('sub_category')->name('sub_category.')->group(function () {

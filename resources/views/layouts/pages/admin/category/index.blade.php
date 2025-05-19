@@ -1,11 +1,12 @@
 <x-app-layout>
+    @section('title', 'Danh sách danh mục')
     <div class="container-fluid">
         <h1 class="h3 mb-4 text-gray-800">Danh sách danh mục</h1>
         <div class="action" id="action">
             <a href="{{ route('admin.category.create') }}" class="btn btn-primary mb-3">Thêm danh mục</a>
             <div class="btn-group mb-3" id="bulk-delete" style="display: none;">
-                <button type="button" class="btn btn-primary">
-                    <span class="visually-hidden"><i class="fa-solid fa-eraser"></i> Xóa danh mục</span>
+                <button type="button" class="btn btn-danger">
+                    <i class="fa-solid fa-trash"></i> Xóa danh mục đã chọn
                 </button>
             </div>
         </div>
@@ -18,17 +19,47 @@
                             <th>ID</th>
                             <th>Tên danh mục</th>
                             <th>Slug</th>
+                            <th>Vị trí</th>
                             <th>Ngày tạo</th>
                             <th>Trạng thái</th>
                             <th>Hành động</th>
                         </tr>
                     </thead>
+                    <tbody id="sortable">
+                        <!-- Dữ liệu sẽ được tải bằng DataTables -->
+                    </tbody>
                 </table>
             </div>
         </div>
     </div>
 
+    @push('styles')
+        <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+        <style>
+            #sortable tr {
+                cursor: move;
+            }
+            #sortable tr.ui-sortable-helper {
+                background-color: #f8f9fa;
+                display: table;
+            }
+            #sortable tr.ui-sortable-placeholder {
+                visibility: visible !important;
+                background-color: #f1f1f1;
+            }
+            .action {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: nowrap;
+                align-content: center;
+                justify-content: space-between;
+                align-items: center;
+            }
+        </style>
+    @endpush
+
     @push('scripts')
+        <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
         <script>
             $(document).ready(function() {
                 var table = $('#categories-table').DataTable({
@@ -58,6 +89,11 @@
                             name: 'slug'
                         },
                         {
+                            data: 'sort',
+                            name: 'sort',
+                            className: 'text-center'
+                        },
+                        {
                             data: 'created_at',
                             name: 'created_at'
                         },
@@ -80,8 +116,66 @@
                                 return '<input type="checkbox" class="row-checkbox" value="' + row.id + '">';
                             }
                         }
-                    ]
+                    ],
+                    drawCallback: function(settings) {
+                        // Khởi tạo sortable sau khi bảng được tải
+                        initSortable();
+                    }
                 });
+
+                function initSortable() {
+                    $('#sortable').sortable({
+                        items: 'tr',
+                        cursor: 'move',
+                        opacity: 0.6,
+                        update: function(event, ui) {
+                            updateOrder();
+                        },
+                        placeholder: 'ui-sortable-placeholder',
+                        forcePlaceholderSize: true,
+                        helper: function(e, tr) {
+                            var $originals = tr.children();
+                            var $helper = tr.clone();
+                            $helper.children().each(function(index) {
+                                $(this).width($originals.eq(index).width());
+                            });
+                            return $helper;
+                        }
+                    }).disableSelection();
+                }
+
+                function updateOrder() {
+                    var order = [];
+                    $('#sortable tr').each(function(index) {
+                        var id = $(this).find('.row-checkbox').val();
+                        order.push({
+                            id: id,
+                            position: index + 1
+                        });
+                    });
+
+                    $.ajax({
+                        url: '{{ route("admin.category.updateOrder") }}',
+                        type: 'POST',
+                        dataType: 'json',
+                        data: {
+                            order: order,
+                            _token: '{{ csrf_token() }}'
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                table.ajax.reload(null, false); // Reload không reset paging
+                                toastr.success(response.message);
+                            } else {
+                                toastr.error(response.message);
+                            }
+                        },
+                        error: function(xhr) {
+                            toastr.error('Đã xảy ra lỗi khi cập nhật vị trí');
+                            table.ajax.reload(null, false); // Rollback nếu có lỗi
+                        }
+                    });
+                }
 
                 // Chọn tất cả/bỏ chọn tất cả
                 $('#select-all').click(function() {
@@ -145,23 +239,4 @@
             });
         </script>
     @endpush
-
-    <style>
-        .action {
-            display: flex;
-            flex-direction: row;
-            flex-wrap: nowrap;
-            align-content: center;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        #bulk-actions {
-            gap: 5px;
-        }
-        
-        .dropdown-menu {
-            margin-top: 0 !important;
-        }
-    </style>
 </x-app-layout>
