@@ -85,8 +85,12 @@ Route::middleware('auth', 'verified', 'checkRole')->group(function () {
 
             Route::get('/get-subcategories/{category_id}', [ProductController::class, 'getSubcategories'])->name('getSubcategories');
         });
+
+        Route::get('/dashboard', function () {
+            return view('layouts.pages.admin.dashboard');
+        })->middleware(['auth', 'verified'])->name('dashboard');
     });
 });
 Route::fallback(function () {
-    return view('layouts.pages.404');
+    return view('layouts.pages.admin.404');
 });

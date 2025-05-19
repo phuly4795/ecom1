@@ -47,7 +47,7 @@ class ProductController extends Controller
                 return $product->created_at->format('d/m/Y');
             })
             ->editColumn('qty', function ($product) {
-                return 'Số lượng còn lại: '.$product->qty;
+                return 'Số lượng còn lại: ' . $product->qty;
             })
             ->editColumn('sku', function ($product) {
                 return 'SKU-' . $product->sku;
@@ -130,6 +130,39 @@ class ProductController extends Controller
         if ($product) {
             $product->update($validated);
             $message = 'Cập nhật thành công';
+
+            // Thêm ảnh đại diện mới
+            if ($image) {
+                // Xóa ảnh đại diện cũ
+                $oldMainImage = $product->productImages->where('type', 1)->first();
+                if ($oldMainImage) {
+                    Storage::disk('public')->delete($oldMainImage->image);
+                    $oldMainImage->delete();
+                }
+
+                ProductImage::create([
+                    'product_id' => $product->id,
+                    'type' => 1,
+                    'image' => $image,
+                ]);
+            }
+
+            // Thêm các thumbnail mới
+            if ($imageThumbnails) {
+                // Xóa các thumbnail cũ
+                $oldThumbnails = $product->productImages->where('type', 2);
+                foreach ($oldThumbnails as $thumbnail) {
+                    Storage::disk('public')->delete($thumbnail->image);
+                    $thumbnail->delete();
+                }
+                foreach ($imageThumbnails as $thumbnail) {
+                    ProductImage::create([
+                        'product_id' => $product->id,
+                        'type' => 2,
+                        'image' => $thumbnail,
+                    ]);
+                }
+            }
         } else {
             $product = Product::create($validated);
             $message = 'Thêm mới thành công';
@@ -141,7 +174,7 @@ class ProductController extends Controller
                     'image' => $image,
                 ]);
             }
-            // dd($imageThumbnails);
+
             if ($imageThumbnails) {
                 foreach ($imageThumbnails as $thumbnail) {
                     $productImage = ProductImage::create([

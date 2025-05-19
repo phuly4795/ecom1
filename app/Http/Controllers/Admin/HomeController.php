@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Hash;
 class HomeController extends Controller
 {
     public function index() {
-        return view('layouts.pages.dashboard');
+        return view('layouts.pages.admin.dashboard');
     }
 
     public function createCustomer()

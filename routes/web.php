@@ -1,6 +1,7 @@
 <?php
 
-use App\Http\Controllers\Admin\HomeController;
+
+use App\Http\Controllers\Guest\HomeController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Models\Role;
@@ -17,13 +18,10 @@ use App\Models\Role;
 */
 
 Route::get('/', function () {
-    return view('welcome');
-})->name('home');
+    return view('layouts.pages.guest.home');
+});
 
 
-Route::get('/dashboard', function () {
-    return view('layouts.pages.dashboard');
-})->middleware(['auth', 'verified'])->name('layouts.pages.dashboard');
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/admin.php';
