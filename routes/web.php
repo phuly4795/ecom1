@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Controllers\Guest\CartController;
 use App\Http\Controllers\Guest\CategoryController;
+use App\Http\Controllers\Guest\HomeController;
+use App\Http\Controllers\Guest\ProductDetailController;
 use Illuminate\Support\Facades\Route;
 use App\Models\Role;
 
@@ -15,12 +18,22 @@ use App\Models\Role;
 |
 */
 
-Route::get('/', function () {
-    return view('layouts.pages.guest.home');
-})->name('home');
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 
 Route::get('/category/{slug}', [CategoryController::class, 'index'])->name('category.show');
+
+Route::prefix('product')->name('product.')->group(function () {
+    Route::get('product_detail/{slug}', [ProductDetailController::class, 'index'])->name('detail');
+});
+Route::prefix('cart')->name('cart.')->group(function () {
+    Route::get('/', [CartController::class, 'index'])->name('show');
+    Route::post('/cart/add/{productId}', [CartController::class, 'addToCart'])->name('add');
+    Route::post('/cart/update', [CartController::class, 'update'])->name('update');
+    Route::delete('/cart/remove/{productId}', [CartController::class, 'remove'])->name('remove');
+    Route::post('/cart/apply-coupon', [CartController::class, 'applyCoupon'])->name('applyCoupon');
+    Route::get('/checkout', [CartController::class, 'index'])->name('checkout');
+});
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/admin.php';
