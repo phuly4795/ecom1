@@ -76,7 +76,9 @@ class ProductController extends Controller
     {
         $categories = Category::orderBy('name', 'asc')->get();
         $brands = Brand::orderBy('name', 'asc')->get();
-        return view('layouts.pages.admin.product.upsert', compact('categories', 'brands'));
+        $barcode = $this->generateBarcode();
+
+        return view('layouts.pages.admin.product.upsert', compact('categories', 'brands', 'barcode'));
     }
 
     public function edit(Product $product)
@@ -247,5 +249,14 @@ class ProductController extends Controller
     {
         $subcategories = SubCategory::where('category_id', $category_id)->get();
         return response()->json($subcategories);
+    }
+
+    function generateBarcode($length = 10)
+    {
+        $barcode = '';
+        for ($i = 0; $i < $length; $i++) {
+            $barcode .= mt_rand(0, 9);
+        }
+        return $barcode;
     }
 }

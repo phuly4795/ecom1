@@ -40,7 +40,7 @@
                     </li>
                 @else
                     <li style="display: flex; align-items: center;">
-                        <a href="#"><i class="fa fa-user-o" style="margin-right: 5px;"></i>Đăng nhập</a>
+                        <a href="{{route('login')}}"><i class="fa fa-user-o" style="margin-right: 5px;"></i>Đăng nhập</a>
                     </li>
                     <li style="color: #aaa;">|</li>
                     <li style="display: flex; align-items: center;">
@@ -130,11 +130,11 @@
                                 </div>
                                 <div class="cart-summary">
                                     <small>3 Item(s) selected</small>
-                                    <h5>SUBTOTAL: $2940.00</h5>
+                                    <h5>Tổng tiền: $2940.00</h5>
                                 </div>
                                 <div class="cart-btns">
-                                    <a href="#">View Cart</a>
-                                    <a href="{{ route('cart.show') }}">Checkout <i
+                                    <a href="#">Xem giỏ hàng</a>
+                                    <a href="{{ route('cart.show') }}">Thanh toán <i
                                             class="fa fa-arrow-circle-right"></i></a>
                                 </div>
                             </div>

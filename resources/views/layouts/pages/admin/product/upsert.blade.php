@@ -112,7 +112,7 @@
                                     <label for="barcode" class="form-label">Mã vạch</label>
                                     <input type="text" name="barcode" id="barcode" class="form-control"
                                         placeholder="Nhập mã vạch"
-                                        value="{{ old('barcode', $product->barcode ?? '') }}">
+                                        value="{{ old('barcode', $product->barcode ?? $barcode) }}">
                                 </div>
                             </div>
                             <div class="row">
@@ -218,8 +218,12 @@
 
 
         function slugify(str) {
-            return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-                .toLowerCase().trim()
+            return str
+                .toLowerCase()
+                .replace(/đ/g, 'd')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .trim()
                 .replace(/[^a-z0-9\s-]/g, '')
                 .replace(/\s+/g, '-')
                 .replace(/-+/g, '-');

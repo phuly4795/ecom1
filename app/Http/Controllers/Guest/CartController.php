@@ -38,7 +38,7 @@ class CartController extends Controller
             return $carry + ($item->price * $item->qty);
         }, 0);
 
-        $shippingFee = 0;
+        $shippingFee = 20000;
         $discount = Session::get('discount', 0);
 
         $total = max($subtotal + $shippingFee - $discount, 0);
