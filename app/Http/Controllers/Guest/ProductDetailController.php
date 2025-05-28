@@ -12,12 +12,14 @@ class ProductDetailController extends Controller
     {
         $productDetail = Product::with('productImages')->where('slug', $slug)->first();
         $productLastest = Product::with('productImages')->latest()->get()->take(4);
+        $mainCategory = $productDetail->subCategory->categories->first();
+
         return view('layouts.pages.guest.product_detail', [
             'product' => $productDetail,
             'productLastest' => $productLastest,
             'breadcrumbs' => [
                 ['name' => 'Trang chủ', 'url' => route('home')],
-                ['name' => $productDetail->category->name, 'url' => route('subcategory.show', $productDetail->category->slug)],
+                ['name' => $mainCategory->name, 'url' => route('category.show', $mainCategory->slug)],
                 ['name' => $productDetail->title, 'url' => null],
             ]
         ]);

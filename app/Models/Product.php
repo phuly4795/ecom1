@@ -14,12 +14,15 @@ class Product extends Model
     protected $dates = ['deleted_at'];
 
     protected $fillable = [
-        'id',
         'title',
         'slug',
         'description',
         'price',
         'compare_price',
+        'original_price',
+        'discount_percentage',
+        'discount_start_date',
+        'discount_end_date',
         'category_id',
         'subcategory_id',
         'brand_id',
@@ -29,6 +32,13 @@ class Product extends Model
         'track_qty',
         'qty',
         'status',
+        'specifications',
+        'warranty_period',
+        'warranty_policy',
+        'meta_title',
+        'meta_description',
+        'meta_keywords',
+        'variants',
         'created_at',
         'updated_at',
         'deleted_at',
@@ -37,13 +47,13 @@ class Product extends Model
     // 1 Product thuộc về 1 Category
     public function category(): BelongsTo
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsTo(Category::class, 'category_id');
     }
 
     // 1 Product thuộc về 1 SubCategory
     public function subCategory(): BelongsTo
     {
-        return $this->belongsTo(SubCategory::class, 'sub_category_id');
+        return $this->belongsTo(SubCategory::class, 'subcategory_id');
     }
 
     // 1 Product thuộc về 1 Brand

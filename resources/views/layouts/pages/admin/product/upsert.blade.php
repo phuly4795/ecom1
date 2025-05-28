@@ -3,9 +3,7 @@
     @section('title', $title)
     <div class="container-fluid">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h1 class="h3 text-gray-800">
-                {{ $title }}
-            </h1>
+            <h1 class="h3 text-gray-800">{{ $title }}</h1>
             <a href="{{ route('admin.product.index') }}" class="btn btn-primary">Trở về</a>
         </div>
 
@@ -50,14 +48,21 @@
                             <textarea id="description" name="description" class="form-control" rows="8">{!! old('description', $product->description ?? '') !!}</textarea>
                         </div>
 
+                        <div class="mb-3">
+                            <label for="specifications" class="form-label h5 mb-3" style="font-weight: 700">Thông số kỹ
+                                thuật</label>
+                            <textarea name="specifications" id="specifications" class="form-control" rows="5"
+                                placeholder="Nhập thông số (ví dụ: CPU: Intel i5, RAM: 8GB...)">{{ old('specifications', $product->specifications ?? '') }}</textarea>
+                        </div>
                     </div>
+
                     <div class="card p-4 mb-3 shadow-sm rounded bg-white">
                         <div class="mb-3">
                             <label for="image-dropzone" class="form-label h5 mb-3" style="font-weight: 700">Hình ảnh đại
                                 diện</label>
                             <div class="dropzone" id="image-dropzone"></div>
                             <input type="hidden" name="image" id="image-main-hidden"
-                                value="{{ old('image', $product->image ?? '') }}">
+                                value="{{ old('image', $image ? $image->image : '') }}">
                             @error('image')
                                 <span class="text-danger">{{ $message }}</span>
                             @enderror
@@ -65,11 +70,9 @@
 
                         <div class="mb-3">
                             <label for="image-dropzone-thumbnail" class="form-label h5 mb-3"
-                                style="font-weight: 700">Hình ảnh thumbnail</label>
+                                style="font-weight: 700">Hình ảnh bổ sung</label>
                             <div class="dropzone" id="image-dropzone-thumbnail"></div>
-                            <input type="hidden" name="imageThumbnail" id="image-thumbnail-hidden"
-                                value="{{ old('image', $product->image ?? '') }}">
-                            @error('image')
+                            @error('imageThumbnails')
                                 <span class="text-danger">{{ $message }}</span>
                             @enderror
                         </div>
@@ -77,22 +80,39 @@
 
                     <div class="card p-4 mb-3 shadow-sm rounded bg-white">
                         <div class="mb-3">
-                            <label for="image-dropzone" class="form-label h5 mb-3" style="font-weight: 700">Giá sản
-                                phẩm</label>
+                            <label class="form-label h5 mb-3" style="font-weight: 700">Giá sản phẩm</label>
                             <div class="row mb-3">
-                                <div class="col-md-12">
+                                <div class="col-md-6">
                                     <label for="price" class="form-label">Giá bán</label>
                                     <input type="number" name="price" id="price" class="form-control" required
-                                        placeholder="Nhập giá bán sản phẩm"
-                                        value="{{ old('price', $product->price ?? '') }}">
+                                        placeholder="Nhập giá bán" value="{{ old('price', $product->price ?? '') }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="original_price" class="form-label">Giá gốc</label>
+                                    <input type="number" name="original_price" id="original_price" class="form-control"
+                                        placeholder="Nhập giá gốc"
+                                        value="{{ old('original_price', $product->original_price ?? '') }}">
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="col-md-12">
-                                    <label for="compare_price" class="form-label">Giá giảm</label>
-                                    <input type="number" name="compare_price" id="compare_price" class="form-control"
-                                        required placeholder="Nhập giá giảm"
-                                        value="{{ old('compare_price', $product->compare_price ?? '') }}">
+                                <div class="col-md-6">
+                                    <label for="discount_percentage" class="form-label">Phần trăm giảm giá (%)</label>
+                                    <input type="number" name="discount_percentage" id="discount_percentage"
+                                        class="form-control" min="0" max="100"
+                                        value="{{ old('discount_percentage', $product->discount_percentage ?? 0) }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="discount_start_date" class="form-label">Ngày bắt đầu khuyến
+                                        mãi</label>
+                                    <input type="date" name="discount_start_date" id="discount_start_date"
+                                        class="form-control"
+                                        value="{{ old('discount_start_date', $product->discount_start_date ?? '') }}">
+                                </div>
+                                <div class="col-md-6 mt-3">
+                                    <label for="discount_end_date" class="form-label">Ngày kết thúc khuyến mãi</label>
+                                    <input type="date" name="discount_end_date" id="discount_end_date"
+                                        class="form-control"
+                                        value="{{ old('discount_end_date', $product->discount_end_date ?? '') }}">
                                 </div>
                             </div>
                         </div>
@@ -112,7 +132,7 @@
                                     <label for="barcode" class="form-label">Mã vạch</label>
                                     <input type="text" name="barcode" id="barcode" class="form-control"
                                         placeholder="Nhập mã vạch"
-                                        value="{{ old('barcode', $product->barcode ?? $barcode) }}">
+                                        value="{{ old('barcode', $product->barcode ?? ($barcode ?? '')) }}">
                                 </div>
                             </div>
                             <div class="row">
@@ -130,6 +150,12 @@
                                     <label for="qty" class="form-label">Số lượng</label>
                                     <input type="number" name="qty" id="qty" class="form-control"
                                         placeholder="Nhập số lượng" value="{{ old('qty', $product->qty ?? '') }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="variants" class="form-label">Biến thể (Ví dụ: 256GB Đen: 10)</label>
+                                    <input type="text" name="variants" id="variants" class="form-control"
+                                        placeholder="Nhập biến thể"
+                                        value="{{ old('variants', $product->variants ?? '') }}">
                                 </div>
                             </div>
                         </div>
@@ -152,19 +178,13 @@
                             <label for="category" class="form-label h5 mb-3" style="font-weight: 700">Danh mục sản
                                 phẩm</label>
                             <select name="category_id" id="category" class="form-control">
-                                <option value="-1" selected>Chọn danh mục sản phẩm</option>
-                                @foreach ($categories as $category)
-                                    <option value="{{ $category->id }}"
-                                        {{ old('category_id', $product->category_id ?? '') == $category->id ? 'selected' : '' }}>
-                                        {{ $category->name }}
+                                <option value="">Chọn danh mục sản phẩm</option>
+                                @foreach ($categoryList as $id => $name)
+                                    <option value="{{ $id }}"
+                                        {{ old('category_id', $product->subcategory_id ?? ($product->category_id ?? '')) == $id ? 'selected' : '' }}>
+                                        {{ $name }}
                                     </option>
                                 @endforeach
-                            </select>
-                        </div>
-                        <div class="mb-0">
-                            <label for="subcategory" class="form-label h5 mb-3" style="font-weight: 700">Danh mục
-                                phụ</label>
-                            <select name="subcategory_id" id="subcategory" class="form-control" disabled>
                             </select>
                         </div>
                     </div>
@@ -174,7 +194,8 @@
                             <label for="brand_id" class="form-label h5 mb-3" style="font-weight: 700">Thương hiệu sản
                                 phẩm</label>
                             <select name="brand_id" id="brand_id" class="form-control">
-                                @foreach ($brands as $id => $brand)
+                                <option value="">Chọn thương hiệu</option>
+                                @foreach ($brands as $brand)
                                     <option value="{{ $brand->id }}"
                                         {{ old('brand_id', $product->brand_id ?? '') == $brand->id ? 'selected' : '' }}>
                                         {{ $brand->name }}
@@ -183,6 +204,7 @@
                             </select>
                         </div>
                     </div>
+
                     <div class="card p-4 mb-3 shadow-sm rounded bg-white">
                         <div class="mb-3">
                             <label for="is_featured" class="form-label h5 mb-3" style="font-weight: 700">Sản phẩm nổi
@@ -197,10 +219,59 @@
                             </select>
                         </div>
                     </div>
+
+                    <div class="card p-4 mb-3 shadow-sm rounded bg-white">
+                        <div class="mb-3">
+                            <label class="form-label h5 mb-3" style="font-weight: 700">Thông tin bảo hành</label>
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label for="warranty_period" class="form-label">Thời gian bảo hành (tháng)</label>
+                                    <input type="number" name="warranty_period" id="warranty_period"
+                                        class="form-control"
+                                        value="{{ old('warranty_period', $product->warranty_period ?? '') }}">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <label for="warranty_policy" class="form-label">Chính sách bảo hành</label>
+                                    <input type="text" name="warranty_policy" id="warranty_policy"
+                                        class="form-control" placeholder="Ví dụ: Đổi trả trong 7 ngày"
+                                        value="{{ old('warranty_policy', $product->warranty_policy ?? '') }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card p-4 mb-3 shadow-sm rounded bg-white">
+                        <div class="mb-3">
+                            <label class="form-label h5 mb-3" style="font-weight: 700">Tối ưu SEO</label>
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label for="meta_title" class="form-label">Meta Title</label>
+                                    <input type="text" name="meta_title" id="meta_title" class="form-control"
+                                        value="{{ old('meta_title', $product->meta_title ?? '') }}">
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label for="meta_description" class="form-label">Meta Description</label>
+                                    <textarea name="meta_description" id="meta_description" class="form-control" rows="3">{{ old('meta_description', $product->meta_description ?? '') }}</textarea>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <label for="meta_keywords" class="form-label">Meta Keywords</label>
+                                    <input type="text" name="meta_keywords" id="meta_keywords"
+                                        class="form-control" placeholder="Ví dụ: laptop, macbook, giá rẻ"
+                                        value="{{ old('meta_keywords', $product->meta_keywords ?? '') }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="text-end">
-                        <button type="submit" class="btn btn-success">
-                            {{ isset($product->id) ? 'Cập nhật' : 'Thêm mới' }}
-                        </button>
+                        <button type="submit"
+                            class="btn btn-success">{{ isset($product->id) ? 'Cập nhật' : 'Thêm mới' }}</button>
                     </div>
                 </div>
             </div>
@@ -208,18 +279,17 @@
     </div>
 
     <script>
-        ClassicEditor
-            .create(document.querySelector('#description'), {
-                toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote']
+        ClassicEditor.create(document.querySelector('#description'), {
+                toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote'],
             })
-            .catch(error => {
-                console.error(error);
-            });
-
+            .then(editor => {
+                editor.ui.view.editable.element.style.maxHeight = "200px";
+                editor.ui.view.editable.element.style.overflowY = "auto";
+            })
+            .catch(error => console.error(error));
 
         function slugify(str) {
-            return str
-                .toLowerCase()
+            return str.toLowerCase()
                 .replace(/đ/g, 'd')
                 .normalize('NFD')
                 .replace(/[\u0300-\u036f]/g, '')
@@ -234,6 +304,9 @@
             const slugValue = slugify(nameValue);
             document.getElementById('slug').value = slugValue;
             document.getElementById('slug-hidden').value = slugValue;
+            if (!document.getElementById('sku').value) {
+                document.getElementById('sku').value = slugify(nameValue).toUpperCase();
+            }
         });
 
         Dropzone.autoDiscover = false;
@@ -248,14 +321,13 @@
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },
             init: function() {
-                @if (!empty(old('image', $image->image ?? '')))
+                @if (isset($image) && !empty($image->image))
                     var mockFile = {
                         name: "Image",
                         size: 12345
                     };
                     this.emit("addedfile", mockFile);
-                    this.emit("thumbnail", mockFile,
-                        "{{ asset('storage/' . old('image', $image->image ?? '')) }}");
+                    this.emit("thumbnail", mockFile, "{{ asset('storage/' . $image->image) }}");
                     this.emit("complete", mockFile);
                     this.files.push(mockFile);
                 @endif
@@ -281,32 +353,24 @@
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },
             init: function() {
-                @php
-                    $thumbnails = old('imageThumbnail', $imageThumbnail ?? []);
-                @endphp
-                @if (!empty($thumbnails))
-                    @foreach ($thumbnails as $index => $thumb)
-                        @php
-                            // dd($thumb->image);
-                            // Nếu là object, lấy thuộc tính path (hoặc tên cột bạn dùng để lưu đường dẫn ảnh)
-                            $filePath = is_string($thumb) ? $thumb : $thumb->image ?? '';
-                        @endphp
-                        @if (!empty($filePath))
-                            var mockFile = {
-                                name: "Image",
-                                size: 12345 // Bạn có thể dùng $thumb->size nếu có
-                            };
-                            this.emit("addedfile", mockFile);
-                            this.emit("thumbnail", mockFile, "{{ asset('storage/' . $filePath) }}");
-                            this.emit("complete", mockFile);
-                            this.files.push(mockFile);
-
-                            let hiddenInput{{ $index }} = document.createElement('input');
-                            hiddenInput{{ $index }}.type = 'hidden';
-                            hiddenInput{{ $index }}.name = 'imageThumbnails[]';
-                            hiddenInput{{ $index }}.value = "{{ $filePath }}";
-                            document.getElementById('image-dropzone-thumbnail').appendChild(
-                                hiddenInput{{ $index }});
+                @if (isset($imageThumbnails) && count($imageThumbnails) > 0)
+                    @foreach ($imageThumbnails as $thumb)
+                        @if (!empty($thumb->image))
+                            {
+                                var mockFile = {
+                                    name: "Thumbnail",
+                                    size: 12345
+                                };
+                                this.emit("addedfile", mockFile);
+                                this.emit("thumbnail", mockFile, "{{ asset('storage/' . $thumb->image) }}");
+                                this.emit("complete", mockFile);
+                                this.files.push(mockFile);
+                                let hiddenInput = document.createElement('input');
+                                hiddenInput.type = 'hidden';
+                                hiddenInput.name = 'imageThumbnails[]';
+                                hiddenInput.value = "{{ $thumb->image }}";
+                                document.getElementById('image-dropzone-thumbnail').appendChild(hiddenInput);
+                            }
                         @endif
                     @endforeach
                 @endif
@@ -320,75 +384,16 @@
             },
             removedfile: function(file) {
                 file.previewElement.remove();
-                // Xoá input hidden tương ứng
                 const inputs = document.querySelectorAll('input[name="imageThumbnails[]"]');
                 inputs.forEach(input => {
-                    if (input.value === file.upload?.filename || file.name === "Image") {
+                    if (input.value === file.upload?.filename || file.name === "Thumbnail") {
                         input.remove();
                     }
                 });
             }
         });
     </script>
-    <script>
-        const SubcategoriesUrl = "{{ route('admin.product.getSubcategories', ['category_id' => ':categoryId']) }}";
-        const categorySelect = document.getElementById('category');
-        const subCategorySelect = document.getElementById('subcategory');
 
-        if (categorySelect.value) {
-            loadSubcategories(categorySelect.value);
-        }
-
-        categorySelect.addEventListener('change', function() {
-            const categoryId = this.value;
-            subCategorySelect.innerHTML = '<option value="">Chọn danh mục phụ</option>';
-            if (categoryId) {
-                loadSubcategories(categoryId);
-            } else {
-                subCategorySelect.disabled = true;
-            }
-        });
-
-        function loadSubcategories(categoryId) {
-            const url = SubcategoriesUrl.replace(':categoryId', categoryId);
-
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    subCategorySelect.innerHTML = '<option value="">Chọn danh mục phụ</option>';
-
-                    if (data.length === 0) {
-                        subCategorySelect.disabled = true;
-                    } else {
-                        subCategorySelect.disabled = false;
-                        data.forEach(subCategory => {
-                            const option = document.createElement('option');
-                            option.value = subCategory.id;
-                            option.textContent = subCategory.name;
-
-                            if (subCategory.id == "{{ $product->subcategory_id ?? old('subcategory_id') }}") {
-                                option.selected = true;
-                            }
-
-                            subCategorySelect.appendChild(option);
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error('Lỗi khi tải danh mục phụ:', error);
-                    subCategorySelect.disabled = true;
-
-                });
-        }
-    </script>
-    <script>
-        document.getElementById('name').addEventListener('input', function() {
-            const name = this.value;
-            if (!document.getElementById('sku').value) {
-                document.getElementById('sku').value = slugify(name).toUpperCase();
-            }
-        });
-    </script>
     <style>
         .ck-editor__editable {
             min-height: 200px;

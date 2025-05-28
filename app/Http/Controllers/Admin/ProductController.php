@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
-use App\Models\ProductImage;
 use App\Models\SubCategory;
+use App\Models\ProductImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
@@ -24,11 +24,25 @@ class ProductController extends Controller
 
     public function data()
     {
-        // Lấy danh sách sản phẩm, kèm quan hệ nếu cần
         $query = Product::with('category', 'subcategory', 'brand');
 
         return DataTables::of($query)
             ->addIndexColumn()
+            ->addColumn('image', function ($product) {
+                $imagePath = optional($product->productImages->where('type', 1)->first())->image;
+                return $imagePath
+                    ? '<img src="' . asset('storage/' . $imagePath) . '" alt="Ảnh sản phẩm" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">'
+                    : '<img src="' . asset('asset/img/no-image.png') . '" alt="Ảnh sản phẩm" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">';
+            })
+            ->addColumn('brand', function ($product) {
+                return $product->brand->name ?? 'N/A';
+            })
+            ->addColumn('original_price', function ($product) {
+                return $product->original_price ? number_format($product->original_price) . ' VNĐ' : 'N/A';
+            })
+            ->addColumn('discount_percentage', function ($product) {
+                return $product->discount_percentage ? $product->discount_percentage . '%' : '0%';
+            })
             ->addColumn('actions', function ($product) {
                 $editUrl = route('admin.product.edit', $product);
                 $deleteUrl = route('admin.product.destroy', $product);
@@ -55,11 +69,19 @@ class ProductController extends Controller
                 return new HtmlString($html);
             })
             ->editColumn('category', function ($product) {
-                $html = '<span class="badge badge-info">' . $product->category->name ?? 'Không có'  . '</span>';
+                if ($product->subcategory_id && $product->subcategory && $product->subcategory->categories) {
+                    $cate = $product->subcategory->categories[0]->name;
+                } elseif ($product->category_id && $product->categories) {
+                    $cate = $product->categories[0]->name;
+                } else {
+                    $cate = "Không có";
+                }
+
+                $html = '<span class="badge badge-info">' . $cate . '</span>';
                 if ($product->is_featured) {
                     $html .= '<span class="badge badge-warning">Nổi bật</span>';
                 }
-                if ($product->compare_price != 0) {
+                if ($product->compare_price > 0 && $product->compare_price < $product->price) {
                     $html .= '<span class="badge badge-danger">Giảm giá</span>';
                 }
                 return new HtmlString($html);
@@ -68,22 +90,14 @@ class ProductController extends Controller
                 return 'SKU-' . $product->sku;
             })
             ->editColumn('price', function ($product) {
-                return number_format($product->price) . ' vnđ';
-            })
-            ->editColumn('image', function ($product) {
-                $imagePath = optional($product->productImages->where('type', 1)->first())->image;
-                if ($imagePath) {
-                    $fullPath = asset('storage/' . $imagePath);
-                    return '<img src="' . $fullPath . '" alt="Ảnh sản phẩm" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">';
-                }
-                return '<img src="' . asset('asset/img/no-image.png') . '" alt="Ảnh sản phẩm" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">';
+                return number_format($product->price) . ' VNĐ';
             })
             ->editColumn('status', function ($product) {
                 return $product->status == 1
                     ? '<i class="fa-solid fa-circle-check text-success" style="font-size: 22px"></i>'
                     : '<i class="fa-regular fa-circle-xmark text-danger" style="font-size: 22px"></i>';
             })
-            ->rawColumns(['actions', 'status', 'image', 'qty', 'category'])
+            ->rawColumns(['image', 'actions', 'status', 'qty', 'category', 'original_price', 'discount_percentage'])
             ->make(true);
     }
 
@@ -92,18 +106,26 @@ class ProductController extends Controller
         $categories = Category::orderBy('name', 'asc')->get();
         $brands = Brand::orderBy('name', 'asc')->get();
         $barcode = $this->generateBarcode();
+        $image = null;
+        $imageThumbnails = collect([]);
 
-        return view('layouts.pages.admin.product.upsert', compact('categories', 'brands', 'barcode'));
+        // Tạo danh sách danh mục phân cấp
+        $categoryList = $this->getCategoryList();
+
+        return view('layouts.pages.admin.product.upsert', compact('categories', 'brands', 'barcode', 'image', 'imageThumbnails', 'categoryList'));
     }
 
     public function edit(Product $product)
     {
         $categories = Category::orderBy('name', 'asc')->get();
         $brands = Brand::orderBy('name', 'asc')->get();
-        $image = $product->productImages->where('type', 1)->first();
-        $imageThumbnail = $product->productImages->where('type', 2);
+        $image = $product->productImages()->where('type', 1)->first();
+        $imageThumbnails = $product->productImages()->where('type', 2)->get();
 
-        return view('layouts.pages.admin.product.upsert', compact('product', 'categories', 'brands', 'image', 'imageThumbnail'));
+        // Tạo danh sách danh mục phân cấp
+        $categoryList = $this->getCategoryList();
+
+        return view('layouts.pages.admin.product.upsert', compact('product', 'categories', 'brands', 'image', 'imageThumbnails', 'categoryList'));
     }
 
     public function storeOrUpdate(Request $request, Product $product = null)
@@ -122,25 +144,51 @@ class ProductController extends Controller
                 Rule::unique('products')->ignore($id),
             ],
             'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'original_price' => 'nullable|numeric|min:0',
+            'discount_percentage' => 'nullable|numeric|min:0|max:100',
+            'discount_start_date' => 'nullable|date',
+            'discount_end_date' => 'nullable|date|after_or_equal:discount_start_date',
             'status' => 'required|in:0,1',
-            'category_id' => 'required|exists:categories,id',
-            'subcategory_id' => 'nullable|exists:sub_categories,id',
+            'category_id' => 'required|integer',
             'brand_id' => 'nullable|exists:brands,id',
             'image' => 'nullable|string',
             'is_featured' => 'required|in:yes,no',
-
-            // Bổ sung các trường mới
-            'price' => 'required|numeric|min:0',
-            'compare_price' => 'required|numeric|min:0',
             'sku' => 'required|string|max:255',
             'barcode' => 'nullable|max:255',
             'qty' => 'nullable|numeric|min:0',
+            'specifications' => 'nullable|string',
+            'warranty_period' => 'nullable|integer|min:0',
+            'warranty_policy' => 'nullable|string',
+            'meta_title' => 'nullable|string|max:255',
+            'meta_description' => 'nullable|string',
+            'meta_keywords' => 'nullable|string',
+            'variants' => 'nullable|string',
         ], [
             'slug.unique' => 'Slug này đã tồn tại, vui lòng chọn tên khác.',
             'price.required' => 'Vui lòng nhập giá bán.',
-            'compare_price.required' => 'Vui lòng nhập giá so sánh.',
-            'sku.required' => 'Vui lòng nhập mã sản phẩm.',
+            'original_price.required' => 'Vui lòng nhập giá gốc.',
+            'discount_percentage.max' => 'Phần trăm giảm giá không được vượt quá 100%.',
+            'discount_end_date.after_or_equal' => 'Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.',
         ]);
+
+        // Xử lý category_id và subcategory_id
+        $selectedCategoryId = $validated['category_id'];
+        $subcategory = Subcategory::find($selectedCategoryId);
+        $category = Category::find($selectedCategoryId);
+
+        if ($subcategory) {
+            // Nếu là danh mục con
+            $validated['category_id'] = $subcategory->category_id; // Gán category_id là danh mục cha
+            $validated['subcategory_id'] = $selectedCategoryId; // Gán subcategory_id là danh mục con
+        } elseif ($category) {
+            // Nếu là danh mục cha
+            $validated['category_id'] = $selectedCategoryId;
+            $validated['subcategory_id'] = null;
+        } else {
+            // Trường hợp không hợp lệ
+            return redirect()->back()->withErrors(['category_id' => 'Danh mục không hợp lệ.']);
+        }
 
         $validated['track_qty'] = $track_qty;
 
@@ -148,36 +196,26 @@ class ProductController extends Controller
             $product->update($validated);
             $message = 'Cập nhật thành công';
 
-            // Thêm ảnh đại diện mới
-            if ($image) {
-                // Xóa ảnh đại diện cũ
+            // Xử lý ảnh đại diện
+            if ($image !== null && $image !== '') {
+                // Nếu có ảnh mới thì xóa ảnh cũ và thêm ảnh mới
                 $oldMainImage = $product->productImages->where('type', 1)->first();
                 if ($oldMainImage) {
                     Storage::disk('public')->delete($oldMainImage->image);
                     $oldMainImage->delete();
                 }
-
-                ProductImage::create([
-                    'product_id' => $product->id,
-                    'type' => 1,
-                    'image' => $image,
-                ]);
+                ProductImage::create(['product_id' => $product->id, 'type' => 1, 'image' => $image]);
             }
-
-            // Thêm các thumbnail mới
-            if ($imageThumbnails) {
-                // Xóa các thumbnail cũ
+            // Xử lý ảnh thumbnail
+            if (!empty($imageThumbnails)) {
+                // Nếu có ảnh mới thì xóa ảnh cũ và thêm ảnh mới
                 $oldThumbnails = $product->productImages->where('type', 2);
                 foreach ($oldThumbnails as $thumbnail) {
                     Storage::disk('public')->delete($thumbnail->image);
                     $thumbnail->delete();
                 }
                 foreach ($imageThumbnails as $thumbnail) {
-                    ProductImage::create([
-                        'product_id' => $product->id,
-                        'type' => 2,
-                        'image' => $thumbnail,
-                    ]);
+                    ProductImage::create(['product_id' => $product->id, 'type' => 2, 'image' => $thumbnail]);
                 }
             }
         } else {
@@ -185,29 +223,16 @@ class ProductController extends Controller
             $message = 'Thêm mới thành công';
 
             if ($image) {
-                $productImage = ProductImage::create([
-                    'product_id' => $product->id,
-                    'type' => 1,
-                    'image' => $image,
-                ]);
+                ProductImage::create(['product_id' => $product->id, 'type' => 1, 'image' => $image]);
             }
-
             if ($imageThumbnails) {
                 foreach ($imageThumbnails as $thumbnail) {
-                    $productImage = ProductImage::create([
-                        'product_id' => $product->id,
-                        'type' => 2,
-                        'image' => $thumbnail,
-                    ]);
+                    ProductImage::create(['product_id' => $product->id, 'type' => 2, 'image' => $thumbnail]);
                 }
             }
         }
 
-
-        return redirect()->route('admin.product.index')->with([
-            'status' => 'success',
-            'message' => $message
-        ]);
+        return redirect()->route('admin.product.index')->with(['status' => 'success', 'message' => $message]);
     }
 
     public function destroy(Product $product)
@@ -218,17 +243,10 @@ class ProductController extends Controller
 
     public function massDestroy(Request $request)
     {
-        $request->validate([
-            'ids' => 'required|array',
-            'ids.*' => 'exists:products,id'
-        ]);
-
+        $request->validate(['ids' => 'required|array', 'ids.*' => 'exists:products,id']);
         Product::whereIn('id', $request->ids)->delete();
 
-        return response()->json([
-            'success' => 'success',
-            'message' => 'Xóa hàng loạt thành công'
-        ]);
+        return response()->json(['success' => 'success', 'message' => 'Xóa hàng loạt thành công']);
     }
 
     public function uploadImage(Request $request)
@@ -238,26 +256,14 @@ class ProductController extends Controller
         }
 
         $file = $request->file('file');
-
         if (!$file->isValid()) {
             return response()->json(['error' => 'Invalid file'], 400);
         }
 
         $fileName = time() . '_' . $file->getClientOriginalName();
+        $filePath = Storage::disk('public')->putFileAs('products', $file, $fileName);
 
-        try {
-            $filePath = Storage::disk('public')->putFileAs('products', $file, $fileName);
-
-            return response()->json([
-                'filePath' => $filePath,
-                'url' => Storage::url($filePath),
-            ]);
-        } catch (\Throwable $e) {
-            return response()->json([
-                'error' => 'Upload failed',
-                'message' => $e->getMessage(),
-            ], 500);
-        }
+        return response()->json(['filePath' => $filePath, 'url' => Storage::url($filePath)]);
     }
 
     public function getSubcategories($category_id)
@@ -266,12 +272,32 @@ class ProductController extends Controller
         return response()->json($subcategories);
     }
 
-    function generateBarcode($length = 10)
+    public function generateBarcode($length = 10)
     {
         $barcode = '';
         for ($i = 0; $i < $length; $i++) {
             $barcode .= mt_rand(0, 9);
         }
         return $barcode;
+    }
+
+    private function getCategoryList()
+    {
+        $categories = Category::with('subcategories')->orderBy('name', 'asc')->get();
+        $categoryList = [];
+
+        foreach ($categories as $category) {
+            // Thêm danh mục cha
+            $categoryList[$category->id] = $category->name;
+
+            // Thêm danh mục con (nếu có)
+            if ($category->subcategories->isNotEmpty()) {
+                foreach ($category->subcategories as $subcategory) {
+                    $categoryList[$subcategory->id] = $category->name . ' > ' . $subcategory->name;
+                }
+            }
+        }
+
+        return $categoryList;
     }
 }

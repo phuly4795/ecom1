@@ -15,7 +15,7 @@
                             </div>
                             <div class="shop-body">
                                 <h3>Bộ sưu tập<br />{{ $item->name }}</h3>
-                                <a href="{{ route('subcategory.show', $item->slug) }}" class="cta-btn">Xem ngay <i
+                                <a href="{{ route('category.show', $item->slug) }}" class="cta-btn">Xem ngay <i
                                         class="fa fa-arrow-circle-right"></i></a>
                             </div>
                         </div>
@@ -53,13 +53,13 @@
                                 <div class="products-slick" data-nav="#slick-nav-1">
                                     <!-- product -->
                                     @foreach ($productLatest as $item)
-                                        {{-- @dd( $item->productImages) --}}
                                         <div class="product">
                                             <div class="product-img">
                                                 @php
-                                                    $image = $item->productImages->where('type', 1)->first();
+                                                    $image = $item->productImages->where('type', 1)->first()->image;
+
                                                     $imagePath = $image
-                                                        ? asset('storage/' . $image->image)
+                                                        ? asset('storage/' . $image)
                                                         : asset('asset/img/no-image.png');
                                                 @endphp
 
@@ -83,7 +83,7 @@
                                                 </div>
                                             </div>
                                             <div class="product-body">
-                                                <p class="product-category">{{ $item->category->name }}</p>
+                                                <p class="product-category">{{ $item->category ? $item->category->name : ($item->subCategory ? $item->subCategory->categories->pluck('name')->implode(', ') : "Chưa có" ) }}</p>
                                                 <h3 class="product-name"><a
                                                         href="{{ route('product.detail', ['slug' => $item->slug]) }}">{{ $item->title }}</a>
                                                 </h3>

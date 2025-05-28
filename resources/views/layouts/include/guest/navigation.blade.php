@@ -5,9 +5,9 @@
                 @foreach ($globalCategories as $category)
                     <li
                         class="dropdown {{ request()->routeIs('subcategory.show') && request()->route('slug') == $category->slug ? 'active' : '' }}">
-                        <!-- Link đến danh mục cha -->
-                        <a href="{{ route('subcategory.show', $category->slug) }}" class="dropdown-toggle"
-                            data-toggle="dropdown">
+                        <!-- Link đến danh mục cha + caret tách riêng -->
+                        <a href="{{ route('category.show', $category->slug) }}" class="dropdown-toggle"
+                            data-toggle="dropdown" onclick="if(event.target.tagName === 'SPAN') event.preventDefault();">
                             {{ $category->name }}
                             @if ($category->subCategories->count() > 0)
                                 <span class="caret"></span>

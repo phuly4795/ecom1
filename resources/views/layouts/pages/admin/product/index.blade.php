@@ -21,10 +21,14 @@
                                 <th>Hình ảnh</th>
                                 <th>Tên sản phẩm</th>
                                 <th>Danh mục</th>
-                                <th>Giá sản phẩm</th>
+                                <th>Thương hiệu</th>
+                                <th>Giá bán</th>
+                                <th>Giá gốc</th>
+                                <th>Giảm giá (%)</th>
                                 <th>Số lượng</th>
                                 <th>SKU</th>
                                 <th>Trạng thái</th>
+                                <th>Ngày tạo</th>
                                 <th>Hành động</th>
                             </tr>
                         </thead>
@@ -67,14 +71,25 @@
                             name: 'category'
                         },
                         {
+                            data: 'brand',
+                            name: 'brand'
+                        },
+                        {
                             data: 'price',
                             name: 'price'
+                        },
+                        {
+                            data: 'original_price',
+                            name: 'original_price'
+                        },
+                        {
+                            data: 'discount_percentage',
+                            name: 'discount_percentage'
                         },
                         {
                             data: 'qty',
                             name: 'qty'
                         },
-
                         {
                             data: 'sku',
                             name: 'sku'
@@ -85,11 +100,15 @@
                             className: 'text-center'
                         },
                         {
+                            data: 'created_at',
+                            name: 'created_at'
+                        },
+                        {
                             data: 'actions',
                             name: 'actions',
                             orderable: false,
                             searchable: false
-                        },
+                        }
                     ],
                     columnDefs: [{
                         targets: 0,
@@ -100,20 +119,17 @@
                     }]
                 });
 
-                // Chọn tất cả/bỏ chọn tất cả
                 $('#select-all').click(function() {
                     $('.row-checkbox').prop('checked', this.checked);
                     toggleBulkActions();
                 });
 
-                // Khi click vào checkbox từng dòng
                 $(document).on('change', '.row-checkbox', function() {
                     var allChecked = $('.row-checkbox:checked').length === $('.row-checkbox').length;
                     $('#select-all').prop('checked', allChecked);
                     toggleBulkActions();
                 });
 
-                // Hiển thị/ẩn bulk actions
                 function toggleBulkActions() {
                     if ($('.row-checkbox:checked').length > 0) {
                         $('#bulk-delete').show();
@@ -122,10 +138,8 @@
                     }
                 }
 
-                // Xóa hàng loạt
                 $('#bulk-delete').click(function(e) {
                     e.preventDefault();
-
                     var ids = [];
                     $('.row-checkbox:checked').each(function() {
                         ids.push($(this).val());

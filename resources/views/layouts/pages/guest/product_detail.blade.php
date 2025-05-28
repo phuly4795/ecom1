@@ -120,8 +120,23 @@
 
                         <ul class="product-links">
                             <li>Danh mục:</li>
-                            <li><a href="#">Headphones</a></li>
-                            <li><a href="#">Accessories</a></li>
+                            <li>
+                                @if ($product->category)
+                                    <a href="{{ route('category.show', $product->category->slug) }}"
+                                        class="text-blue-600 font-semibold">
+                                        {{ $product->category->name }}
+                                    </a>
+                                @elseif ($product->subCategory && $product->subCategory->categories->count())
+                                    @foreach ($product->subCategory->categories as $cat)
+                                        <a href="{{ route('category.show', $cat->slug) }}"><span
+                                                class="inline-block bg-gray-200 px-2 py-1 rounded text-sm">{{ $cat->name }}</span></a>{{ !$loop->last ? ',' : '' }}
+                                    @endforeach
+                                @else
+                                    <span class="text-gray-500">Chưa có</span>
+                                @endif
+                            </li>
+
+
                         </ul>
 
                         <ul class="product-links">
