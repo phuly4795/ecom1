@@ -7,6 +7,7 @@ use App\Models\Cart;
 use App\Models\CartDetail;
 use Illuminate\Support\Facades\Session;
 use App\Models\Product;
+use App\Models\Province;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -130,5 +131,38 @@ class CartController extends Controller
         }
 
         return redirect()->back()->with('success', 'Đã thêm vào giỏ hàng!');
+    }
+
+    public function checkout()
+    {
+        $cart = null;
+        $provinces = Province::all();
+        if (Auth::check()) {
+            // Người dùng đã đăng nhập: lấy giỏ hàng theo user_id
+            $userId = Auth::id();
+            $cart = Cart::with('cartDetails.product')->where('user_id', $userId)->first();
+        } else {
+            // Chưa đăng nhập: lấy giỏ hàng theo session_id
+            $sessionId = Session::getId();
+            $cart = Cart::with('cartDetails.product')->where('session_id', $sessionId)->first();
+        }
+
+        $cartItems = collect();
+
+        if ($cart && $cart->cartDetails) {
+            $cartItems = $cart->cartDetails;
+        }
+
+        // Tính tổng tạm tính
+        $subtotal = $cartItems->reduce(function ($carry, $item) {
+            return $carry + ($item->price * $item->qty);
+        }, 0);
+
+        $shippingFee = 20000;
+        $discount = Session::get('discount', 0);
+
+        $total = max($subtotal + $shippingFee - $discount, 0);
+
+        return view('layouts.pages.guest.checkout', compact('cartItems', 'subtotal', 'shippingFee', 'discount', 'total', 'provinces'));
     }
 }

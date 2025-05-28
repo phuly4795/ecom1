@@ -67,16 +67,29 @@
                                                     <img src="{{ $imagePath }}" alt="" class="product-img">
                                                 </div>
 
+                                                @if (isset($item->compare_price) && $item->compare_price < $item->price)
+                                                    @php
+                                                        $discount = round(
+                                                            (($item->price - $item->compare_price) / $item->price) *
+                                                                100,
+                                                        );
+                                                    @endphp
+                                                @endif
+
                                                 <div class="product-label">
-                                                    <span class="sale">-30%</span>
+                                                    {!! isset($discount) ? '<span class="sale">-' . $discount . '%</span>' : '' !!}
+
                                                     <span class="new">Mới</span>
                                                 </div>
                                             </div>
                                             <div class="product-body">
                                                 <p class="product-category">{{ $item->category->name }}</p>
-                                                <h3 class="product-name"><a href="{{route('product.detail', ['slug' => $item->slug])}}">{{ $item->title }}</a></h3>
-                                                <h4 class="product-price">{{ $item->price }} <del
-                                                        class="product-old-price">{{ $item->compare_price }}</del></h4>
+                                                <h3 class="product-name"><a
+                                                        href="{{ route('product.detail', ['slug' => $item->slug]) }}">{{ $item->title }}</a>
+                                                </h3>
+                                                <h4 class="product-price"> {{ number_format($item->price) }} vnđ<del
+                                                        class="product-old-price">{{ $item->compare_price != 0 ? number_format($item->compare_price) . ' vnđ' : '' }}
+                                                        </del></h4>
                                                 <div class="product-rating">
                                                     <i class="fa fa-star"></i>
                                                     <i class="fa fa-star"></i>
@@ -94,7 +107,8 @@
                                                 </div>
                                             </div>
                                             <div class="add-to-cart">
-                                                <button class="add-to-cart-btn"><i class="fa fa-shopping-cart"></i> Thêm giỏ hàng</button>
+                                                <button class="add-to-cart-btn"><i class="fa fa-shopping-cart"></i> Thêm
+                                                    giỏ hàng</button>
                                             </div>
                                         </div>
                                     @endforeach

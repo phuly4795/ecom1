@@ -102,8 +102,8 @@
 </x-app-layout>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const districtsUrl = "{{ route('admin.getDistricts', ['provinceId' => ':provinceId']) }}";
-        const wardsUrl = "{{ route('admin.getWards', ['districtId' => ':districtId']) }}";
+        const districtsUrl = "{{ route('getDistricts', ['provinceId' => ':provinceId']) }}";
+        const wardsUrl = "{{ route('getWards', ['districtId' => ':districtId']) }}";
         const provinceSelect = document.getElementById('province');
         const districtSelect = document.getElementById('district');
         const wardSelect = document.getElementById('ward');

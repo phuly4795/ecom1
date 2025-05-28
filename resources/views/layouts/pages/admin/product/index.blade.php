@@ -12,21 +12,24 @@
         </div>
         <div class="card shadow">
             <div class="card-body">
-                <table class="table table-bordered" id="categories-table" width="100%">
-                    <thead>
-                        <tr>
-                            <th width="20px"><input type="checkbox" id="select-all"></th>
-                            <th>ID</th>
-                            <th>Hình ảnh</th>
-                            <th>Tên sản phẩm</th>
-                            <th>Giá sản phẩm</th>
-                            <th>Số lượng</th>
-                            <th>SKU</th>
-                            <th>Trạng thái</th>
-                            <th>Hành động</th>
-                        </tr>
-                    </thead>
-                </table>
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="categories-table" width="100%">
+                        <thead>
+                            <tr>
+                                <th width="20px"><input type="checkbox" id="select-all"></th>
+                                <th>ID</th>
+                                <th>Hình ảnh</th>
+                                <th>Tên sản phẩm</th>
+                                <th>Danh mục</th>
+                                <th>Giá sản phẩm</th>
+                                <th>Số lượng</th>
+                                <th>SKU</th>
+                                <th>Trạng thái</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -60,6 +63,10 @@
                             name: 'title'
                         },
                         {
+                            data: 'category',
+                            name: 'category'
+                        },
+                        {
                             data: 'price',
                             name: 'price'
                         },
@@ -67,6 +74,7 @@
                             data: 'qty',
                             name: 'qty'
                         },
+
                         {
                             data: 'sku',
                             name: 'sku'
@@ -86,7 +94,8 @@
                     columnDefs: [{
                         targets: 0,
                         render: function(data, type, row) {
-                            return '<input type="checkbox" class="row-checkbox" value="' + row.id +'">';
+                            return '<input type="checkbox" class="row-checkbox" value="' + row.id +
+                                '">';
                         }
                     }]
                 });

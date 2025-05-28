@@ -40,7 +40,8 @@
                     </li>
                 @else
                     <li style="display: flex; align-items: center;">
-                        <a href="{{route('login')}}"><i class="fa fa-user-o" style="margin-right: 5px;"></i>Đăng nhập</a>
+                        <a href="{{ route('login') }}"><i class="fa fa-user-o" style="margin-right: 5px;"></i>Đăng
+                            nhập</a>
                     </li>
                     <li style="color: #aaa;">|</li>
                     <li style="display: flex; align-items: center;">
@@ -102,39 +103,48 @@
                             <a class="dropdown-toggle" data-toggle="dropdown" aria-expanded="true">
                                 <i class="fa fa-shopping-cart"></i>
                                 <span>Giỏ hàng</span>
-                                <div class="qty">3</div>
+                                <div class="qty">{{ $countQtyCart }}</div>
                             </a>
                             <div class="cart-dropdown">
                                 <div class="cart-list">
-                                    <div class="product-widget">
-                                        <div class="product-img">
-                                            <img src="{{ asset('asset/guest/img/product01.png') }}" alt="">
+                                    @forelse ($cartItems as $item)
+                                        <div class="product-widget">
+                                            <div class="product-img">
+                                                @php
+                                                    $image = $item->product->productImages->where('type', 1)->first();
+                                                    $imagePath = $image
+                                                        ? asset('storage/' . $image->image)
+                                                        : asset('asset/img/no-image.png');
+                                                @endphp
+                                                <img src="{{ $imagePath }}" alt="{{ $item->product->title }}">
+                                            </div>
+                                            <div class="product-body">
+                                                <h3 class="product-name"><a
+                                                        href="{{ route('product.detail', ['slug' => $item->product->slug]) }}">{{ $item->product->title }}</a>
+                                                </h3>
+                                                <h4 class="product-price"><span
+                                                        class="qty">{{ $item->qty }}x</span>
+                                                    {{ number_format($item->product->price) . ' vnđ' }}</h4>
+                                            </div>
+                                            <form action="{{ route('cart.remove', $item->id) }}" method="POST"
+                                                style="display:inline;">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button class="delete" type="submit"><i
+                                                        class="fa fa-close"></i></button>
+                                            </form>
                                         </div>
-                                        <div class="product-body">
-                                            <h3 class="product-name"><a href="#">product name goes here</a></h3>
-                                            <h4 class="product-price"><span class="qty">1x</span>$980.00</h4>
-                                        </div>
-                                        <button class="delete"><i class="fa fa-close"></i></button>
-                                    </div>
-
-                                    <div class="product-widget">
-                                        <div class="product-img">
-                                            <img src="{{ asset('asset/guest/img/product02.png') }}" alt="">
-                                        </div>
-                                        <div class="product-body">
-                                            <h3 class="product-name"><a href="#">product name goes here</a></h3>
-                                            <h4 class="product-price"><span class="qty">3x</span>$980.00</h4>
-                                        </div>
-                                        <button class="delete"><i class="fa fa-close"></i></button>
-                                    </div>
+                                    @empty
+                                        <p>Giỏ hàng trống</p>
+                                    @endforelse
                                 </div>
                                 <div class="cart-summary">
-                                    <small>3 Item(s) selected</small>
-                                    <h5>Tổng tiền: $2940.00</h5>
+                                    <small>Có {{ $countQtyCart }} sản phẩm trong giỏ hàng</small>
+                                    <h5>Tổng tiền: {{ number_format($totalPrice) . ' vnđ' }}</h5>
                                 </div>
                                 <div class="cart-btns">
-                                    <a href="#">Xem giỏ hàng</a>
-                                    <a href="{{ route('cart.show') }}">Thanh toán <i
+                                    <a href="{{ route('cart.show') }}">Xem giỏ hàng</a>
+                                    <a href="{{ route('cart.checkout') }}">Thanh toán <i
                                             class="fa fa-arrow-circle-right"></i></a>
                                 </div>
                             </div>
@@ -145,7 +155,7 @@
                         <div class="menu-toggle">
                             <a href="#">
                                 <i class="fa fa-bars"></i>
-                                <span>Menu</span>
+                                <span>Danh mục</span>
                             </a>
                         </div>
                         <!-- /Menu Toogle -->

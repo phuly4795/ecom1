@@ -56,8 +56,8 @@
                             <label for="image-dropzone" class="form-label h5 mb-3" style="font-weight: 700">Hình ảnh đại
                                 diện</label>
                             <div class="dropzone" id="image-dropzone"></div>
-                            <input type="hidden" name="image" id="image-hidden"
-                                value="{{ old('image', $category->image ?? '') }}">
+                            <input type="hidden" name="image" id="image-main-hidden"
+                                value="{{ old('image', $product->image ?? '') }}">
                             @error('image')
                                 <span class="text-danger">{{ $message }}</span>
                             @enderror
@@ -67,8 +67,8 @@
                             <label for="image-dropzone-thumbnail" class="form-label h5 mb-3"
                                 style="font-weight: 700">Hình ảnh thumbnail</label>
                             <div class="dropzone" id="image-dropzone-thumbnail"></div>
-                            <input type="hidden" name="imageThumbnail" id="image-hidden"
-                                value="{{ old('image', $category->image ?? '') }}">
+                            <input type="hidden" name="imageThumbnail" id="image-thumbnail-hidden"
+                                value="{{ old('image', $product->image ?? '') }}">
                             @error('image')
                                 <span class="text-danger">{{ $message }}</span>
                             @enderror
@@ -119,7 +119,7 @@
                                 <div class="col-md-6">
                                     <div class="form-group form-check">
                                         <input type="checkbox" name="track_qty" id="track_qty"
-                                            class="form-check-input"
+                                            class="form-check-input form-switch"
                                             {{ old('track_qty', $product->track_qty ?? 'yes') == 'yes' ? 'checked' : '' }}>
                                         <label for="track_qty" class="form-check-label">Kiểm soát tồn kho</label>
                                     </div>
@@ -261,12 +261,12 @@
                 @endif
             },
             success: function(file, response) {
-                document.getElementById('image-hidden').value = response.filePath;
+                document.getElementById('image-main-hidden').value = response.filePath;
                 this.emit("thumbnail", file, response.url);
             },
             removedfile: function(file) {
                 file.previewElement.remove();
-                document.getElementById('image-hidden').value = '';
+                document.getElementById('image-main-hidden').value = '';
             }
         });
 
@@ -381,7 +381,14 @@
                 });
         }
     </script>
-
+    <script>
+        document.getElementById('name').addEventListener('input', function() {
+            const name = this.value;
+            if (!document.getElementById('sku').value) {
+                document.getElementById('sku').value = slugify(name).toUpperCase();
+            }
+        });
+    </script>
     <style>
         .ck-editor__editable {
             min-height: 200px;

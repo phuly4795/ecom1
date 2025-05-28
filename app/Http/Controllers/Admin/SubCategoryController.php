@@ -19,13 +19,13 @@ class SubCategoryController extends Controller
 
     public function data()
     {
-        $query = SubCategory::with('category'); // Thêm eager loading
+        $query = SubCategory::with('categories'); // Corrected to 'categories'
 
         return DataTables::of($query)
             ->addIndexColumn()
-            ->addColumn('actions', function ($sub_category) {
-                $editUrl = route('admin.sub_category.edit', $sub_category);
-                $deleteUrl = route('admin.sub_category.destroy', $sub_category);
+            ->addColumn('actions', function ($subCategory) {
+                $editUrl = route('admin.sub_category.edit', $subCategory);
+                $deleteUrl = route('admin.sub_category.destroy', $subCategory);
 
                 $html = '<div class="d-flex gap-2">';
                 $html .= '<a href="' . $editUrl . '" class="btn btn-sm btn-warning mr-2">Sửa</a>';
@@ -38,18 +38,18 @@ class SubCategoryController extends Controller
 
                 return new HtmlString($html);
             })
-            ->editColumn('created_at', function ($sub_category) {
-                return $sub_category->created_at->format('d/m/Y');
+            ->editColumn('created_at', function ($subCategory) {
+                return $subCategory->created_at->format('d/m/Y');
             })
-            ->editColumn('status', function ($sub_category) {
-                return $sub_category->status == 1
+            ->editColumn('status', function ($subCategory) {
+                return $subCategory->status == 1
                     ? '<i class="fa-solid fa-circle-check text-success" style="font-size: 22px"></i>'
                     : '<i class="fa-regular fa-circle-xmark text-danger" style="font-size: 22px"></i>';
             })
-            ->editColumn('category', function ($sub_category) {
-                return $sub_category->category->name;
+            ->addColumn('categories', function ($subCategory) {
+                return $subCategory->categories->pluck('name')->implode(', ') ?: 'Chưa có danh mục cha';
             })
-            ->rawColumns(['actions', 'status'])
+            ->rawColumns(['actions', 'status', 'categories'])
             ->make(true);
     }
 
@@ -61,26 +61,38 @@ class SubCategoryController extends Controller
     public function edit(SubCategory $subCategory)
     {
         $category = Category::orderBy('name', 'ASC')->get();
+        $subCategory->load('categories');
         return view('layouts.pages.admin.sub_category.upsert', compact('subCategory', 'category'));
     }
 
     public function storeOrUpdate(Request $request, $id = null)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:sub_categories,slug,' . $id,
-            'status' => 'required|in:0,1',
-            'category_id' =>  'required',
-        ], [
-            'slug.unique' => 'Slug này đã tồn tại, vui lòng chọn tên khác.'
-        ]);
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'slug' => 'required|string|max:255|unique:sub_categories,slug,' . $id,
+                'status' => 'required|in:0,1',
+                'category_ids' => 'required|array',
+                'category_ids.*' => 'exists:categories,id',
+            ], [
+                'slug.unique' => 'Slug này đã tồn tại, vui lòng chọn tên khác.',
+                'category_ids.required' => 'Vui lòng chọn ít nhất một danh mục cha.',
+            ]);
 
-        SubCategory::updateOrCreate(
-            ['id' => $id],
-            $validated
-        );
+            $subCategory = SubCategory::updateOrCreate(
+                ['id' => $id],
+                $request->only(['name', 'slug', 'status'])
+            );
 
-        return redirect()->back()->with(['status' => 'success', 'message' => $id ? 'Cập nhật thành công' : 'Thêm mới thành công']);
+            $subCategory->categories()->sync($validated['category_ids']);
+
+            return redirect()->back()->with([
+                'status' => 'success',
+                'message' => $id ? 'Cập nhật thành công' : 'Thêm mới thành công',
+            ]);
+        } catch (\Exception $e) {
+            return redirect()->back()->with(['status' => 'error', 'message' => 'Có lỗi xảy ra: ' . $e->getMessage()]);
+        }
     }
 
 

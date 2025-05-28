@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 use Yajra\DataTables\DataTables;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
@@ -46,14 +47,28 @@ class ProductController extends Controller
             ->editColumn('created_at', function ($product) {
                 return $product->created_at->format('d/m/Y');
             })
+            ->editColumn('title', function ($product) {
+                return Str::limit($product->title, 30, '...');
+            })
             ->editColumn('qty', function ($product) {
-                return 'Số lượng còn lại: ' . $product->qty;
+                $html = '<span class="badge badge-success">Còn: ' . $product->qty . '</span>';
+                return new HtmlString($html);
+            })
+            ->editColumn('category', function ($product) {
+                $html = '<span class="badge badge-info">' . $product->category->name ?? 'Không có'  . '</span>';
+                if ($product->is_featured) {
+                    $html .= '<span class="badge badge-warning">Nổi bật</span>';
+                }
+                if ($product->compare_price != 0) {
+                    $html .= '<span class="badge badge-danger">Giảm giá</span>';
+                }
+                return new HtmlString($html);
             })
             ->editColumn('sku', function ($product) {
                 return 'SKU-' . $product->sku;
             })
             ->editColumn('price', function ($product) {
-                return $product->price . 'vnđ';
+                return number_format($product->price) . ' vnđ';
             })
             ->editColumn('image', function ($product) {
                 $imagePath = optional($product->productImages->where('type', 1)->first())->image;
@@ -61,14 +76,14 @@ class ProductController extends Controller
                     $fullPath = asset('storage/' . $imagePath);
                     return '<img src="' . $fullPath . '" alt="Ảnh sản phẩm" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">';
                 }
-                return '<span class="text-muted">Không có ảnh</span>';
+                return '<img src="' . asset('asset/img/no-image.png') . '" alt="Ảnh sản phẩm" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">';
             })
             ->editColumn('status', function ($product) {
                 return $product->status == 1
                     ? '<i class="fa-solid fa-circle-check text-success" style="font-size: 22px"></i>'
                     : '<i class="fa-regular fa-circle-xmark text-danger" style="font-size: 22px"></i>';
             })
-            ->rawColumns(['actions', 'status', 'image'])
+            ->rawColumns(['actions', 'status', 'image', 'qty', 'category'])
             ->make(true);
     }
 

@@ -24,9 +24,6 @@ Route::middleware('auth', 'verified', 'checkRole')->group(function () {
             $role->slug   =  'customer';
             $role->save();
         });
-        Route::get('/districts/{provinceId}', [LocationController::class, 'getDistricts'])->name('getDistricts');
-        Route::get('/wards/{districtId}', [LocationController::class, 'getWards'])->name('getWards');
-
 
         Route::prefix('category')->name('category.')->group(function () {
             Route::get('/', [CategoryController::class, 'index'])->name('index');

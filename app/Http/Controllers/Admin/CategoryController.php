@@ -67,48 +67,56 @@ class CategoryController extends Controller
 
     public function storeOrUpdate(Request $request, $id = null)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:categories,slug,' . $id,
-            'status' => 'required|in:0,1',
-            'image' => 'nullable|string',
-            'sort' => 'required|integer|min:1',
-        ], [
-            'slug.unique' => 'Slug này đã tồn tại, vui lòng chọn tên khác.',
-            'sort.required' => 'Vui lòng chọn vị trí.',
-        ]);
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'slug' => 'required|string|max:255|unique:categories,slug,' . $id,
+                'status' => 'required|in:0,1',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'sort' => 'required|integer|min:1',
+            ], [
+                'slug.unique' => 'Slug này đã tồn tại, vui lòng chọn tên khác.',
+                'sort.required' => 'Vui lòng chọn vị trí.',
+                'image.image' => 'File phải là hình ảnh.',
+            ]);
 
-        if ($id) {
-            $category = Category::find($id);
-            $oldSort = $category->sort;
-            $newSort = $validated['sort'];
+            if ($id) {
+                $category = Category::findOrFail($id);
+                $oldSort = $category->sort;
+                $newSort = $validated['sort'];
 
-            if ($oldSort != $newSort) {
-                // Di chuyển các danh mục khác để nhường chỗ
-                if ($newSort < $oldSort) {
-                    // Di chuyển lên trên (số nhỏ hơn)
-                    Category::where('sort', '>=', $newSort)
-                        ->where('sort', '<', $oldSort)
-                        ->increment('sort');
-                } else {
-                    // Di chuyển xuống dưới (số lớn hơn)
-                    Category::where('sort', '>', $oldSort)
-                        ->where('sort', '<=', $newSort)
-                        ->decrement('sort');
+                if ($oldSort != $newSort) {
+                    if ($newSort < $oldSort) {
+                        Category::where('sort', '>=', $newSort)
+                            ->where('sort', '<', $oldSort)
+                            ->increment('sort');
+                    } else {
+                        Category::where('sort', '>', $oldSort)
+                            ->where('sort', '<=', $newSort)
+                            ->decrement('sort');
+                    }
                 }
+
+                if ($request->hasFile('image')) {
+                    if ($category->image) {
+                        Storage::disk('public')->delete($category->image);
+                    }
+                    $validated['image'] = Storage::disk('public')->putFileAs('categories', $request->file('image'), time() . '_' . $request->file('image')->getClientOriginalName());
+                }
+
+                $category->update($validated);
+                $message = 'Cập nhật danh mục thành công.';
+            } else {
+                $sort = $validated['sort'];
+                Category::where('sort', '>=', $sort)->increment('sort');
+                $category = Category::create($validated);
+                $message = 'Thêm danh mục thành công.';
             }
 
-            // Cập nhật danh mục
-            $category->update($validated);
-            $message = 'Cập nhật danh mục thành công.';
-        } else {
-            $sort = $validated['sort'];
-            Category::where('sort', '>=', $sort)->increment('sort');
-            Category::create($validated);
-            $message = 'Thêm danh mục thành công.';
+            return redirect()->back()->with(['status' => 'success', 'message' => $message]);
+        } catch (\Exception $e) {
+            return redirect()->back()->with(['status' => 'error', 'message' => 'Có lỗi xảy ra: ' . $e->getMessage()]);
         }
-
-        return redirect()->back()->with(['status' => 'success', 'message' => $message]);
     }
 
     public function destroy(Category $category)

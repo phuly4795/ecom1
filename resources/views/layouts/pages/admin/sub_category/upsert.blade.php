@@ -1,4 +1,6 @@
 <x-app-layout>
+    <?php $title = isset($subCategory->id) ? 'Cập nhật danh mục phụ' : 'Thêm danh mục phụ'; ?>
+    @section('title', $title)
     <div class="container-fluid">
         <div class="card p-4 bg-white shadow-sm rounded">
             @if (isset($subCategory->id))
@@ -44,12 +46,13 @@
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <label for="category_id" class="form-label">Danh mục cha</label>
-                        <select name="category_id" id="category_id" class="form-control">
-                            @foreach ($category as $cate)
-                                <option value="{{ $cate->id }}"
-                                    {{ old('category_id', $cate->id ?? '') == (isset($subCategory->id) ? $subCategory->category_id : '') ? 'selected' : '' }}>
-                                    {{ $cate->name }}</option>
+                        <label for="category_ids" class="form-label">Danh mục cha</label>
+                        <select name="category_ids[]" multiple class="form-control select2" id="category_ids">
+                            @foreach ($category as $cat)
+                                <option value="{{ $cat->id }}"
+                                    {{ isset($subCategory) && $subCategory->categories->contains($cat->id) ? 'selected' : '' }}>
+                                    {{ $cat->name }}
+                                </option>
                             @endforeach
                         </select>
                         @error('status')
@@ -79,8 +82,14 @@
             </form>
         </div>
     </div>
-
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
+        $('#category_ids').select2({
+            placeholder: "Chọn danh mục cha",
+            allowClear: true
+        });
+
         function slugify(str) {
             return str
                 .toLowerCase()

@@ -4,13 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+
 class Category extends Model
 {
     use HasFactory, SoftDeletes;
+
     protected $dates = ['deleted_at'];
-    
+
     protected $fillable = [
         'name',
         'slug',
@@ -19,8 +20,9 @@ class Category extends Model
         'sort'
     ];
 
-    public function subCategories(): HasMany
+    public function subCategories()
     {
-        return $this->hasMany(SubCategory::class);
+        return $this->belongsToMany(SubCategory::class, 'category_sub_category', 'category_id', 'sub_category_id')
+            ->withTimestamps();
     }
 }

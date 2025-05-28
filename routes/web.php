@@ -2,8 +2,10 @@
 
 use App\Http\Controllers\Guest\CartController;
 use App\Http\Controllers\Guest\CategoryController;
+use App\Http\Controllers\Guest\CheckoutController;
 use App\Http\Controllers\Guest\HomeController;
 use App\Http\Controllers\Guest\ProductDetailController;
+use App\Http\Controllers\LocationController;
 use Illuminate\Support\Facades\Route;
 use App\Models\Role;
 
@@ -32,8 +34,16 @@ Route::prefix('cart')->name('cart.')->group(function () {
     Route::post('/cart/update', [CartController::class, 'update'])->name('update');
     Route::delete('/cart/remove/{productId}', [CartController::class, 'remove'])->name('remove');
     Route::post('/cart/apply-coupon', [CartController::class, 'applyCoupon'])->name('applyCoupon');
-    Route::get('/checkout', [CartController::class, 'index'])->name('checkout');
+    Route::get('/checkout', [CartController::class, 'checkout'])->name('checkout');
 });
+
+Route::prefix('checkout')->name('checkout.')->group(function () {
+    Route::get('/', [CheckoutController::class, 'index'])->name('show');
+    Route::post('/', [CheckoutController::class, 'process'])->name('process');
+});
+
+Route::get('/districts/{provinceId}', [LocationController::class, 'getDistricts'])->name('getDistricts');
+Route::get('/wards/{districtId}', [LocationController::class, 'getWards'])->name('getWards');
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/admin.php';
