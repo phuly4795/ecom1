@@ -5,6 +5,7 @@ use App\Http\Controllers\Guest\CategoryController;
 use App\Http\Controllers\Guest\CheckoutController;
 use App\Http\Controllers\Guest\HomeController;
 use App\Http\Controllers\Guest\ProductDetailController;
+use App\Http\Controllers\Guest\SubCategoryController;
 use App\Http\Controllers\LocationController;
 use Illuminate\Support\Facades\Route;
 use App\Models\Role;
@@ -23,7 +24,7 @@ use App\Models\Role;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 
-Route::get('/category/{slug}', [CategoryController::class, 'index'])->name('category.show');
+Route::get('/subcategory/{slug}', [SubCategoryController::class, 'show'])->name('subcategory.show');
 
 Route::prefix('product')->name('product.')->group(function () {
     Route::get('product_detail/{slug}', [ProductDetailController::class, 'index'])->name('detail');

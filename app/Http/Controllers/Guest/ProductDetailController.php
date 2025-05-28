@@ -17,7 +17,7 @@ class ProductDetailController extends Controller
             'productLastest' => $productLastest,
             'breadcrumbs' => [
                 ['name' => 'Trang chủ', 'url' => route('home')],
-                ['name' => $productDetail->category->name, 'url' => route('category.show', $productDetail->category->slug)],
+                ['name' => $productDetail->category->name, 'url' => route('subcategory.show', $productDetail->category->slug)],
                 ['name' => $productDetail->title, 'url' => null],
             ]
         ]);

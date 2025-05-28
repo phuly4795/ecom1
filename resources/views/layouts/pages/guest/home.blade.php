@@ -15,7 +15,7 @@
                             </div>
                             <div class="shop-body">
                                 <h3>Bộ sưu tập<br />{{ $item->name }}</h3>
-                                <a href="{{ route('category.show', $item->slug) }}" class="cta-btn">Xem ngay <i
+                                <a href="{{ route('subcategory.show', $item->slug) }}" class="cta-btn">Xem ngay <i
                                         class="fa fa-arrow-circle-right"></i></a>
                             </div>
                         </div>
