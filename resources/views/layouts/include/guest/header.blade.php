@@ -120,7 +120,7 @@
                                             </div>
                                             <div class="product-body">
                                                 <h3 class="product-name"><a
-                                                        href="{{ route('product.detail', ['slug' => $item->product->slug]) }}">{{ $item->product->title }}</a>
+                                                        href="{{ route('product.show', ['slug' => $item->product->slug]) }}">{{ $item->product->title }}</a>
                                                 </h3>
                                                 <h4 class="product-price"><span
                                                         class="qty">{{ $item->qty }}x</span>

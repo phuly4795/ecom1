@@ -5,6 +5,7 @@ use App\Http\Controllers\Guest\CartController;
 use App\Http\Controllers\Guest\CategoryController;
 use App\Http\Controllers\Guest\CheckoutController;
 use App\Http\Controllers\Guest\HomeController;
+use App\Http\Controllers\Guest\ProductController;
 use App\Http\Controllers\Guest\ProductDetailController;
 use App\Http\Controllers\LocationController;
 use Illuminate\Support\Facades\Route;
@@ -28,8 +29,11 @@ Route::get('/category/{slug}', [CategoryController::class, 'index'])->name('cate
 Route::get('/subcategory/{slug}', [SubCategoryController::class, 'show'])->name('subcategory.show');
 
 Route::prefix('product')->name('product.')->group(function () {
-    Route::get('product_detail/{slug}', [ProductDetailController::class, 'index'])->name('detail');
+    Route::post('/products/{product}/reviews', [ProductController::class, 'storeReview'])->name('review.store');
+
+    Route::get('product_detail/{slug}', [ProductDetailController::class, 'index'])->name('show');
 });
+
 Route::prefix('cart')->name('cart.')->group(function () {
     Route::get('/', [CartController::class, 'index'])->name('show');
     Route::post('/cart/add/{productId}', [CartController::class, 'addToCart'])->name('add');

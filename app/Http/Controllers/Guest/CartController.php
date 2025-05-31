@@ -162,7 +162,8 @@ class CartController extends Controller
         $discount = Session::get('discount', 0);
 
         $total = max($subtotal + $shippingFee - $discount, 0);
+        $userInfo = Auth::user();
 
-        return view('layouts.pages.guest.checkout', compact('cartItems', 'subtotal', 'shippingFee', 'discount', 'total', 'provinces'));
+        return view('layouts.pages.guest.checkout', compact('cartItems', 'subtotal', 'shippingFee', 'discount', 'total', 'provinces', 'userInfo', 'cart'));
     }
 }

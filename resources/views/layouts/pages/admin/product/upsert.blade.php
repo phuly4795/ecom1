@@ -323,22 +323,40 @@
             init: function() {
                 @if (isset($image) && !empty($image->image))
                     var mockFile = {
-                        name: "Image",
-                        size: 12345
+                        name: "MainImage",
+                        size: 12345,
+                        accepted: true
                     };
                     this.emit("addedfile", mockFile);
                     this.emit("thumbnail", mockFile, "{{ asset('storage/' . $image->image) }}");
                     this.emit("complete", mockFile);
                     this.files.push(mockFile);
+                    document.getElementById('image-main-hidden').value = "{{ $image->image }}";
+                    mockFile.storedPath = "{{ $image->image }}";
                 @endif
+
+                // Lưu giá trị ban đầu của ảnh đại diện
+                this.originalImageValue = document.getElementById('image-main-hidden').value;
+
+                // Khi form được submit, nếu không có thay đổi, giữ giá trị cũ
+                this.on("sending", function(file, xhr, formData) {
+                    if (!file.accepted) {
+                        formData.append('image', this.originalImageValue);
+                    }
+                });
             },
             success: function(file, response) {
+                file.storedPath = response.filePath;
                 document.getElementById('image-main-hidden').value = response.filePath;
-                this.emit("thumbnail", file, response.url);
+                this.originalImageValue = response.filePath; // Cập nhật giá trị gốc
             },
             removedfile: function(file) {
                 file.previewElement.remove();
-                document.getElementById('image-main-hidden').value = '';
+                const hiddenInput = document.getElementById('image-main-hidden');
+                if (hiddenInput && hiddenInput.value === file.storedPath) {
+                    hiddenInput.value = ''; // Đặt thành chuỗi rỗng nếu xóa ảnh
+                    this.originalImageValue = '';
+                }
             }
         });
 
@@ -353,43 +371,82 @@
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },
             init: function() {
+                this.originalThumbnails = [];
                 @if (isset($imageThumbnails) && count($imageThumbnails) > 0)
                     @foreach ($imageThumbnails as $thumb)
                         @if (!empty($thumb->image))
                             {
                                 var mockFile = {
                                     name: "Thumbnail",
-                                    size: 12345
+                                    size: 12345,
+                                    accepted: true
                                 };
                                 this.emit("addedfile", mockFile);
                                 this.emit("thumbnail", mockFile, "{{ asset('storage/' . $thumb->image) }}");
                                 this.emit("complete", mockFile);
                                 this.files.push(mockFile);
+
+                                mockFile.storedPath = "{{ $thumb->image }}";
+
                                 let hiddenInput = document.createElement('input');
                                 hiddenInput.type = 'hidden';
                                 hiddenInput.name = 'imageThumbnails[]';
                                 hiddenInput.value = "{{ $thumb->image }}";
+                                hiddenInput.classList.add('thumb-hidden');
+                                mockFile._hiddenInput = hiddenInput;
+
                                 document.getElementById('image-dropzone-thumbnail').appendChild(hiddenInput);
+
+                                // Lưu giá trị ban đầu của thumbnail
+                                this.originalThumbnails.push("{{ $thumb->image }}");
                             }
                         @endif
                     @endforeach
                 @endif
+
+                // Khi form được submit, nếu không có thay đổi, gửi lại giá trị cũ
+                this.on("sending", function(file, xhr, formData) {
+                    if (!file.accepted) {
+                        this.originalThumbnails.forEach(function(thumb) {
+                            formData.append('imageThumbnails[]', thumb);
+                        });
+                    }
+                });
             },
             success: function(file, response) {
+                file.storedPath = response.filePath;
+
                 const input = document.createElement('input');
                 input.type = 'hidden';
                 input.name = 'imageThumbnails[]';
                 input.value = response.filePath;
-                file.previewElement.appendChild(input);
+                input.classList.add('thumb-hidden');
+                file._hiddenInput = input;
+
+                document.getElementById('image-dropzone-thumbnail').appendChild(input);
+
+                // Cập nhật danh sách thumbnail gốc
+                this.originalThumbnails.push(response.filePath);
             },
             removedfile: function(file) {
                 file.previewElement.remove();
-                const inputs = document.querySelectorAll('input[name="imageThumbnails[]"]');
+
+                if (file._hiddenInput && file._hiddenInput.parentNode) {
+                    file._hiddenInput.remove();
+                }
+
+                const inputs = document.querySelectorAll('input.thumb-hidden');
                 inputs.forEach(input => {
-                    if (input.value === file.upload?.filename || file.name === "Thumbnail") {
+                    if (input.value === file.storedPath) {
                         input.remove();
                     }
                 });
+
+                // Cập nhật danh sách thumbnail gốc khi xóa
+                const index = this.originalThumbnails.indexOf(file.storedPath);
+                if (index !== -1) {
+                    this.originalThumbnails.splice(index, 1);
+                }
             }
         });
     </script>

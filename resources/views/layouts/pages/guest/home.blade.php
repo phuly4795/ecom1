@@ -85,7 +85,7 @@
                                             <div class="product-body">
                                                 <p class="product-category">{{ $item->category ? $item->category->name : ($item->subCategory ? $item->subCategory->categories->pluck('name')->implode(', ') : "Chưa có" ) }}</p>
                                                 <h3 class="product-name"><a
-                                                        href="{{ route('product.detail', ['slug' => $item->slug]) }}">{{ $item->title }}</a>
+                                                        href="{{ route('product.show', ['slug' => $item->slug]) }}">{{ $item->title }}</a>
                                                 </h3>
                                                 <h4 class="product-price"> {{ number_format($item->price) }} vnđ<del
                                                         class="product-old-price">{{ $item->compare_price != 0 ? number_format($item->compare_price) . ' vnđ' : '' }}

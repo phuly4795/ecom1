@@ -15,17 +15,19 @@
                             <h3 class="title">Địa chỉ thanh toán</h3>
                         </div>
                         <div class="form-group">
-                            <input class="input" type="text" name="name" placeholder="Nhập họ và tên">
+                            <input class="input" type="text" name="name" placeholder="Nhập họ và tên"
+                                value="{{ old('name', $userInfo->name ?? '') }}">
                         </div>
                         <div class="form-group">
-                            <input class="input" type="email" name="email" placeholder="Nhập địa chỉ email">
+                            <input class="input" type="email" name="email" placeholder="Nhập địa chỉ email"
+                                value="{{ old('email', $userInfo->email ?? '') }}">
                         </div>
                         <div class="form-group">
                             <select id="province" name="province_id" class="form-control">
                                 <option value="">Chọn Tỉnh/Thành phố</option>
                                 @foreach ($provinces as $province)
                                     <option value="{{ $province->code }}"
-                                        {{ isset($user) ? ($user->province_id == $province->code ? 'selected' : '') : '' }}>
+                                        {{ isset($userInfo) ? ($userInfo->province_id == $province->code ? 'selected' : '') : '' }}>
                                         {{ $province->full_name }}
                                     </option>
                                 @endforeach
@@ -42,26 +44,31 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <input class="input" type="text" name="address" placeholder="Nhập địa chỉ nhận hàng">
+                            <input class="input" type="text" name="address" placeholder="Nhập địa chỉ nhận hàng"
+                                value="{{ old('address', $userInfo->address ?? '') }}">
                         </div>
                         <div class="form-group">
-                            <input class="input" type="tel" name="tel" placeholder="Nhập số điện thoại">
+                            <input class="input" type="number" name="phone" placeholder="Nhập số điện thoại"
+                                value="{{ old('phone', $userInfo->phone ?? '') }}">
                         </div>
-                        <div class="form-group">
-                            <div class="input-checkbox">
-                                <input type="checkbox" id="create-account">
-                                <label for="create-account">
-                                    <span></span>
-                                    Create Account?
-                                </label>
-                                <div class="caption">
-                                    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor
-                                        incididunt.</p>
-                                    <input class="input" type="password" name="password"
-                                        placeholder="Enter Your Password">
+                        @if (!$userInfo)
+                            <div class="form-group">
+                                <div class="input-checkbox">
+                                    <input type="checkbox" id="create-account">
+                                    <label for="create-account">
+                                        <span></span>
+                                        Create Account?
+                                    </label>
+                                    <div class="caption">
+                                        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
+                                            tempor
+                                            incididunt.</p>
+                                        <input class="input" type="password" name="password"
+                                            placeholder="Enter Your Password">
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        @endif
                     </div>
                     <!-- /Billing Details -->
 
@@ -120,26 +127,28 @@
                     </div>
                     <div class="order-summary">
                         <div class="order-col">
-                            <div><strong>PRODUCT</strong></div>
-                            <div><strong>TOTAL</strong></div>
+                            <div><strong>Sản phẩm</strong></div>
+                            <div><strong>Tổng tiền</strong></div>
                         </div>
                         <div class="order-products">
-                            <div class="order-col">
-                                <div>1x Product Name Goes Here</div>
-                                <div>$980.00</div>
-                            </div>
-                            <div class="order-col">
+                            @foreach ($cart->cartDetails as $item)
+                                <div class="order-col">
+                                    <div>{{$item->qty}}x {{$item->product->name}}</div>
+                                    <div>{{number_format($item->price). " VNĐ"}}</div>
+                                </div>
+                            @endforeach
+                            {{-- <div class="order-col">
                                 <div>2x Product Name Goes Here</div>
                                 <div>$980.00</div>
-                            </div>
+                            </div> --}}
                         </div>
                         <div class="order-col">
-                            <div>Shiping</div>
+                            <div>Vận chuyển</div>
                             <div><strong>FREE</strong></div>
                         </div>
                         <div class="order-col">
                             <div><strong>TOTAL</strong></div>
-                            <div><strong class="order-total">$2940.00</strong></div>
+                            <div><strong class="order-total">{{number_format($item->total). " VNĐ"}}</strong></div>
                         </div>
                     </div>
                     <div class="payment-method">
@@ -249,7 +258,7 @@
                         option.textContent = district.name;
 
                         // Thêm selected nếu là district_id của user
-                        if (district.code == "{{ $user->district_id ?? '' }}") {
+                        if (district.code == "{{ $userInfo->district_id ?? '' }}") {
                             option.selected = true;
                             // Tự động load wards khi đã có district_id
                             loadWards(district.code);
@@ -273,7 +282,7 @@
                         option.textContent = ward.name;
 
                         // Thêm selected nếu là ward_id của user
-                        if (ward.code == "{{ $user->ward_id ?? '' }}") {
+                        if (ward.code == "{{ $userInfo->ward_id ?? '' }}") {
                             option.selected = true;
                         }
 
@@ -283,12 +292,12 @@
         }
     });
     // Kích hoạt district select nếu đã có province_id
-    if ("{{ $user->province_id ?? '' }}") {
+    if ("{{ $userInfo->province_id ?? '' }}") {
         districtSelect.disabled = false;
     }
 
     // Kích hoạt ward select nếu đã có district_id
-    if ("{{ $user->district_id ?? '' }}") {
+    if ("{{ $userInfo->district_id ?? '' }}") {
         wardSelect.disabled = false;
     }
 </script>

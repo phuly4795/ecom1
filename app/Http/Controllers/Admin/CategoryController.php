@@ -68,13 +68,19 @@ class CategoryController extends Controller
     public function storeOrUpdate(Request $request, $id = null)
     {
         try {
-            $validated = $request->validate([
+            $rules = [
                 'name' => 'required|string|max:255',
                 'slug' => 'required|string|max:255|unique:categories,slug,' . $id,
                 'status' => 'required|in:0,1',
-                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
                 'sort' => 'required|integer|min:1',
-            ], [
+            ];
+
+            // Chỉ thêm rule hình ảnh nếu có file
+            if ($request->hasFile('image')) {
+                $rules['image'] = 'image|mimes:jpeg,png,jpg,gif|max:2048';
+            }
+
+            $validated = $request->validate($rules, [
                 'slug.unique' => 'Slug này đã tồn tại, vui lòng chọn tên khác.',
                 'sort.required' => 'Vui lòng chọn vị trí.',
                 'image.image' => 'File phải là hình ảnh.',
@@ -101,7 +107,13 @@ class CategoryController extends Controller
                     if ($category->image) {
                         Storage::disk('public')->delete($category->image);
                     }
-                    $validated['image'] = Storage::disk('public')->putFileAs('categories', $request->file('image'), time() . '_' . $request->file('image')->getClientOriginalName());
+                    $validated['image'] = Storage::disk('public')->putFileAs(
+                        'categories',
+                        $request->file('image'),
+                        time() . '_' . $request->file('image')->getClientOriginalName()
+                    );
+                } else {
+                    unset($validated['image']); // tránh override ảnh cũ nếu không có ảnh mới
                 }
 
                 $category->update($validated);
@@ -109,15 +121,28 @@ class CategoryController extends Controller
             } else {
                 $sort = $validated['sort'];
                 Category::where('sort', '>=', $sort)->increment('sort');
+
+                if ($request->hasFile('image')) {
+                    $validated['image'] = Storage::disk('public')->putFileAs(
+                        'categories',
+                        $request->file('image'),
+                        time() . '_' . $request->file('image')->getClientOriginalName()
+                    );
+                }
+
                 $category = Category::create($validated);
                 $message = 'Thêm danh mục thành công.';
             }
 
             return redirect()->back()->with(['status' => 'success', 'message' => $message]);
         } catch (\Exception $e) {
-            return redirect()->back()->with(['status' => 'error', 'message' => 'Có lỗi xảy ra: ' . $e->getMessage()]);
+            return redirect()->back()->with([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra: ' . $e->getMessage()
+            ]);
         }
     }
+
 
     public function destroy(Category $category)
     {

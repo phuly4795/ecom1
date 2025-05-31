@@ -178,15 +178,12 @@ class ProductController extends Controller
         $category = Category::find($selectedCategoryId);
 
         if ($subcategory) {
-            // Nếu là danh mục con
-            $validated['category_id'] = $subcategory->category_id; // Gán category_id là danh mục cha
-            $validated['subcategory_id'] = $selectedCategoryId; // Gán subcategory_id là danh mục con
+            $validated['category_id'] = $subcategory->category_id;
+            $validated['subcategory_id'] = $selectedCategoryId;
         } elseif ($category) {
-            // Nếu là danh mục cha
             $validated['category_id'] = $selectedCategoryId;
             $validated['subcategory_id'] = null;
         } else {
-            // Trường hợp không hợp lệ
             return redirect()->back()->withErrors(['category_id' => 'Danh mục không hợp lệ.']);
         }
 
@@ -196,28 +193,54 @@ class ProductController extends Controller
             $product->update($validated);
             $message = 'Cập nhật thành công';
 
-            // Xử lý ảnh đại diện
-            if ($image !== null && $image !== '') {
-                // Nếu có ảnh mới thì xóa ảnh cũ và thêm ảnh mới
-                $oldMainImage = $product->productImages->where('type', 1)->first();
+            // === Xử lý ảnh đại diện ===
+            $oldMainImage = $product->productImages->where('type', 1)->first();
+            if ($image === '') {
+                // Người dùng xóa ảnh đại diện
                 if ($oldMainImage) {
                     Storage::disk('public')->delete($oldMainImage->image);
                     $oldMainImage->delete();
                 }
-                ProductImage::create(['product_id' => $product->id, 'type' => 1, 'image' => $image]);
+            } elseif (!empty($image) && $image !== ($oldMainImage->image ?? '')) {
+                // Có ảnh mới và khác với ảnh cũ
+                if ($oldMainImage) {
+                    Storage::disk('public')->delete($oldMainImage->image);
+                    $oldMainImage->delete();
+                }
+                ProductImage::create([
+                    'product_id' => $product->id,
+                    'type' => 1,
+                    'image' => $image
+                ]);
             }
-            // Xử lý ảnh thumbnail
-            if (!empty($imageThumbnails)) {
-                // Nếu có ảnh mới thì xóa ảnh cũ và thêm ảnh mới
-                $oldThumbnails = $product->productImages->where('type', 2);
+            // Nếu $image là null hoặc giống ảnh cũ, giữ nguyên ảnh hiện tại
+
+            // === Xử lý ảnh thumbnails ===
+            $oldThumbnails = $product->productImages->where('type', 2);
+            $existingThumbnailPaths = $oldThumbnails->pluck('image')->toArray();
+            $newThumbnails = array_filter($imageThumbnails, fn($val) => !empty($val));
+
+            if (empty($newThumbnails) && $request->has('imageThumbnails')) {
+                // Người dùng xóa hết thumbnail
                 foreach ($oldThumbnails as $thumbnail) {
                     Storage::disk('public')->delete($thumbnail->image);
                     $thumbnail->delete();
                 }
-                foreach ($imageThumbnails as $thumbnail) {
-                    ProductImage::create(['product_id' => $product->id, 'type' => 2, 'image' => $thumbnail]);
+            } elseif (!empty($newThumbnails) && $newThumbnails !== $existingThumbnailPaths) {
+                // Có thay đổi trong thumbnail
+                foreach ($oldThumbnails as $thumbnail) {
+                    Storage::disk('public')->delete($thumbnail->image);
+                    $thumbnail->delete();
+                }
+                foreach ($newThumbnails as $thumbnail) {
+                    ProductImage::create([
+                        'product_id' => $product->id,
+                        'type' => 2,
+                        'image' => $thumbnail
+                    ]);
                 }
             }
+            // Nếu không có thay đổi, giữ nguyên thumbnail hiện tại
         } else {
             $product = Product::create($validated);
             $message = 'Thêm mới thành công';
@@ -225,9 +248,12 @@ class ProductController extends Controller
             if ($image) {
                 ProductImage::create(['product_id' => $product->id, 'type' => 1, 'image' => $image]);
             }
+
             if ($imageThumbnails) {
                 foreach ($imageThumbnails as $thumbnail) {
-                    ProductImage::create(['product_id' => $product->id, 'type' => 2, 'image' => $thumbnail]);
+                    if (!empty($thumbnail)) {
+                        ProductImage::create(['product_id' => $product->id, 'type' => 2, 'image' => $thumbnail]);
+                    }
                 }
             }
         }
@@ -263,7 +289,10 @@ class ProductController extends Controller
         $fileName = time() . '_' . $file->getClientOriginalName();
         $filePath = Storage::disk('public')->putFileAs('products', $file, $fileName);
 
-        return response()->json(['filePath' => $filePath, 'url' => Storage::url($filePath)]);
+        return response()->json([
+            'filePath' => 'products/' . $fileName, // <-- đảm bảo lưu đúng
+            'url' => Storage::url('products/' . $fileName),
+        ]);
     }
 
     public function getSubcategories($category_id)
