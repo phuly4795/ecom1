@@ -12,7 +12,9 @@ class Product extends Model
 {
     use HasFactory, SoftDeletes;
     protected $dates = ['deleted_at'];
-
+    protected $casts = [
+        'specifications' => 'array',
+    ];
     protected $fillable = [
         'title',
         'slug',
@@ -27,6 +29,7 @@ class Product extends Model
         'subcategory_id',
         'brand_id',
         'is_featured',
+        'product_type',
         'sku',
         'barcode',
         'track_qty',
@@ -70,7 +73,7 @@ class Product extends Model
     {
         return $this->hasMany(Review::class);
     }
-    public function variants()
+    public function productVariants()
     {
         return $this->hasMany(ProductVariant::class);
     }

@@ -5,15 +5,17 @@ namespace App\Http\Controllers\Guest;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Review;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class ProductDetailController extends Controller
 {
-    public function index($slug)
+    public function show($slug, $variant = null)
     {
-        $productDetail = Product::with(['productImages', 'brand', 'reviews'])->where('slug', $slug)->firstOrFail();
+        $productDetail = Product::with(['productImages', 'brand', 'reviews', 'productVariants'])->where('slug', $slug)->firstOrFail();
         $productLastest = Product::with('productImages')->latest()->get()->take(4);
-        $mainCategory = $productDetail->subCategory->categories->first();
+        $mainCategory = $productDetail->category ? $productDetail->category : $productDetail->subCategory;
 
         // Tính toán thông tin đánh giá
         $averageRating = $productDetail->reviews->avg('rating') ?? 0;
@@ -26,6 +28,23 @@ class ProductDetailController extends Controller
         }
         unset($value); // Unset reference để tránh lỗi
 
+        $selectedVariant = null;
+        $isDiscountActive = false;
+        if ($variant) {
+            $selectedVariant = $productDetail->productVariants->firstWhere('variant_name', str_replace('-', ' ', $variant));
+            if ($selectedVariant) {
+                $currentDate = Carbon::now();
+                $startDate = $selectedVariant->discount_start_date ? Carbon::parse($selectedVariant->discount_start_date) : null;
+                $endDate = $selectedVariant->discount_end_date ? Carbon::parse($selectedVariant->discount_end_date) : null;
+                $isDiscountActive = $selectedVariant->discounted_price && $startDate && $endDate && $currentDate->between($startDate, $endDate);
+            }
+        }
+
+
+        $reviews = Review::where('product_id', $productDetail->id)
+            ->orderByDesc('created_at')
+            ->paginate(5); // mỗi trang 5 review
+
         return view('layouts.pages.guest.product_detail', [
             'product' => $productDetail,
             'productLastest' => $productLastest,
@@ -36,6 +55,9 @@ class ProductDetailController extends Controller
             ],
             'averageRating' => $averageRating,
             'ratings' => $ratings,
+            'selectedVariant' => $selectedVariant,
+            'isDiscountActive' => $isDiscountActive,
+            'reviews' => $reviews
         ]);
     }
 }

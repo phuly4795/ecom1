@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\SubCategory;
 use App\Models\ProductImage;
+use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
@@ -24,35 +25,83 @@ class ProductController extends Controller
 
     public function data()
     {
-        $query = Product::with('category', 'subcategory', 'brand');
+        $query = Product::with('category', 'subcategory', 'brand', 'productVariants');
+
+        if ($categoryId = request('category_id')) {
+            $query->where('category_id', $categoryId);
+        }
+
+        if ($status = request('status')) {
+            $query->where('product.status', $status);
+        }
+
+        // if (!is_null(request('is_featured'))) {
+        //     $query->where('is_featured', request('is_featured'));
+        // }
 
         return DataTables::of($query)
             ->addIndexColumn()
             ->addColumn('image', function ($product) {
                 $imagePath = optional($product->productImages->where('type', 1)->first())->image;
                 return $imagePath
-                    ? '<img src="' . asset('storage/' . $imagePath) . '" alt="Ảnh sản phẩm" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">'
-                    : '<img src="' . asset('asset/img/no-image.png') . '" alt="Ảnh sản phẩm" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">';
+                    ? '<img src="' . asset('storage/' . $imagePath) . '" alt="Ảnh sản phẩm" class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;">'
+                    : '<img src="' . asset('asset/img/no-image.png') . '" alt="Ảnh sản phẩm" class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;">';
             })
             ->addColumn('brand', function ($product) {
-                return $product->brand->name ?? 'N/A';
+                return $product->brand ? '<span class="badge badge-primary">' . $product->brand->name . '</span>' : '<span class="badge badge-secondary">N/A</span>';
             })
-            ->addColumn('original_price', function ($product) {
-                return $product->original_price ? number_format($product->original_price) . ' VNĐ' : 'N/A';
-            })
-            ->addColumn('discount_percentage', function ($product) {
-                return $product->discount_percentage ? $product->discount_percentage . '%' : '0%';
+            ->addColumn('price_info', function ($product) {
+                $html = '<div>';
+
+                if ($product->product_type == 'single') {
+                    $html .= '<span class="text-primary font-weight-bold">' . number_format($product->price) . ' VNĐ</span>';
+                    if ($product->original_price && $product->original_price > $product->price) {
+                        $html .= '<br><del class="text-muted">' . number_format($product->original_price) . ' VNĐ</del>';
+                        $discount = $product->discount_percentage ? $product->discount_percentage . '%' : 'N/A';
+                        $html .= '<span class="badge badge-danger ml-1">' . $discount . '</span>';
+                    }
+                } elseif ($product->product_type == 'variant') {
+                    $variants = $product->productVariants;
+                    if ($variants->isNotEmpty()) {
+                        foreach ($variants as $variant) {
+                            $price = $variant->price ?? 0;
+                            $originalPrice = $variant->original_price ?? $price; // Giá gốc, nếu không có thì dùng giá hiện tại
+                            $discountedPrice = $variant->discounted_price ?? $price; // Giá sau giảm, nếu không có thì dùng giá hiện tại
+                            $discountPercentage = $variant->discount_percentage ?? 0;
+
+                            $html .= '<div class="mb-1">';
+                            $html .= '<span class="text-primary font-weight-bold">' . number_format($discountedPrice) . ' VNĐ</span>';
+                            if ($originalPrice > $discountedPrice) {
+                                $html .= '<br><del class="text-muted">' . number_format($originalPrice) . ' VNĐ</del>';
+                                $html .= '<span class="badge badge-danger ml-1">' . ($discountPercentage > 0 ? $discountPercentage . '%' : 'N/A') . '</span>';
+                            }
+                            $html .= '<br><small class="text-info">' . ($variant->variant_name ?? 'Không có tên') . '</small>';
+                            $html .= '</div>';
+                        }
+                    } else {
+                        $html .= '<span class="text-muted">Chưa có biến thể</span>';
+                    }
+                }
+
+                $html .= '</div>';
+                return new HtmlString($html);
             })
             ->addColumn('actions', function ($product) {
                 $editUrl = route('admin.product.edit', $product);
                 $deleteUrl = route('admin.product.destroy', $product);
+                $toggleStatusUrl = route('admin.product.toggleStatus', $product);
 
                 $html = '<div class="d-flex gap-2">';
-                $html .= '<a href="' . $editUrl . '" class="btn btn-sm btn-warning mr-2">Sửa</a>';
-                $html .= '<form action="' . $deleteUrl . '" method="POST" class="d-inline">';
+                $html .= '<a href="' . $editUrl . '" class="btn btn-sm btn-warning" data-toggle="tooltip" title="Sửa sản phẩm" style="margin-right: 2%;"><i class="fas fa-edit"></i></a>';
+                $html .= '<form action="' . $deleteUrl . '" method="POST" class="d-inline" style="margin-right: 2%;">';
                 $html .= csrf_field();
                 $html .= method_field('DELETE');
-                $html .= '<button type="submit" class="btn btn-sm btn-danger" onclick="return confirm(\'Bạn có chắc chắn muốn xóa?\')">Xóa</button>';
+                $html .= '<button type="submit" class="btn btn-sm btn-danger" onclick="return confirm(\'Bạn có chắc chắn muốn xóa?\')" data-toggle="tooltip" title="Xóa sản phẩm"><i class="fas fa-trash"></i></button>';
+                $html .= '</form>';
+                $html .= '<form action="' . $toggleStatusUrl . '" method="POST" class="d-inline">';
+                $html .= csrf_field();
+                $html .= method_field('PATCH');
+                $html .= '<button type="submit" class="btn btn-sm ' . ($product->status == 1 ? 'btn-success' : 'btn-secondary') . '" data-toggle="tooltip" title="' . ($product->status == 1 ? 'Hiển thị sản phẩm' : 'Ẩn sản phẩm') . '"><i class="fas ' . ($product->status == 1 ? 'fa-eye' : 'fa-eye-slash') . '"></i></button>';
                 $html .= '</form>';
                 $html .= '</div>';
 
@@ -62,49 +111,52 @@ class ProductController extends Controller
                 return $product->created_at->format('d/m/Y');
             })
             ->editColumn('title', function ($product) {
-                return Str::limit($product->title, 30, '...');
+                return '<span data-toggle="tooltip" title="' . $product->title . '">' . Str::limit($product->title, 30, '...') . '</span>';
             })
             ->editColumn('qty', function ($product) {
-                $html = '<span class="badge badge-success">Còn: ' . $product->qty . '</span>';
+                $html = '<div>';
+                if ($product->product_type == "single") {
+                    $html .= '<span class="badge badge-' . ($product->qty > 0 ? 'success' : 'danger') . '">Còn: ' . $product->qty . '</span>';
+                }
+                if ($product->product_type == "variant") {
+                    foreach ($product->productVariants as $variant) {
+                        $html .= '<span class="badge badge-' . ($variant->qty > 0 ? 'success' : 'danger') . ' mb-1">' . $variant->variant_name . ': ' . $variant->qty . '</span><br>';
+                    }
+                }
+                $html .= '</div>';
                 return new HtmlString($html);
             })
             ->editColumn('category', function ($product) {
+                $html = '<div>';
+                $cate = "Không có";
                 if ($product->subcategory_id && $product->subcategory && $product->subcategory->categories) {
                     $cate = $product->subcategory->categories[0]->name;
                 } elseif ($product->category_id && $product->categories) {
                     $cate = $product->categories[0]->name;
-                } else {
-                    $cate = "Không có";
                 }
-
-                $html = '<span class="badge badge-info">' . $cate . '</span>';
-                if ($product->is_featured) {
-                    $html .= '<span class="badge badge-warning">Nổi bật</span>';
+                $html .= '<span class="badge badge-info">' . $cate . '</span>';
+                if ($product->is_featured == 'yes') {
+                    $html .= '<span class="badge badge-warning ml-1">Nổi bật</span>';
                 }
-                if ($product->compare_price > 0 && $product->compare_price < $product->price) {
-                    $html .= '<span class="badge badge-danger">Giảm giá</span>';
-                }
+                $html .= '</div>';
                 return new HtmlString($html);
             })
             ->editColumn('sku', function ($product) {
-                return 'SKU-' . $product->sku;
-            })
-            ->editColumn('price', function ($product) {
-                return number_format($product->price) . ' VNĐ';
+                return '<span class="badge badge-dark">SKU-' . Str::limit($product->sku, 10, '...') . '</span>';
             })
             ->editColumn('status', function ($product) {
                 return $product->status == 1
-                    ? '<i class="fa-solid fa-circle-check text-success" style="font-size: 22px"></i>'
-                    : '<i class="fa-regular fa-circle-xmark text-danger" style="font-size: 22px"></i>';
+                    ? '<span class="badge badge-success">Hiển thị</span>'
+                    : '<span class="badge badge-danger">Ẩn</span>';
             })
-            ->rawColumns(['image', 'actions', 'status', 'qty', 'category', 'original_price', 'discount_percentage'])
+            ->rawColumns(['image', 'actions', 'status', 'qty', 'category', 'price_info', 'title', 'sku', 'brand'])
             ->make(true);
     }
 
     public function create()
     {
         $categories = Category::orderBy('name', 'asc')->get();
-        $brands = Brand::orderBy('name', 'asc')->get();
+        $brands = Brand::where('status', 1)->orderBy('name', 'asc')->get();
         $barcode = $this->generateBarcode();
         $image = null;
         $imageThumbnails = collect([]);
@@ -118,11 +170,9 @@ class ProductController extends Controller
     public function edit(Product $product)
     {
         $categories = Category::orderBy('name', 'asc')->get();
-        $brands = Brand::orderBy('name', 'asc')->get();
+        $brands = Brand::where('status', 1)->orderBy('name', 'asc')->get();
         $image = $product->productImages()->where('type', 1)->first();
         $imageThumbnails = $product->productImages()->where('type', 2)->get();
-
-        // Tạo danh sách danh mục phân cấp
         $categoryList = $this->getCategoryList();
 
         return view('layouts.pages.admin.product.upsert', compact('product', 'categories', 'brands', 'image', 'imageThumbnails', 'categoryList'));
@@ -135,20 +185,35 @@ class ProductController extends Controller
         $image = $request->input('image', null);
         $imageThumbnails = $request->input('imageThumbnails', []);
 
+        // Chuyển image thành chuỗi nếu là mảng (lấy giá trị đầu tiên)
+        if (is_array($image)) {
+            $image = !empty($image) ? $image[0] : null;
+        }
+
+        // Lọc các giá trị không rỗng từ imageThumbnails
+        $imageThumbnails = array_filter($imageThumbnails, fn($val) => !empty($val));
+
+        // Kiểm tra và giải mã specifications
+        $specifications = $request->input('specifications');
+        $specificationsArray = [];
+        if ($specifications) {
+            $specificationsArray = json_decode($specifications, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return redirect()->back()->withErrors(['specifications' => 'Dữ liệu thông số kỹ thuật không hợp lệ (JSON không đúng định dạng).']);
+            }
+        }
+
+        // Validation
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'slug' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('products')->ignore($id),
-            ],
+            'slug' => ['required', 'string', 'max:255', Rule::unique('products')->ignore($id)],
             'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'original_price' => 'nullable|numeric|min:0',
-            'discount_percentage' => 'nullable|numeric|min:0|max:100',
-            'discount_start_date' => 'nullable|date',
-            'discount_end_date' => 'nullable|date|after_or_equal:discount_start_date',
+            'price' => $request->input('product_type') == 'single' ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
+            'original_price' => $request->input('product_type') == 'single' ? 'nullable|numeric|min:0' : 'nullable|numeric|min:0',
+            'discount_percentage' => $request->input('product_type') == 'single' ? 'nullable|numeric|min:0|max:100' : 'nullable|numeric|min:0|max:100',
+            'discount_start_date' => $request->input('product_type') == 'single' ? 'nullable|date' : 'nullable|date',
+            'discount_end_date' => $request->input('product_type') == 'single' ? 'nullable|date|after_or_equal:discount_start_date' : 'nullable|date|after_or_equal:discount_start_date',
+            'qty' => $request->input('product_type') == 'single' ? 'nullable|numeric|min:0' : 'nullable|numeric|min:0',
             'status' => 'required|in:0,1',
             'category_id' => 'required|integer',
             'brand_id' => 'nullable|exists:brands,id',
@@ -156,14 +221,29 @@ class ProductController extends Controller
             'is_featured' => 'required|in:yes,no',
             'sku' => 'required|string|max:255',
             'barcode' => 'nullable|max:255',
-            'qty' => 'nullable|numeric|min:0',
-            'specifications' => 'nullable|string',
+            'specifications' => 'nullable|string', // Có thể thêm validation JSON nếu cần
             'warranty_period' => 'nullable|integer|min:0',
             'warranty_policy' => 'nullable|string',
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string',
             'meta_keywords' => 'nullable|string',
-            'variants' => 'nullable|string',
+            'imageThumbnails' => 'nullable|array',
+            'imageThumbnails.*' => 'nullable|string',
+            'variants.new.name' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
+            'variants.new.original_price' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
+            'variants.new.discounted_price' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
+            'variants.new.discount_start_date' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
+            'variants.new.discount_end_date' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
+            'variants.new.sku' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
+            'variants.new.qty' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
+            'variants.existing.name' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
+            'variants.existing.original_price' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
+            'variants.existing.discounted_price' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
+            'variants.existing.discount_start_date' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
+            'variants.existing.discount_end_date' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
+            'variants.existing.sku' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
+            'variants.existing.qty' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
+            'product_type' => 'required|in:single,variant',
         ], [
             'slug.unique' => 'Slug này đã tồn tại, vui lòng chọn tên khác.',
             'price.required' => 'Vui lòng nhập giá bán.',
@@ -174,7 +254,7 @@ class ProductController extends Controller
 
         // Xử lý category_id và subcategory_id
         $selectedCategoryId = $validated['category_id'];
-        $subcategory = Subcategory::find($selectedCategoryId);
+        $subcategory = SubCategory::find($selectedCategoryId);
         $category = Category::find($selectedCategoryId);
 
         if ($subcategory) {
@@ -187,22 +267,26 @@ class ProductController extends Controller
             return redirect()->back()->withErrors(['category_id' => 'Danh mục không hợp lệ.']);
         }
 
+        // Gán specifications vào validated
+        $validated['specifications'] = $specificationsArray; // Lưu mảng đã giải mã thay vì chuỗi JSON
         $validated['track_qty'] = $track_qty;
 
+        // Loại bỏ cột variants nếu không cần thiết
+        unset($validated['variants']);
+
         if ($product) {
+            // Cập nhật sản phẩm
             $product->update($validated);
             $message = 'Cập nhật thành công';
 
             // === Xử lý ảnh đại diện ===
-            $oldMainImage = $product->productImages->where('type', 1)->first();
+            $oldMainImage = $product->productImages()->where('type', 1)->first();
             if ($image === '') {
-                // Người dùng xóa ảnh đại diện
                 if ($oldMainImage) {
                     Storage::disk('public')->delete($oldMainImage->image);
                     $oldMainImage->delete();
                 }
             } elseif (!empty($image) && $image !== ($oldMainImage->image ?? '')) {
-                // Có ảnh mới và khác với ảnh cũ
                 if ($oldMainImage) {
                     Storage::disk('public')->delete($oldMainImage->image);
                     $oldMainImage->delete();
@@ -213,26 +297,22 @@ class ProductController extends Controller
                     'image' => $image
                 ]);
             }
-            // Nếu $image là null hoặc giống ảnh cũ, giữ nguyên ảnh hiện tại
 
             // === Xử lý ảnh thumbnails ===
-            $oldThumbnails = $product->productImages->where('type', 2);
+            $oldThumbnails = $product->productImages()->where('type', 2)->get();
             $existingThumbnailPaths = $oldThumbnails->pluck('image')->toArray();
-            $newThumbnails = array_filter($imageThumbnails, fn($val) => !empty($val));
 
-            if (empty($newThumbnails) && $request->has('imageThumbnails')) {
-                // Người dùng xóa hết thumbnail
+            if (empty($imageThumbnails) && $request->has('imageThumbnails')) {
                 foreach ($oldThumbnails as $thumbnail) {
                     Storage::disk('public')->delete($thumbnail->image);
                     $thumbnail->delete();
                 }
-            } elseif (!empty($newThumbnails) && $newThumbnails !== $existingThumbnailPaths) {
-                // Có thay đổi trong thumbnail
+            } elseif (!empty($imageThumbnails) && array_diff($imageThumbnails, $existingThumbnailPaths)) {
                 foreach ($oldThumbnails as $thumbnail) {
                     Storage::disk('public')->delete($thumbnail->image);
                     $thumbnail->delete();
                 }
-                foreach ($newThumbnails as $thumbnail) {
+                foreach ($imageThumbnails as $thumbnail) {
                     ProductImage::create([
                         'product_id' => $product->id,
                         'type' => 2,
@@ -240,8 +320,61 @@ class ProductController extends Controller
                     ]);
                 }
             }
-            // Nếu không có thay đổi, giữ nguyên thumbnail hiện tại
+
+            // === Xử lý biến thể hiện có ===
+            if ($request->has('variants.existing.name')) {
+                $existingVariants = $product->productVariants->keyBy('id');
+                $existingNames = $request->input('variants.existing.name', []);
+                $existingOriginalPrices = $request->input('variants.existing.original_price', []);
+                $existingDiscountedPrices = $request->input('variants.existing.discounted_price', []);
+                $existingDiscountStartDates = $request->input('variants.existing.discount_start_date', []);
+                $existingDiscountEndDates = $request->input('variants.existing.discount_end_date', []);
+                $existingSkus = $request->input('variants.existing.sku', []);
+                $existingQtys = $request->input('variants.existing.qty', []);
+
+                foreach ($existingNames as $variantId => $name) {
+                    if (isset($existingVariants[$variantId]) && !empty($name)) {
+                        $existingVariants[$variantId]->update([
+                            'variant_name' => $name,
+                            'price' => $existingOriginalPrices[$variantId] ?? 0,
+                            'discounted_price' => $existingDiscountedPrices[$variantId] ?? null,
+                            'discount_start_date' => $existingDiscountStartDates[$variantId] ?? null,
+                            'discount_end_date' => $existingDiscountEndDates[$variantId] ?? null,
+                            'sku' => $existingSkus[$variantId] ?? '',
+                            'qty' => $existingQtys[$variantId] ?? 0,
+                        ]);
+                    }
+                }
+                $existingVariantIds = $existingVariants->keys()->toArray();
+                $keptVariantIds = array_keys(array_filter($existingNames, 'strlen'));
+                $variantsToDelete = array_diff($existingVariantIds, $keptVariantIds);
+                $product->productVariants()->whereIn('id', $variantsToDelete)->delete();
+            }
+
+            // === Xử lý biến thể mới ===
+            if ($request->has('variants.new.name')) {
+                $newNames = $request->input('variants.new.name', []);
+                $newOriginalPrices = $request->input('variants.new.original_price', []);
+                $newDiscountedPrices = $request->input('variants.new.discounted_price', []);
+                $newDiscountStartDates = $request->input('variants.new.discount_start_date', []);
+                $newDiscountEndDates = $request->input('variants.new.discount_end_date', []);
+                $newSkus = $request->input('variants.new.sku', []);
+                $newQtys = $request->input('variants.new.qty', []);
+
+                foreach (array_filter($newNames) as $index => $name) {
+                    $product->productVariants()->create([
+                        'variant_name' => $name,
+                        'price' => $newOriginalPrices[$index] ?? 0,
+                        'discounted_price' => $newDiscountedPrices[$index] ?? null,
+                        'discount_start_date' => $newDiscountStartDates[$index] ?? null,
+                        'discount_end_date' => $newDiscountEndDates[$index] ?? null,
+                        'sku' => $newSkus[$index] ?? '',
+                        'qty' => $newQtys[$index] ?? 0,
+                    ]);
+                }
+            }
         } else {
+            // Tạo mới sản phẩm
             $product = Product::create($validated);
             $message = 'Thêm mới thành công';
 
@@ -254,6 +387,28 @@ class ProductController extends Controller
                     if (!empty($thumbnail)) {
                         ProductImage::create(['product_id' => $product->id, 'type' => 2, 'image' => $thumbnail]);
                     }
+                }
+            }
+
+            if ($request->has('variants.new.name')) {
+                $newNames = $request->input('variants.new.name', []);
+                $newOriginalPrices = $request->input('variants.new.original_price', []);
+                $newDiscountedPrices = $request->input('variants.new.discounted_price', []);
+                $newDiscountStartDates = $request->input('variants.new.discount_start_date', []);
+                $newDiscountEndDates = $request->input('variants.new.discount_end_date', []);
+                $newSkus = $request->input('variants.new.sku', []);
+                $newQtys = $request->input('variants.new.qty', []);
+
+                foreach (array_filter($newNames) as $index => $name) {
+                    $product->productVariants()->create([
+                        'variant_name' => $name,
+                        'price' => $newOriginalPrices[$index] ?? 0,
+                        'discounted_price' => $newDiscountedPrices[$index] ?? null,
+                        'discount_start_date' => $newDiscountStartDates[$index] ?? null,
+                        'discount_end_date' => $newDiscountEndDates[$index] ?? null,
+                        'sku' => $newSkus[$index] ?? '',
+                        'qty' => $newQtys[$index] ?? 0,
+                    ]);
                 }
             }
         }
@@ -270,6 +425,8 @@ class ProductController extends Controller
     public function massDestroy(Request $request)
     {
         $request->validate(['ids' => 'required|array', 'ids.*' => 'exists:products,id']);
+
+        ProductVariant::whereIn('product_id', $request->ids)->delete();
         Product::whereIn('id', $request->ids)->delete();
 
         return response()->json(['success' => 'success', 'message' => 'Xóa hàng loạt thành công']);
@@ -328,5 +485,13 @@ class ProductController extends Controller
         }
 
         return $categoryList;
+    }
+    public function toggleStatus(Product $product)
+    {
+        $product->update([
+            'status' => $product->status == 1 ? 0 : 1
+        ]);
+
+        return redirect()->route('admin.product.index')->with(['status' => 'success', 'message' => 'Cập nhật trạng thái thành công']);
     }
 }

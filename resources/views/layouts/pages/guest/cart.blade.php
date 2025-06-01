@@ -37,17 +37,21 @@
                                 <div class="col-sm-5 col-xs-12">
                                     <div class="media">
                                         <div class="media-left">
-                                            <img src="{{ asset($item->product->image ?? 'asset/guest/img/product01.png') }}"
+                                            <img src="{{ asset('storage/' . $item->product->productImages->where('type', 1)->first()->image ?? 'asset/guest/img/product01.png') }}"
                                                 alt="{{ $item->product->title }}" class="media-object product-image">
                                         </div>
                                         <div class="media-body">
                                             <h4 class="media-heading">{{ $item->product->title }}</h4>
-                                            <p class="text-muted">Màu: {{ $item->color ?? 'N/A' }}</p>
+                                            <p class="text-muted">Màu:
+                                                {{ isset($item->productVariant) ? $item->productVariant->variant_name : 'N/A' }}
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-sm-2 col-xs-12 text-center">
-                                    <p class="item-price">{{ number_format($item->product->price) }} vnđ</p>
+                                    <p class="item-price">
+                                        {{ isset($item->productVariant) ? number_format($item->productVariant->price) : number_format($item->product->price) }}
+                                        vnđ</p>
                                 </div>
                                 <div class="col-sm-2 col-xs-12 text-center">
                                     <div class="input-group input-group-sm quantity-control">
@@ -245,6 +249,8 @@
             if (this.value < 1) {
                 this.value = 1;
             }
+            console.log(this.value);
+            
         });
     });
 </script>

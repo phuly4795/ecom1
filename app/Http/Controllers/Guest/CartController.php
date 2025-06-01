@@ -105,7 +105,7 @@ class CartController extends Controller
         $qty = max(1, (int) $request->input('qty', 1)); // Đảm bảo >= 1
         $userId = auth()->check() ? auth()->id() : null;
         $sessionId = session()->getId();
-
+        $productVariantId = $request->input('product_variant_id', null);
         // 1. Tìm hoặc tạo giỏ hàng của người dùng / khách
         $cart = Cart::firstOrCreate(
             ['user_id' => $userId, 'session_id' => $userId ? null : $sessionId]
@@ -114,6 +114,7 @@ class CartController extends Controller
         // 2. Kiểm tra sản phẩm đã có trong giỏ chưa
         $cartDetail = CartDetail::where('cart_id', $cart->id)
             ->where('product_id', $productId)
+            ->where('product_variant_id', $productVariantId)
             ->first();
 
         if ($cartDetail) {
@@ -127,6 +128,7 @@ class CartController extends Controller
                 'product_id' => $productId,
                 'qty'        => $qty,
                 'price'      => $product->price,
+                'product_variant_id' => $productVariantId
             ]);
         }
 
@@ -165,5 +167,39 @@ class CartController extends Controller
         $userInfo = Auth::user();
 
         return view('layouts.pages.guest.checkout', compact('cartItems', 'subtotal', 'shippingFee', 'discount', 'total', 'provinces', 'userInfo', 'cart'));
+    }
+
+    public function updateQty(Request $request, $productId)
+    {
+        $product = Product::findOrFail($productId);
+        $qty = max(1, (int) $request->input('qty', 1)); // Đảm bảo >= 1
+        $userId = auth()->check() ? auth()->id() : null;
+        $sessionId = session()->getId();
+        $productVariantId = $request->input('product_variant_id', null);
+        // 1. Tìm hoặc tạo giỏ hàng của người dùng / khách
+        $cart = Cart::firstOrCreate(
+            ['user_id' => $userId, 'session_id' => $userId ? null : $sessionId]
+        );
+
+        // 2. Kiểm tra sản phẩm đã có trong giỏ chưa
+        $cartDetail = CartDetail::where('cart_id', $cart->id)
+            ->where('product_id', $productId)
+            ->where('product_variant_id', $productVariantId)
+            ->first();
+
+        if ($cartDetail) {
+            // Nếu đã có → tăng số lượng
+            $cartDetail->qty = $cartDetail->qty + $qty;
+            $cartDetail->save();
+        } else {
+            // Nếu chưa có → thêm mới
+            CartDetail::create([
+                'cart_id'    => $cart->id,
+                'product_id' => $productId,
+                'qty'        => $qty,
+                'price'      => $product->price,
+                'product_variant_id' => $productVariantId
+            ]);
+        }
     }
 }

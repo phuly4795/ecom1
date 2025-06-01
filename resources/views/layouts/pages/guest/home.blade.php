@@ -56,8 +56,8 @@
                                         <div class="product">
                                             <div class="product-img">
                                                 @php
-                                                    $image = $item->productImages->where('type', 1)->first()->image;
-
+                                                    $image =
+                                                        $item->productImages->where('type', 1)->first()->image ?? '';
                                                     $imagePath = $image
                                                         ? asset('storage/' . $image)
                                                         : asset('asset/img/no-image.png');
@@ -83,13 +83,15 @@
                                                 </div>
                                             </div>
                                             <div class="product-body">
-                                                <p class="product-category">{{ $item->category ? $item->category->name : ($item->subCategory ? $item->subCategory->categories->pluck('name')->implode(', ') : "Chưa có" ) }}</p>
+                                                <p class="product-category">
+                                                    {{ $item->category ? $item->category->name : ($item->subCategory ? $item->subCategory->categories->pluck('name')->implode(', ') : 'Chưa có') }}
+                                                </p>
                                                 <h3 class="product-name"><a
                                                         href="{{ route('product.show', ['slug' => $item->slug]) }}">{{ $item->title }}</a>
                                                 </h3>
                                                 <h4 class="product-price"> {{ number_format($item->price) }} vnđ<del
                                                         class="product-old-price">{{ $item->compare_price != 0 ? number_format($item->compare_price) . ' vnđ' : '' }}
-                                                        </del></h4>
+                                                    </del></h4>
                                                 <div class="product-rating">
                                                     <i class="fa fa-star"></i>
                                                     <i class="fa fa-star"></i>

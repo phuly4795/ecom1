@@ -133,22 +133,19 @@
                         <div class="order-products">
                             @foreach ($cart->cartDetails as $item)
                                 <div class="order-col">
-                                    <div>{{$item->qty}}x {{$item->product->name}}</div>
-                                    <div>{{number_format($item->price). " VNĐ"}}</div>
+                                    <div>{{ $item->qty }}x {{ Str::limit($item->product->title, 30, '...') }}</div>
+                                    <div>{{ number_format($item->price) . ' VNĐ' }}</div>
                                 </div>
                             @endforeach
-                            {{-- <div class="order-col">
-                                <div>2x Product Name Goes Here</div>
-                                <div>$980.00</div>
-                            </div> --}}
+
                         </div>
                         <div class="order-col">
                             <div>Vận chuyển</div>
-                            <div><strong>FREE</strong></div>
+                            <div><strong>Miễn phí</strong></div>
                         </div>
                         <div class="order-col">
-                            <div><strong>TOTAL</strong></div>
-                            <div><strong class="order-total">{{number_format($item->total). " VNĐ"}}</strong></div>
+                            <div><strong>Tổng tiền</strong></div>
+                            <div><strong class="order-total">{{ number_format($total) . ' VNĐ' }}</strong></div>
                         </div>
                     </div>
                     <div class="payment-method">
@@ -156,7 +153,7 @@
                             <input type="radio" name="payment" id="payment-1">
                             <label for="payment-1">
                                 <span></span>
-                                Direct Bank Transfer
+                                Thanh toán tiền mặt
                             </label>
                             <div class="caption">
                                 <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor
@@ -189,11 +186,10 @@
                     <div class="input-checkbox">
                         <input type="checkbox" id="terms">
                         <label for="terms">
-                            <span></span>
-                            I've read and accept the <a href="#">terms & conditions</a>
+                            <span></span>Tôi đã đọc và chấp nhận các <a href="#">điều khoản và điều kiện</a>
                         </label>
                     </div>
-                    <a href="#" class="primary-btn order-submit">Place order</a>
+                    <a href="#" class="primary-btn order-submit">Đặt hàng</a>
                 </div>
                 <!-- /Order Details -->
             </div>

@@ -19,7 +19,7 @@
 
         <form
             action="{{ isset($product->id) ? route('admin.product.update', $product->id) : route('admin.product.store') }}"
-            method="POST" enctype="multipart/form-data">
+            method="POST" enctype="multipart/form-data" id="product-form">
             @csrf
             @if (isset($product->id))
                 @method('PUT')
@@ -28,6 +28,24 @@
             <div class="row">
                 <div class="col-md-8">
                     <div class="card p-4 mb-3 shadow-sm rounded bg-white">
+                        <div class="mb-3">
+                            @if (!isset($product->id))
+                                <label for="product_type" class="form-label h5 mb-3" style="font-weight: 700">Loại sản
+                                    phẩm</label>
+                                <select name="product_type" id="product_type" class="form-control" required>
+                                    <option value="single" {{ old('product_type') == 'single' ? 'selected' : '' }}>Sản
+                                        phẩm đơn</option>
+                                    <option value="variant" {{ old('product_type') == 'variant' ? 'selected' : '' }}>Sản
+                                        phẩm biến thể</option>
+                                </select>
+                            @else
+                                <label class="form-label h5 mb-3" style="font-weight: 700">Loại sản phẩm</label>
+                                <p class="form-control-static">
+                                    {{ $product->product_type == 'single' ? 'Sản phẩm đơn' : 'Sản phẩm biến thể' }}</p>
+                                <input type="hidden" name="product_type" value="{{ $product->product_type }}">
+                            @endif
+                        </div>
+
                         <div class="mb-3">
                             <label for="name" class="form-label h5 mb-3" style="font-weight: 700">Tên sản
                                 phẩm</label>
@@ -49,17 +67,85 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="specifications" class="form-label h5 mb-3" style="font-weight: 700">Thông số kỹ
-                                thuật</label>
-                            <textarea name="specifications" id="specifications" class="form-control" rows="5"
-                                placeholder="Nhập thông số (ví dụ: CPU: Intel i5, RAM: 8GB...)">{{ old('specifications', $product->specifications ?? '') }}</textarea>
+                            <label class="form-label h5" style="font-weight: 700">Thông số kỹ thuật</label>
+                            <div id="specifications-groups">
+                                @if (isset($product->id) && !empty($product->specifications))
+                                    @php
+                                        $groupIndex = 0;
+                                    @endphp
+                                    @foreach ($product->specifications as $groupName => $items)
+                                        <div class="spec-group border rounded p-3 mb-3"
+                                            data-index="{{ $groupIndex }}">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <input type="text" name="groups[{{ $groupIndex }}][name]"
+                                                    class="form-control me-2"
+                                                    placeholder="Tên nhóm (VD: Thông tin chung)"
+                                                    value="{{ $groupName }}" />
+                                                <button type="button"
+                                                    class="btn btn-danger btn-sm remove-group">X</button>
+                                            </div>
+                                            <div class="spec-items">
+                                                @php
+                                                    $itemIndex = 0;
+                                                @endphp
+                                                @foreach ($items as $key => $value)
+                                                    <div class="input-group mb-2">
+                                                        <input type="text"
+                                                            name="groups[{{ $groupIndex }}][items][{{ $itemIndex }}][key]"
+                                                            class="form-control"
+                                                            placeholder="Thuộc tính (VD: Loại sản phẩm)"
+                                                            value="{{ $key }}" />
+                                                        <input type="text"
+                                                            name="groups[{{ $groupIndex }}][items][{{ $itemIndex }}][value]"
+                                                            class="form-control"
+                                                            placeholder="Giá trị (VD: Loa bluetooth)"
+                                                            value="{{ $value }}" />
+                                                        <button type="button"
+                                                            class="btn btn-outline-secondary btn-sm add-item">+</button>
+                                                    </div>
+                                                    @php
+                                                        $itemIndex++;
+                                                    @endphp
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                        @php
+                                            $groupIndex++;
+                                        @endphp
+                                    @endforeach
+                                @else
+                                    <!-- Nhóm thông số đầu tiên -->
+                                    <div class="spec-group border rounded p-3 mb-3" data-index="0">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <input type="text" name="groups[0][name]" class="form-control me-2"
+                                                placeholder="Tên nhóm (VD: Thông tin chung)" />
+                                            <button type="button" class="btn btn-danger btn-sm remove-group">X</button>
+                                        </div>
+                                        <div class="spec-items">
+                                            <div class="input-group mb-2">
+                                                <input type="text" name="groups[0][items][0][key]"
+                                                    class="form-control"
+                                                    placeholder="Thuộc tính (VD: Loại sản phẩm)" />
+                                                <input type="text" name="groups[0][items][0][value]"
+                                                    class="form-control" placeholder="Giá trị (VD: Loa bluetooth)" />
+                                                <button type="button"
+                                                    class="btn btn-outline-secondary btn-sm add-item">+</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+
+                            <button type="button" class="btn btn-primary btn-sm" id="add-group">+ Thêm nhóm</button>
+
+                            <input type="hidden" name="specifications" id="specifications-json" value="{}">
                         </div>
                     </div>
 
                     <div class="card p-4 mb-3 shadow-sm rounded bg-white">
                         <div class="mb-3">
-                            <label for="image-dropzone" class="form-label h5 mb-3" style="font-weight: 700">Hình ảnh đại
-                                diện</label>
+                            <label for="image-dropzone" class="form-label h5 mb-3" style="font-weight: 700">Hình ảnh
+                                đại diện</label>
                             <div class="dropzone" id="image-dropzone"></div>
                             <input type="hidden" name="image" id="image-main-hidden"
                                 value="{{ old('image', $image ? $image->image : '') }}">
@@ -77,20 +163,41 @@
                             @enderror
                         </div>
                     </div>
-
                     <div class="card p-4 mb-3 shadow-sm rounded bg-white">
+                        <div class="mb-3">
+                            <label class="form-label h5 mb-3" style="font-weight: 700">Quản lý kho</label>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="sku" class="form-label">SKU (Mã hàng hóa)</label>
+                                    <input type="text" name="sku" id="sku" class="form-control"
+                                        required placeholder="Nhập mã hàng hóa"
+                                        value="{{ old('sku', $product->sku ?? '') }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="barcode" class="form-label">Mã vạch</label>
+                                    <input type="text" name="barcode" id="barcode" class="form-control"
+                                        placeholder="Nhập mã vạch"
+                                        value="{{ old('barcode', $product->barcode ?? ($barcode ?? '')) }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Phần Giá sản phẩm (Sản phẩm đơn) -->
+                    <div class="card p-4 mb-3 shadow-sm rounded bg-white product_single"
+                        style="{{ (!isset($product->id) && old('product_type') != 'single') || (isset($product->id) && $product->product_type != 'single') ? 'display: none;' : '' }}">
                         <div class="mb-3">
                             <label class="form-label h5 mb-3" style="font-weight: 700">Giá sản phẩm</label>
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label for="price" class="form-label">Giá bán</label>
-                                    <input type="number" name="price" id="price" class="form-control" required
-                                        placeholder="Nhập giá bán" value="{{ old('price', $product->price ?? '') }}">
+                                    <input type="number" name="price" id="price" class="form-control"
+                                        required placeholder="Nhập giá bán"
+                                        value="{{ old('price', $product->price ?? '') }}">
                                 </div>
                                 <div class="col-md-6">
                                     <label for="original_price" class="form-label">Giá gốc</label>
-                                    <input type="number" name="original_price" id="original_price" class="form-control"
-                                        placeholder="Nhập giá gốc"
+                                    <input type="number" name="original_price" id="original_price"
+                                        class="form-control" placeholder="Nhập giá gốc"
                                         value="{{ old('original_price', $product->original_price ?? '') }}">
                                 </div>
                             </div>
@@ -114,48 +221,118 @@
                                         class="form-control"
                                         value="{{ old('discount_end_date', $product->discount_end_date ?? '') }}">
                                 </div>
+                                <div class="col-md-6 mt-3">
+                                    <label for="qty" class="form-label">Số lượng</label>
+                                    <input type="number" name="qty" id="qty" class="form-control"
+                                        value="{{ old('qty', $product->qty ?? '') }}">
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="card p-4 mb-3 shadow-sm rounded bg-white">
+                    <!-- Phần Biến thể sản phẩm -->
+                    <div class="card p-4 mb-3 shadow-sm rounded bg-white product_variations"
+                        style="{{ (!isset($product->id) && old('product_type') != 'variant') || (isset($product->id) && $product->product_type != 'variant') ? 'display: none;' : '' }}">
                         <div class="mb-3">
-                            <label class="form-label h5 mb-3" style="font-weight: 700">Quản lý kho</label>
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="sku" class="form-label">SKU (Mã hàng hóa)</label>
-                                    <input type="text" name="sku" id="sku" class="form-control"
-                                        required placeholder="Nhập mã hàng hóa"
-                                        value="{{ old('sku', $product->sku ?? '') }}">
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="barcode" class="form-label">Mã vạch</label>
-                                    <input type="text" name="barcode" id="barcode" class="form-control"
-                                        placeholder="Nhập mã vạch"
-                                        value="{{ old('barcode', $product->barcode ?? ($barcode ?? '')) }}">
-                                </div>
-                            </div>
+                            <label class="form-label h5 mb-3" style="font-weight: 700">Biến thể sản phẩm</label>
                             <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group form-check">
-                                        <input type="checkbox" name="track_qty" id="track_qty"
-                                            class="form-check-input form-switch"
-                                            {{ old('track_qty', $product->track_qty ?? 'yes') == 'yes' ? 'checked' : '' }}>
-                                        <label for="track_qty" class="form-check-label">Kiểm soát tồn kho</label>
+                                <div class="col-md-12">
+                                    <div id="variant-container">
+                                        @if (isset($product->id) && $product->product_type == 'variant' && $product->productVariants->isNotEmpty())
+                                            @foreach ($product->productVariants as $variant)
+                                                <div class="variant-row row mb-3">
+                                                    <div class="col-md-2">
+                                                        <input type="text"
+                                                            name="variants[existing][name][{{ $variant->id }}]"
+                                                            class="form-control"
+                                                            placeholder="Tên biến thể (VD: Size S)"
+                                                            value="{{ $variant->variant_name }}">
+                                                    </div>
+                                                    <div class="col-md-2">
+                                                        <input type="number"
+                                                            name="variants[existing][original_price][{{ $variant->id }}]"
+                                                            class="form-control" placeholder="Giá gốc"
+                                                            value="{{ $variant->price }}">
+                                                    </div>
+                                                    <div class="col-md-2">
+                                                        <input type="number"
+                                                            name="variants[existing][discounted_price][{{ $variant->id }}]"
+                                                            class="form-control" placeholder="Giá giảm"
+                                                            value="{{ $variant->discounted_price ?? '' }}">
+                                                    </div>
+                                                    <div class="col-md-2">
+                                                        <input type="date"
+                                                            name="variants[existing][discount_start_date][{{ $variant->id }}]"
+                                                            class="form-control" placeholder="Ngày bắt đầu giảm giá"
+                                                            value="{{ optional($variant->discount_start_date)->format('Y-m-d') ?? '' }}">
+                                                    </div>
+                                                    <div class="col-md-2">
+                                                        <input type="date"
+                                                            name="variants[existing][discount_end_date][{{ $variant->id }}]"
+                                                            class="form-control" placeholder="Ngày kết thúc giảm giá"
+                                                            value="{{ optional($variant->discount_end_date)->format('Y-m-d') ?? '' }}">
+                                                    </div>
+                                                    <div class="col-md-2">
+                                                        <input type="text"
+                                                            name="variants[existing][sku][{{ $variant->id }}]"
+                                                            class="form-control" placeholder="SKU"
+                                                            value="{{ $variant->sku }}">
+                                                    </div>
+                                                    <div class="col-md-2">
+                                                        <input type="number"
+                                                            name="variants[existing][qty][{{ $variant->id }}]"
+                                                            class="form-control" placeholder="Số lượng"
+                                                            value="{{ $variant->qty }}">
+                                                    </div>
+                                                    <div class="col-md-2">
+                                                        <button type="button"
+                                                            class="btn btn-danger remove-variant">Xóa</button>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        @endif
+                                        <div class="variant-row row mb-3">
+                                            <div class="col-md-2">
+                                                <input type="text" name="variants[new][name][]"
+                                                    class="form-control" placeholder="Tên biến thể (VD: Size S)"
+                                                    value="{{ old('variants.new.name.0') }}">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <input type="number" name="variants[new][original_price][]"
+                                                    class="form-control" placeholder="Giá gốc"
+                                                    value="{{ old('variants.new.original_price.0') }}">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <input type="number" name="variants[new][discounted_price][]"
+                                                    class="form-control" placeholder="Giá giảm"
+                                                    value="{{ old('variants.new.discounted_price.0') }}">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <input type="date" name="variants[new][discount_start_date][]"
+                                                    class="form-control" placeholder="Ngày bắt đầu giảm giá"
+                                                    value="{{ old('variants.new.discount_start_date.0') }}">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <input type="date" name="variants[new][discount_end_date][]"
+                                                    class="form-control" placeholder="Ngày kết thúc giảm giá"
+                                                    value="{{ old('variants.new.discount_end_date.0') }}">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <input type="text" name="variants[new][sku][]"
+                                                    class="form-control" placeholder="SKU"
+                                                    value="{{ old('variants.new.sku.0') }}">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <input type="number" name="variants[new][qty][]"
+                                                    class="form-control" placeholder="Số lượng"
+                                                    value="{{ old('variants.new.qty.0') }}">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <button type="button"
+                                                    class="btn btn-success add-variant">Thêm</button>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <label for="qty" class="form-label">Số lượng</label>
-                                    <input type="number" name="qty" id="qty" class="form-control"
-                                        placeholder="Nhập số lượng" value="{{ old('qty', $product->qty ?? '') }}">
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="variants" class="form-label">Biến thể (Ví dụ: 256GB Đen: 10)</label>
-                                    <input type="text" name="variants" id="variants" class="form-control"
-                                        placeholder="Nhập biến thể"
-                                        value="{{ old('variants', $product->variants ?? '') }}">
                                 </div>
                             </div>
                         </div>
@@ -279,6 +456,109 @@
     </div>
 
     <script>
+        let groupIndex =
+            {{ isset($product->id) && !empty($product->specifications) ? count($product->specifications) : 1 }};
+
+        // Thêm nhóm thông số mới
+        document.getElementById('add-group').addEventListener('click', function() {
+            const container = document.getElementById('specifications-groups');
+            const html = `
+                <div class="spec-group border rounded p-3 mb-3" data-index="${groupIndex}">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <input type="text" name="groups[${groupIndex}][name]" class="form-control me-2" placeholder="Tên nhóm" />
+                        <button type="button" class="btn btn-danger btn-sm remove-group">X</button>
+                    </div>
+                    <div class="spec-items">
+                        <div class="input-group mb-2">
+                            <input type="text" name="groups[${groupIndex}][items][0][key]" class="form-control" placeholder="Thuộc tính" />
+                            <input type="text" name="groups[${groupIndex}][items][0][value]" class="form-control" placeholder="Giá trị" />
+                            <button type="button" class="btn btn-outline-secondary btn-sm add-item">+</button>
+                        </div>
+                    </div>
+                </div>`;
+            container.insertAdjacentHTML('beforeend', html);
+            groupIndex++;
+        });
+
+        // Xử lý sự kiện click (xóa nhóm hoặc thêm dòng thông số)
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-group')) {
+                if (confirm('Bạn có chắc chắn muốn xóa nhóm này không?')) {
+                    e.target.closest('.spec-group').remove();
+                }
+            }
+
+            if (e.target.classList.contains('add-item')) {
+                const group = e.target.closest('.spec-group');
+                const itemsContainer = group.querySelector('.spec-items');
+                const groupId = group.dataset.index;
+                const itemCount = itemsContainer.querySelectorAll('.input-group').length;
+
+                const itemHtml = `
+                    <div class="input-group mb-2">
+                        <input type="text" name="groups[${groupId}][items][${itemCount}][key]" class="form-control" placeholder="Thuộc tính" />
+                        <input type="text" name="groups[${groupId}][items][${itemCount}][value]" class="form-control" placeholder="Giá trị" />
+                        <button type="button" class="btn btn-outline-secondary btn-sm add-item">+</button>
+                    </div>`;
+                itemsContainer.insertAdjacentHTML('beforeend', itemHtml);
+            }
+        });
+
+        // Xử lý form submit
+        document.getElementById('product-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            console.log('Form submit triggered');
+
+            try {
+                const specData = {};
+                const specGroups = document.querySelectorAll('.spec-group');
+                console.log('Number of spec groups:', specGroups.length);
+
+                specGroups.forEach(group => {
+                    const groupNameInput = group.querySelector('input[name*="[name]"]');
+                    const groupName = groupNameInput ? groupNameInput.value.trim() : '';
+                    if (!groupName) {
+                        console.warn('Skipping group with empty name');
+                        return;
+                    }
+
+                    specData[groupName] = {};
+                    const inputRows = group.querySelectorAll('.input-group');
+                    inputRows.forEach(row => {
+                        const keyInput = row.querySelector('input[name*="[key]"]');
+                        const valueInput = row.querySelector('input[name*="[value]"]');
+                        const key = keyInput ? keyInput.value.trim() : '';
+                        const value = valueInput ? valueInput.value.trim() : '';
+                        if (key) {
+                            specData[groupName][key] = value;
+                        }
+                    });
+
+                    if (Object.keys(specData[groupName]).length === 0) {
+                        delete specData[groupName];
+                    }
+                });
+
+                const jsonString = Object.keys(specData).length > 0 ? JSON.stringify(specData) : '{}';
+                console.log('specData:', specData);
+                console.log('JSON string:', jsonString);
+
+                const specInput = document.getElementById('specifications-json');
+                if (specInput) {
+                    specInput.value = jsonString;
+                    console.log('Input value set:', specInput.value);
+                } else {
+                    console.error('Hidden input #specifications-json not found');
+                }
+
+                this.submit();
+            } catch (error) {
+                console.error('Error processing specifications:', error);
+                alert('Có lỗi khi xử lý thông số kỹ thuật. Vui lòng kiểm tra console và thử lại.');
+            }
+        });
+
+        // CKEditor for description
         ClassicEditor.create(document.querySelector('#description'), {
                 toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote'],
             })
@@ -286,8 +566,9 @@
                 editor.ui.view.editable.element.style.maxHeight = "200px";
                 editor.ui.view.editable.element.style.overflowY = "auto";
             })
-            .catch(error => console.error(error));
+            .catch(error => console.error('CKEditor error:', error));
 
+        // Slug generation
         function slugify(str) {
             return str.toLowerCase()
                 .replace(/đ/g, 'd')
@@ -309,6 +590,7 @@
             }
         });
 
+        // Dropzone for main image
         Dropzone.autoDiscover = false;
         const dropzone = new Dropzone("#image-dropzone", {
             url: "{{ route('admin.product.uploadImage') }}",
@@ -334,32 +616,26 @@
                     document.getElementById('image-main-hidden').value = "{{ $image->image }}";
                     mockFile.storedPath = "{{ $image->image }}";
                 @endif
-
-                // Lưu giá trị ban đầu của ảnh đại diện
                 this.originalImageValue = document.getElementById('image-main-hidden').value;
-
-                // Khi form được submit, nếu không có thay đổi, giữ giá trị cũ
                 this.on("sending", function(file, xhr, formData) {
-                    if (!file.accepted) {
-                        formData.append('image', this.originalImageValue);
-                    }
+                    if (!file.accepted) formData.append('image', this.originalImageValue);
                 });
             },
             success: function(file, response) {
                 file.storedPath = response.filePath;
                 document.getElementById('image-main-hidden').value = response.filePath;
-                this.originalImageValue = response.filePath; // Cập nhật giá trị gốc
+                this.originalImageValue = response.filePath;
             },
             removedfile: function(file) {
                 file.previewElement.remove();
-                const hiddenInput = document.getElementById('image-main-hidden');
-                if (hiddenInput && hiddenInput.value === file.storedPath) {
-                    hiddenInput.value = ''; // Đặt thành chuỗi rỗng nếu xóa ảnh
+                if (document.getElementById('image-main-hidden').value === file.storedPath) {
+                    document.getElementById('image-main-hidden').value = '';
                     this.originalImageValue = '';
                 }
             }
         });
 
+        // Dropzone for thumbnails
         const dropzoneThumbnail = new Dropzone("#image-dropzone-thumbnail", {
             url: "{{ route('admin.product.uploadImage') }}",
             method: 'post',
@@ -385,67 +661,124 @@
                                 this.emit("thumbnail", mockFile, "{{ asset('storage/' . $thumb->image) }}");
                                 this.emit("complete", mockFile);
                                 this.files.push(mockFile);
-
                                 mockFile.storedPath = "{{ $thumb->image }}";
-
                                 let hiddenInput = document.createElement('input');
                                 hiddenInput.type = 'hidden';
                                 hiddenInput.name = 'imageThumbnails[]';
                                 hiddenInput.value = "{{ $thumb->image }}";
                                 hiddenInput.classList.add('thumb-hidden');
                                 mockFile._hiddenInput = hiddenInput;
-
                                 document.getElementById('image-dropzone-thumbnail').appendChild(hiddenInput);
-
-                                // Lưu giá trị ban đầu của thumbnail
                                 this.originalThumbnails.push("{{ $thumb->image }}");
                             }
                         @endif
                     @endforeach
                 @endif
-
-                // Khi form được submit, nếu không có thay đổi, gửi lại giá trị cũ
                 this.on("sending", function(file, xhr, formData) {
-                    if (!file.accepted) {
-                        this.originalThumbnails.forEach(function(thumb) {
-                            formData.append('imageThumbnails[]', thumb);
-                        });
-                    }
+                    if (!file.accepted) this.originalThumbnails.forEach(thumb => formData.append(
+                        'imageThumbnails[]', thumb));
                 });
             },
             success: function(file, response) {
                 file.storedPath = response.filePath;
-
                 const input = document.createElement('input');
                 input.type = 'hidden';
                 input.name = 'imageThumbnails[]';
                 input.value = response.filePath;
                 input.classList.add('thumb-hidden');
                 file._hiddenInput = input;
-
                 document.getElementById('image-dropzone-thumbnail').appendChild(input);
-
-                // Cập nhật danh sách thumbnail gốc
                 this.originalThumbnails.push(response.filePath);
             },
             removedfile: function(file) {
                 file.previewElement.remove();
-
-                if (file._hiddenInput && file._hiddenInput.parentNode) {
-                    file._hiddenInput.remove();
-                }
-
-                const inputs = document.querySelectorAll('input.thumb-hidden');
-                inputs.forEach(input => {
-                    if (input.value === file.storedPath) {
-                        input.remove();
-                    }
-                });
-
-                // Cập nhật danh sách thumbnail gốc khi xóa
+                if (file._hiddenInput) file._hiddenInput.remove();
                 const index = this.originalThumbnails.indexOf(file.storedPath);
-                if (index !== -1) {
-                    this.originalThumbnails.splice(index, 1);
+                if (index !== -1) this.originalThumbnails.splice(index, 1);
+            }
+        });
+
+        // Variant management
+        document.addEventListener('DOMContentLoaded', function() {
+            const variantContainer = document.getElementById('variant-container');
+            const addVariantBtn = document.querySelector('.add-variant');
+
+            if (addVariantBtn) {
+                addVariantBtn.addEventListener('click', function() {
+                    const newRow = document.createElement('div');
+                    newRow.classList.add('variant-row', 'row', 'mb-3');
+                    newRow.innerHTML = `
+                        <div class="col-md-2"><input type="text" name="variants[new][name][]" class="form-control" placeholder="Tên biến thể (VD: Size S)"></div>
+                        <div class="col-md-2"><input type="number" name="variants[new][original_price][]" class="form-control" placeholder="Giá gốc"></div>
+                        <div class="col-md-2"><input type="number" name="variants[new][discounted_price][]" class="form-control" placeholder="Giá giảm"></div>
+                        <div class="col-md-2"><input type="date" name="variants[new][discount_start_date][]" class="form-control" placeholder="Ngày bắt đầu giảm giá"></div>
+                        <div class="col-md-2"><input type="date" name="variants[new][discount_end_date][]" class="form-control" placeholder="Ngày kết thúc giảm giá"></div>
+                        <div class="col-md-2"><input type="text" name="variants[new][sku][]" class="form-control" placeholder="SKU"></div>
+                        <div class="col-md-2"><input type="number" name="variants[new][qty][]" class="form-control" placeholder="Số lượng"></div>
+                        <div class="col-md-2"><button type="button" class="btn btn-danger remove-variant">Xóa</button></div>
+                    `;
+                    variantContainer.insertBefore(newRow, addVariantBtn.parentElement.parentElement);
+                });
+            }
+
+            variantContainer.addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-variant')) {
+                    e.target.parentElement.parentElement.remove();
+                }
+            });
+
+            // Product type toggle
+            const productType = document.getElementById('product_type');
+            const singleSection = document.querySelector('.product_single');
+            const variantSection = document.querySelector('.product_variations');
+
+            const isUpdateMode = {!! json_encode(isset($product->id)) !!};
+            const productTypeValue = "{{ $product->product_type ?? '' }}";
+
+            if (productType) {
+                function updateSections() {
+                    const type = productType.value;
+                    if (type === 'single') {
+                        singleSection.style.display = 'block';
+                        variantSection.style.display = 'none';
+                        singleSection.querySelectorAll('input, select, textarea').forEach(input => {
+                            input.disabled = false;
+                        });
+                        variantSection.querySelectorAll('input, select, textarea').forEach(input => {
+                            input.disabled = true;
+                        });
+                    } else if (type === 'variant') {
+                        singleSection.style.display = 'none';
+                        variantSection.style.display = 'block';
+                        singleSection.querySelectorAll('input, select, textarea').forEach(input => {
+                            input.disabled = true;
+                        });
+                        variantSection.querySelectorAll('input, select, textarea').forEach(input => {
+                            input.disabled = false;
+                        });
+                    }
+                }
+                updateSections();
+                productType.addEventListener('change', updateSections);
+            } else if (isUpdateMode) {
+                if (productTypeValue === 'single') {
+                    singleSection.style.display = 'block';
+                    variantSection.style.display = 'none';
+                    singleSection.querySelectorAll('input, select, textarea').forEach(input => {
+                        input.disabled = false;
+                    });
+                    variantSection.querySelectorAll('input, select, textarea').forEach(input => {
+                        input.disabled = true;
+                    });
+                } else if (productTypeValue === 'variant') {
+                    singleSection.style.display = 'none';
+                    variantSection.style.display = 'block';
+                    singleSection.querySelectorAll('input, select, textarea').forEach(input => {
+                        input.disabled = true;
+                    });
+                    variantSection.querySelectorAll('input, select, textarea').forEach(input => {
+                        input.disabled = false;
+                    });
                 }
             }
         });
@@ -456,25 +789,7 @@
             min-height: 200px;
         }
 
-        #image-dropzone .dz-image {
-            width: 150px;
-            height: 100px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            border: 1px dashed #ccc;
-            background: #fafafa;
-        }
-
-        #image-dropzone .dz-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            border-radius: 0.5rem;
-            background-color: #f8f9fa;
-        }
-
+        #image-dropzone .dz-image,
         #image-dropzone-thumbnail .dz-image {
             width: 150px;
             height: 100px;
@@ -486,6 +801,7 @@
             background: #fafafa;
         }
 
+        #image-dropzone .dz-image img,
         #image-dropzone-thumbnail .dz-image img {
             width: 100%;
             height: 100%;

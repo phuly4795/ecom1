@@ -81,22 +81,39 @@
                                 đánh giá</a>
                         </div>
                         <div>
-                            <h3 class="product-price">
-                                {{ number_format($product->price) }} vnđ
-                                @if ($product->compare_price != 0 || $product->original_price != 0)
+                            <h3 class="product-price" id="product-price">
+                                {{ number_format($selectedVariant ? ($isDiscountActive ? $selectedVariant->discounted_price : $selectedVariant->price) : $product->price) }}
+                                vnđ
+                                @if (
+                                    ($selectedVariant && $selectedVariant->price != ($selectedVariant->discounted_price ?? $selectedVariant->price)) ||
+                                        (!$selectedVariant && ($product->compare_price != 0 || $product->original_price != 0)))
                                     <del class="product-old-price">
-                                        {{ $product->compare_price != 0 ? number_format($product->compare_price) : ($product->original_price != 0 ? number_format($product->original_price) : '') }}
+                                        {{ number_format($selectedVariant ? $selectedVariant->price : ($product->compare_price != 0 ? $product->compare_price : ($product->original_price != 0 ? $product->original_price : ''))) }}
                                         vnđ
                                     </del>
                                 @endif
-                                @if ($product->discount_percentage > 0)
+                                @php
+                                    $discountPercentage =
+                                        $selectedVariant &&
+                                        $selectedVariant->discounted_price &&
+                                        $selectedVariant->price > 0
+                                            ? round(
+                                                (($selectedVariant->price - $selectedVariant->discounted_price) /
+                                                    $selectedVariant->price) *
+                                                    100,
+                                            )
+                                            : $product->discount_percentage ?? 0;
+                                @endphp
+                                @if ($discountPercentage > 0 && $isDiscountActive)
                                     <span class="discount-label"
                                         style="color: red; font-weight: bold; margin-left: 10px;">
-                                        Giảm {{ $product->discount_percentage }}%
+                                        Giảm {{ $discountPercentage }}%
                                     </span>
                                 @endif
                             </h3>
-                            <span class="product-available">{{ $product->qty > 0 ? 'Còn hàng' : 'Hết hàng' }}</span>
+                            <span class="product-available" id="product-availability">
+                                {{ $selectedVariant ? ($selectedVariant->qty > 0 ? 'Còn hàng' : 'Hết hàng') : ($product->qty > 0 ? 'Còn hàng' : 'Hết hàng') }}
+                            </span>
                         </div>
 
                         <form action="{{ route('cart.add', $product->id) }}" method="POST">
@@ -105,11 +122,14 @@
                                 <div class="qty-label">
                                     Số lượng
                                     <div class="input-number">
-                                        <input type="number" name="qty" min="1" value="1">
+                                        <input type="number" name="qty" id="product-qty" min="1"
+                                            value="1"
+                                            max="{{ $selectedVariant ? $selectedVariant->qty : $product->qty }}">
                                         <span class="qty-up">+</span>
                                         <span class="qty-down">-</span>
                                     </div>
                                 </div>
+                                <input type="hidden" id="product_variant_id" name="product_variant_id">
                                 <button type="submit" class="add-to-cart-btn">
                                     <i class="fa fa-shopping-cart"></i> Thêm giỏ hàng
                                 </button>
@@ -152,27 +172,54 @@
                                 </li>
                             </ul>
                         @endif
-                        @if ($product->variants)
+                        @if ($product->productVariants != '[]')
                             <ul class="product-links">
                                 <li>Biến thể:</li>
                                 <li>
                                     <select name="variant" id="variant-select" class="input-select"
                                         onchange="changeVariant(this)">
                                         @php
-                                            $variants = !empty($product->variants)
-                                                ? explode(',', str_replace(['[', ']', '"'], '', $product->variants))
-                                                : [];
+                                            $currentDate = \Carbon\Carbon::now();
                                         @endphp
-                                        @foreach ($variants as $variant)
+                                        @foreach ($product->productVariants as $variant)
                                             @php
-                                                $variant = trim($variant);
-                                                $variantSlug = \Illuminate\Support\Str::slug(
-                                                    $product->slug . '-' . $variant,
-                                                );
+                                                $startDate = $variant->discount_start_date
+                                                    ? \Carbon\Carbon::parse($variant->discount_start_date)
+                                                    : null;
+                                                $endDate = $variant->discount_end_date
+                                                    ? \Carbon\Carbon::parse($variant->discount_end_date)
+                                                    : null;
+                                                $isDiscountActive =
+                                                    $variant->discounted_price &&
+                                                    $startDate &&
+                                                    $endDate &&
+                                                    $currentDate->between($startDate, $endDate);
+                                                $variantDisplayPrice = $isDiscountActive
+                                                    ? $variant->discounted_price
+                                                    : $variant->price;
+                                                $variantDiscountPercentage =
+                                                    $isDiscountActive && $variant->price > 0
+                                                        ? round(
+                                                            (($variant->price - $variant->discounted_price) /
+                                                                $variant->price) *
+                                                                100,
+                                                        )
+                                                        : 0;
                                             @endphp
-                                            <option value="{{ route('product.show', $variantSlug) }}"
-                                                {{ $variant === 'Đen' ? 'selected' : '' }}>
-                                                {{ $variant }}
+                                            <option
+                                                value="{{ route('product.show', [$product->slug, $variant->variant_name]) }}"
+                                                data-original-price="{{ $variant->price }}"
+                                                data-original-id="{{ $variant->id }}"
+                                                data-discounted-price="{{ $variant->discounted_price ?? $variant->price }}"
+                                                data-discount-percentage="{{ $variantDiscountPercentage }}"
+                                                data-qty="{{ $variant->qty }}"
+                                                {{ $selectedVariant && $selectedVariant->id === $variant->id ? 'selected' : '' }}>
+                                                {{ $variant->variant_name }} -
+                                                {{ number_format($variantDisplayPrice) }} VNĐ (Còn:
+                                                {{ $variant->qty }})
+                                                @if ($variantDiscountPercentage > 0 && $isDiscountActive)
+                                                    (-{{ $variantDiscountPercentage }}%)
+                                                @endif
                                             </option>
                                         @endforeach
                                     </select>
@@ -228,23 +275,52 @@
                                 </div>
                             </div>
                             <!-- /tab1  -->
-
-                            <!-- tab2  -->
-                            <div id="tab2" class="tab-pane fade in active">
+                            <!-- tab2 -->
+                            <div id="tab2" class="tab-pane fade in">
                                 <div class="row">
                                     <div class="col-md-12">
                                         @if ($product->specifications)
-                                            <ul class="product-links">
-                                                <li>Thông số kỹ thuật:</li>
-                                                <li>
-                                                    <span>{!! nl2br(e($product->specifications)) !!}</span>
-                                                </li>
-                                            </ul>
+                                            @php
+                                                $specs = $product->specifications;
+                                            @endphp
+                                            @if ($specs && is_array($specs) && !empty($specs))
+                                                @foreach ($specs as $group => $items)
+                                                    <div class="card mb-3">
+                                                        <div class="card-header bg-light font-weight-bold">
+                                                            {{ htmlspecialchars($group, ENT_QUOTES, 'UTF-8') }}
+                                                        </div>
+                                                        <div class="table-responsive">
+                                                            <table class="table table-bordered mb-0">
+                                                                <tbody>
+                                                                    @foreach ($items as $label => $value)
+                                                                        <tr>
+                                                                            <th style="width: 30%;">
+                                                                                {{ htmlspecialchars($label, ENT_QUOTES, 'UTF-8') }}
+                                                                            </th>
+                                                                            <td>
+                                                                                {!! nl2br(htmlspecialchars($value, ENT_QUOTES, 'UTF-8')) !!}
+                                                                            </td>
+                                                                        </tr>
+                                                                    @endforeach
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            @else
+                                                <div class="alert alert-info">
+                                                    Không có thông số kỹ thuật nào được định nghĩa cho sản phẩm này.
+                                                </div>
+                                            @endif
+                                        @else
+                                            <div class="alert alert-info">
+                                                Không có thông số kỹ thuật nào được định nghĩa cho sản phẩm này.
+                                            </div>
                                         @endif
                                     </div>
                                 </div>
                             </div>
-                            <!-- /tab2  -->
+                            <!-- /tab2 -->
 
                             <!-- tab3  -->
                             <div id="tab3" class="tab-pane fade in">
@@ -285,7 +361,7 @@
                                     <div class="col-md-6">
                                         <div id="reviews">
                                             <ul class="reviews">
-                                                @foreach ($product->reviews as $review)
+                                                @foreach ($reviews as $review)
                                                     <li>
                                                         <div class="review-heading">
                                                             <h5 class="name">{{ $review->user_name }}</h5>
@@ -305,12 +381,12 @@
                                                 @endforeach
                                             </ul>
                                             <ul class="reviews-pagination">
-                                                {{-- {{$product->reviews->link()}} --}}
-                                                <li class="active">1</li>
+                                                {{ $reviews->links('pagination::tailwind') }}
+                                                {{-- <li class="active">1</li>
                                                 <li><a href="#">2</a></li>
                                                 <li><a href="#">3</a></li>
                                                 <li><a href="#">4</a></li>
-                                                <li><a href="#"><i class="fa fa-angle-right"></i></a></li>
+                                                <li><a href="#"><i class="fa fa-angle-right"></i></a></li> --}}
                                             </ul>
                                         </div>
                                     </div>
@@ -467,9 +543,62 @@
 </script>
 <script>
     function changeVariant(select) {
-        var url = select.value;
-        if (url) {
-            window.location.href = url; // Chuyển hướng đến URL của biến thể
+        const selectedOption = select.options[select.selectedIndex];
+        const url = selectedOption.value;
+        const variantId = selectedOption.getAttribute('data-original-id');
+        const originalPrice = selectedOption.getAttribute('data-original-price');
+        const discountedPrice = selectedOption.getAttribute('data-discounted-price');
+        const discountPercentage = selectedOption.getAttribute('data-discount-percentage');
+        const productVariantId = document.getElementById('product_variant_id');
+        const qty = selectedOption.getAttribute('data-qty');
+
+        // Cập nhật URL
+        window.history.pushState({}, document.title, url);
+
+        // Cập nhật giá
+        const priceElement = document.getElementById('product-price');
+        priceElement.innerHTML = `${numberFormat(discountedPrice)} vnđ`;
+        if (originalPrice && discountedPrice && originalPrice != discountedPrice) {
+            priceElement.innerHTML += ` <del class="product-old-price">${numberFormat(originalPrice)} vnđ</del>`;
         }
+        if (discountPercentage > 0) {
+            priceElement.innerHTML +=
+                ` <span class="discount-label" style="color: red; font-weight: bold; margin-left: 10px;">Giảm ${discountPercentage}%</span>`;
+        }
+
+        // Cập nhật số lượng và trạng thái hàng
+        const qtyInput = document.getElementById('product-qty');
+        const availabilityElement = document.getElementById('product-availability');
+        qtyInput.setAttribute('max', qty);
+        qtyInput.value = Math.min(qtyInput.value, qty); // Đảm bảo số lượng không vượt quá qty
+        productVariantId.value = variantId;
+        availabilityElement.textContent = qty > 0 ? 'Còn hàng' : 'Hết hàng';
     }
+
+    function numberFormat(number) {
+        return new Intl.NumberFormat('vi-VN').format(number);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const select = document.getElementById('variant-select');
+        if (select && select.value) {
+            changeVariant(select);
+        }
+
+        // Xử lý nút tăng/giảm số lượng
+        const qtyUp = document.querySelector('.qty-up');
+        const qtyDown = document.querySelector('.qty-down');
+        const qtyInput = document.getElementById('product-qty');
+        const maxQty = qtyInput.getAttribute('max');
+
+        qtyUp.addEventListener('click', function() {
+            let value = parseInt(qtyInput.value);
+            if (value < maxQty) qtyInput.value = value + 1;
+        });
+
+        qtyDown.addEventListener('click', function() {
+            let value = parseInt(qtyInput.value);
+            if (value > 1) qtyInput.value = value - 1;
+        });
+    });
 </script>

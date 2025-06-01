@@ -31,16 +31,17 @@ Route::get('/subcategory/{slug}', [SubCategoryController::class, 'show'])->name(
 Route::prefix('product')->name('product.')->group(function () {
     Route::post('/products/{product}/reviews', [ProductController::class, 'storeReview'])->name('review.store');
 
-    Route::get('product_detail/{slug}', [ProductDetailController::class, 'index'])->name('show');
+    Route::get('/product/product_detail/{slug}/{variant?}', [ProductDetailController::class, 'show'])->name('show');
 });
 
 Route::prefix('cart')->name('cart.')->group(function () {
     Route::get('/', [CartController::class, 'index'])->name('show');
     Route::post('/cart/add/{productId}', [CartController::class, 'addToCart'])->name('add');
-    Route::post('/cart/update', [CartController::class, 'update'])->name('update');
+    Route::post('/cart/updateQty', [CartController::class, 'updateQty'])->name('updateQty');
     Route::delete('/cart/remove/{productId}', [CartController::class, 'remove'])->name('remove');
     Route::post('/cart/apply-coupon', [CartController::class, 'applyCoupon'])->name('applyCoupon');
     Route::get('/checkout', [CartController::class, 'checkout'])->name('checkout');
+
 });
 
 Route::prefix('checkout')->name('checkout.')->group(function () {

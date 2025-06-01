@@ -82,6 +82,7 @@ Route::middleware('auth', 'verified', 'checkRole')->group(function () {
             Route::post('/upload-image', [ProductController::class, 'uploadImage'])->name('uploadImage');
 
             Route::get('/get-subcategories/{category_id}', [ProductController::class, 'getSubcategories'])->name('getSubcategories');
+            Route::patch('{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('toggleStatus');
         });
 
         Route::get('/dashboard', function () {

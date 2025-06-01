@@ -4,11 +4,30 @@
         <h1 class="h3 mb-4 text-gray-800">Danh sách sản phẩm</h1>
         <div class="action" id="action">
             <a href="{{ route('admin.product.create') }}" class="btn btn-primary mb-3">Thêm sản phẩm</a>
-            <div class="btn-group mb-3" id="bulk-delete" style="display: none;">
-                <button type="button" class="btn btn-primary">
-                    <span class="visually-hidden"><i class="fa-solid fa-eraser"></i> Xóa sản phẩm</span>
-                </button>
+
+            <div class="fillter">
+                <div class="btn-group mb-3">
+                    <select id="categoryFilter" class="form-control">
+                        <option value="">Tất cả danh mục</option>
+                        @foreach (\App\Models\Category::all() as $category)
+                            <option value="{{ $category->id }}">{{ $category->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="btn-group mb-3">
+                    <select id="statusFilter" class="form-control">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="1">Hiển thị</option>
+                        <option value="0">Ẩn</option>
+                    </select>
+                </div>
+                <div class="btn-group mb-3" id="bulk-delete" style="display: none;">
+                    <button type="button" class="btn btn-primary">
+                        <span class="visually-hidden"><i class="fa-solid fa-eraser"></i> Xóa sản phẩm</span>
+                    </button>
+                </div>
             </div>
+
         </div>
         <div class="card shadow">
             <div class="card-body">
@@ -17,14 +36,14 @@
                         <thead>
                             <tr>
                                 <th width="20px"><input type="checkbox" id="select-all"></th>
-                                <th>ID</th>
+                                <th>#</th>
                                 <th>Hình ảnh</th>
                                 <th>Tên sản phẩm</th>
                                 <th>Danh mục</th>
                                 <th>Thương hiệu</th>
-                                <th>Giá bán</th>
-                                <th>Giá gốc</th>
-                                <th>Giảm giá (%)</th>
+                                {{-- <th>Giá bán</th> --}}
+                                {{-- <th>Giá gốc</th> --}}
+                                {{-- <th>Giảm giá (%)</th> --}}
                                 <th>Số lượng</th>
                                 <th>SKU</th>
                                 <th>Trạng thái</th>
@@ -37,14 +56,20 @@
             </div>
         </div>
     </div>
-
     @push('scripts')
         <script>
             $(document).ready(function() {
                 var table = $('#categories-table').DataTable({
                     processing: true,
                     serverSide: true,
-                    ajax: '{{ route('admin.product.data') }}',
+                    ajax: {
+                        url: "{{ route('admin.product.data') }}",
+                        type: 'GET',
+                        data: function(d) {
+                            d.category_id = $('#categoryFilter').val();
+                            d.status = $('#statusFilter').val();
+                        }
+                    },
                     columns: [{
                             data: 'checkbox',
                             name: 'checkbox',
@@ -60,7 +85,9 @@
                         },
                         {
                             data: 'image',
-                            name: 'image'
+                            name: 'image',
+                            orderable: false,
+                            searchable: false
                         },
                         {
                             data: 'title',
@@ -68,24 +95,27 @@
                         },
                         {
                             data: 'category',
-                            name: 'category'
+                            name: 'category',
+                            orderable: false,
+                            searchable: false
                         },
                         {
                             data: 'brand',
                             name: 'brand'
                         },
-                        {
-                            data: 'price',
-                            name: 'price'
-                        },
-                        {
-                            data: 'original_price',
-                            name: 'original_price'
-                        },
-                        {
-                            data: 'discount_percentage',
-                            name: 'discount_percentage'
-                        },
+                        // {
+                        //     data: 'price_info',
+                        //     name: 'price',
+                        //     orderable: false
+                        // },
+                        // {
+                        //     data: 'original_price',
+                        //     name: 'original_price'
+                        // },
+                        // {
+                        //     data: 'discount_percentage',
+                        //     name: 'discount_percentage'
+                        // },
                         {
                             data: 'qty',
                             name: 'qty'
@@ -116,7 +146,25 @@
                             return '<input type="checkbox" class="row-checkbox" value="' + row.id +
                                 '">';
                         }
-                    }]
+                    }],
+                    language: {
+                        url: '//cdn.datatables.net/plug-ins/1.13.1/i18n/vi.json'
+                    },
+                    order: [
+                        [9, 'desc']
+                    ], // Sắp xếp mặc định theo ngày tạo
+                    responsive: true,
+                    autoWidth: false
+                });
+
+                // Lọc theo danh mục và trạng thái
+                $('#categoryFilter, #statusFilter').on('change', function() {
+                    table.draw();
+                });
+
+                // Khởi tạo tooltip
+                $('body').tooltip({
+                    selector: '[data-toggle="tooltip"]'
                 });
 
                 $('#select-all').click(function() {
