@@ -1,221 +1,266 @@
 <x-guest-layout>
     @section('title', 'Thanh toán')
-
     <!-- SECTION -->
     <div class="section">
-        <!-- container -->
         <div class="container">
-            <!-- row -->
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
             <div class="row">
-
-                <div class="col-md-7">
-                    <!-- Billing Details -->
-                    <div class="billing-details">
-                        <div class="section-title">
-                            <h3 class="title">Địa chỉ thanh toán</h3>
-                        </div>
-                        <div class="form-group">
-                            <input class="input" type="text" name="name" placeholder="Nhập họ và tên"
-                                value="{{ old('name', $userInfo->name ?? '') }}">
-                        </div>
-                        <div class="form-group">
-                            <input class="input" type="email" name="email" placeholder="Nhập địa chỉ email"
-                                value="{{ old('email', $userInfo->email ?? '') }}">
-                        </div>
-                        <div class="form-group">
-                            <select id="province" name="province_id" class="form-control">
-                                <option value="">Chọn Tỉnh/Thành phố</option>
-                                @foreach ($provinces as $province)
-                                    <option value="{{ $province->code }}"
-                                        {{ isset($userInfo) ? ($userInfo->province_id == $province->code ? 'selected' : '') : '' }}>
-                                        {{ $province->full_name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <select id="district" name="district_id" class="form-control" disabled>
-                                <option value="">Chọn Quận/Huyện</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <select id="ward" name="ward_id" class="form-control" disabled>
-                                <option value="">Chọn Phường/Xã</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <input class="input" type="text" name="address" placeholder="Nhập địa chỉ nhận hàng"
-                                value="{{ old('address', $userInfo->address ?? '') }}">
-                        </div>
-                        <div class="form-group">
-                            <input class="input" type="number" name="phone" placeholder="Nhập số điện thoại"
-                                value="{{ old('phone', $userInfo->phone ?? '') }}">
-                        </div>
-                        @if (!$userInfo)
+                <form action="{{ route('checkout.placeOrder') }}" method="POST">
+                    @csrf
+                    <div class="col-md-7">
+                        <!-- Billing Details -->
+                        <div class="billing-details">
+                            <div class="section-title">
+                                <h3 class="title">Địa chỉ thanh toán</h3>
+                            </div>
                             <div class="form-group">
-                                <div class="input-checkbox">
-                                    <input type="checkbox" id="create-account">
-                                    <label for="create-account">
-                                        <span></span>
-                                        Create Account?
-                                    </label>
-                                    <div class="caption">
-                                        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
-                                            tempor
-                                            incididunt.</p>
-                                        <input class="input" type="password" name="password"
-                                            placeholder="Enter Your Password">
+                                <input class="input" type="text" name="billing_full_name"
+                                    placeholder="Nhập họ và tên"
+                                    value="{{ old('billing_full_name', $userInfo->name ?? '') }}">
+                            </div>
+                            <div class="form-group">
+                                <input class="input" type="email" name="billing_email"
+                                    placeholder="Nhập địa chỉ email"
+                                    value="{{ old('billing_email', $userInfo->email ?? '') }}">
+                            </div>
+                            <div class="form-group">
+                                <select id="province" name="billing_province_id" class="form-control">
+                                    <option value="">Chọn Tỉnh/Thành phố</option>
+                                    @foreach ($provinces as $province)
+                                        <option value="{{ $province->code }}"
+                                            {{ old('billing_province_id', $userInfo->province_id ?? '') == $province->code ? 'selected' : '' }}>
+                                            {{ $province->full_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <select id="district" name="billing_district_id" class="form-control" disabled>
+                                    <option value="">Chọn Quận/Huyện</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <select id="ward" name="billing_ward_id" class="form-control" disabled>
+                                    <option value="">Chọn Phường/Xã</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <input class="input" type="text" name="billing_address"
+                                    placeholder="Nhập địa chỉ nhận hàng"
+                                    value="{{ old('billing_address', $userInfo->address ?? '') }}">
+                            </div>
+                            <div class="form-group">
+                                <input class="input" type="tel" name="billing_telephone"
+                                    placeholder="Nhập số điện thoại"
+                                    value="{{ old('billing_telephone', $userInfo->phone ?? '') }}">
+                            </div>
+                            @if (!$userInfo)
+                                <div class="form-group">
+                                    <div class="input-checkbox">
+                                        <input type="checkbox" id="create-account">
+                                        <label for="create-account">
+                                            <span></span>
+                                            Create Account?
+                                        </label>
+                                        <div class="caption">
+                                            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit.</p>
+                                            <input class="input" type="password" name="password"
+                                                placeholder="Enter Your Password">
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                        <!-- /Billing Details -->
+
+                        <!-- Shipping Details -->
+                        <div class="shiping-details">
+                            <div class="section-title">
+                                <h3 class="title">Địa chỉ giao hàng</h3>
+                            </div>
+                            @if (auth()->check() && isset($ShippingAddress))
+                                <div class="form-group">
+                                    <label>Chọn địa chỉ giao hàng đã lưu:</label>
+                                    <select name="shipping_address_id" class="form-control">
+                                        <option value="">-- Chọn địa chỉ --</option>
+                                        @foreach ($ShippingAddress as $address)
+                                            <option value="{{ $address->id }}"
+                                                {{ old('shipping_address_id', $address->is_default == 1 ? $address->id : null) == $address->id ? 'selected' : '' }}>
+                                                {{ $address->full_name }} - {{ $address->address }},
+                                                {{ $address->ward->name }}, {{ $address->district->name }},
+                                                {{ $address->province->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
+                            <div class="form-group">
+                                <label><input type="checkbox" name="use_new_shipping_address"> Giao đến địa chỉ
+                                    mới</label>
+                                <div class="new-shipping-form" style="display: none;">
+                                    <div class="form-group">
+                                        <input class="input" type="text" name="shipping_full_name"
+                                            placeholder="Họ tên người nhận" value="{{ old('shipping_full_name') }}">
+                                    </div>
+                                    <div class="form-group">
+                                        <input class="input" type="email" name="shipping_email"
+                                            placeholder="Email người nhận nhận" value="{{ old('shipping_email') }}">
+                                    </div>
+                                    <div class="form-group">
+                                        <input class="input" type="tel" name="shipping_telephone"
+                                            placeholder="Số điện thoại người nhận"
+                                            value="{{ old('shipping_telephone') }}">
+                                    </div>
+                                    <div class="form-group">
+                                        <select id="shipping_province" name="shipping_province_id" class="form-control">
+                                            <option value="">Chọn Tỉnh/Thành phố</option>
+                                            @foreach ($provinces as $province)
+                                                <option value="{{ $province->code }}"
+                                                    {{ old('shipping_province_id') == $province->code ? 'selected' : '' }}>
+                                                    {{ $province->full_name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <select id="shipping_district" name="shipping_district_id"
+                                            class="form-control" disabled>
+                                            <option value="">Chọn Quận/Huyện</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <select id="shipping_ward" name="shipping_ward_id" class="form-control"
+                                            disabled>
+                                            <option value="">Chọn Phường/Xã</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <input class="input" type="text" name="shipping_address"
+                                            placeholder="Số nhà, tên đường..." value="{{ old('shipping_address') }}">
                                     </div>
                                 </div>
                             </div>
-                        @endif
-                    </div>
-                    <!-- /Billing Details -->
+                        </div>
+                        <!-- /Shipping Details -->
 
-                    <!-- Shiping Details -->
-                    <div class="shiping-details">
-                        <div class="section-title">
-                            <h3 class="title">Shiping address</h3>
+                        <!-- Order notes -->
+                        <div class="order-notes">
+                            <textarea class="input" name="note" placeholder="Ghi chú đơn hàng">{{ old('note') }}</textarea>
+                        </div>
+                        <!-- /Order notes -->
+                    </div>
+
+                    <!-- Order Details -->
+                    <div class="col-md-5 order-details">
+                        <div class="section-title text-center">
+                            <h3 class="title">Đơn hàng của bạn</h3>
+                        </div>
+                        <div class="order-summary">
+                            <div class="order-col">
+                                <div><strong>Sản phẩm</strong></div>
+                                <div><strong>Tổng tiền</strong></div>
+                            </div>
+                            <div class="order-products">
+                                @foreach ($cart->cartDetails as $item)
+                                    <div class="order-col">
+                                        <div>{{ $item->qty }}x {{ Str::limit($item->product->title, 30, '...') }}
+                                        </div>
+                                        <div>{{ number_format($item->price * $item->qty) . ' VNĐ' }}</div>
+                                    </div>
+                                @endforeach
+                            </div>
+                            <div class="order-col">
+                                <div>Vận chuyển</div>
+                                <div><strong>{{ number_format(20000) . ' VNĐ' }}</strong></div>
+                            </div>
+                            <div class="order-col">
+                                <div><strong>Tổng tiền</strong></div>
+                                <div><strong class="order-total">{{ number_format($total + 20000) . ' VNĐ' }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="payment-method">
+                            <div class="input-radio">
+                                <input type="radio" name="payment_method" id="payment-1" value="cash">
+                                <label for="payment-1">
+                                    <span></span>
+                                    Thanh toán tiền mặt
+                                </label>
+                                <div class="caption">
+                                    <p>Thanh toán khi nhận hàng.</p>
+                                </div>
+                            </div>
+                            <div class="input-radio">
+                                <input type="radio" name="payment_method" id="payment-2" value="cheque">
+                                <label for="payment-2">
+                                    <span></span>
+                                    Cheque Payment
+                                </label>
+                                <div class="caption">
+                                    <p>Thanh toán bằng séc.</p>
+                                </div>
+                            </div>
+                            <div class="input-radio">
+                                <input type="radio" name="payment_method" id="payment-3" value="paypal">
+                                <label for="payment-3">
+                                    <span></span>
+                                    Paypal System
+                                </label>
+                                <div class="caption">
+                                    <p>Thanh toán qua Paypal.</p>
+                                </div>
+                            </div>
                         </div>
                         <div class="input-checkbox">
-                            <input type="checkbox" id="shiping-address">
-                            <label for="shiping-address">
-                                <span></span>
-                                Ship to a diffrent address?
+                            <input type="checkbox" id="terms" name="terms">
+                            <label for="terms">
+                                <span></span>Tôi đã đọc và chấp nhận các <a href="#">điều khoản và điều kiện</a>
                             </label>
-                            <div class="caption">
-                                <div class="form-group">
-                                    <input class="input" type="text" name="first-name" placeholder="First Name">
-                                </div>
-                                <div class="form-group">
-                                    <input class="input" type="text" name="last-name" placeholder="Last Name">
-                                </div>
-                                <div class="form-group">
-                                    <input class="input" type="email" name="email" placeholder="Email">
-                                </div>
-                                <div class="form-group">
-                                    <input class="input" type="text" name="address" placeholder="Address">
-                                </div>
-                                <div class="form-group">
-                                    <input class="input" type="text" name="city" placeholder="City">
-                                </div>
-                                <div class="form-group">
-                                    <input class="input" type="text" name="country" placeholder="Country">
-                                </div>
-                                <div class="form-group">
-                                    <input class="input" type="text" name="zip-code" placeholder="ZIP Code">
-                                </div>
-                                <div class="form-group">
-                                    <input class="input" type="tel" name="tel" placeholder="Telephone">
-                                </div>
-                            </div>
                         </div>
+                        <button type="submit" class="primary-btn order-submit">Đặt hàng</button>
                     </div>
-                    <!-- /Shiping Details -->
-
-                    <!-- Order notes -->
-                    <div class="order-notes">
-                        <textarea class="input" placeholder="Order Notes"></textarea>
-                    </div>
-                    <!-- /Order notes -->
-                </div>
-
-                <!-- Order Details -->
-                <div class="col-md-5 order-details">
-                    <div class="section-title text-center">
-                        <h3 class="title">Đơn hàng của bạn</h3>
-                    </div>
-                    <div class="order-summary">
-                        <div class="order-col">
-                            <div><strong>Sản phẩm</strong></div>
-                            <div><strong>Tổng tiền</strong></div>
-                        </div>
-                        <div class="order-products">
-                            @foreach ($cart->cartDetails as $item)
-                                <div class="order-col">
-                                    <div>{{ $item->qty }}x {{ Str::limit($item->product->title, 30, '...') }}</div>
-                                    <div>{{ number_format($item->price) . ' VNĐ' }}</div>
-                                </div>
-                            @endforeach
-
-                        </div>
-                        <div class="order-col">
-                            <div>Vận chuyển</div>
-                            <div><strong>Miễn phí</strong></div>
-                        </div>
-                        <div class="order-col">
-                            <div><strong>Tổng tiền</strong></div>
-                            <div><strong class="order-total">{{ number_format($total) . ' VNĐ' }}</strong></div>
-                        </div>
-                    </div>
-                    <div class="payment-method">
-                        <div class="input-radio">
-                            <input type="radio" name="payment" id="payment-1">
-                            <label for="payment-1">
-                                <span></span>
-                                Thanh toán tiền mặt
-                            </label>
-                            <div class="caption">
-                                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor
-                                    incididunt ut labore et dolore magna aliqua.</p>
-                            </div>
-                        </div>
-                        <div class="input-radio">
-                            <input type="radio" name="payment" id="payment-2">
-                            <label for="payment-2">
-                                <span></span>
-                                Cheque Payment
-                            </label>
-                            <div class="caption">
-                                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor
-                                    incididunt ut labore et dolore magna aliqua.</p>
-                            </div>
-                        </div>
-                        <div class="input-radio">
-                            <input type="radio" name="payment" id="payment-3">
-                            <label for="payment-3">
-                                <span></span>
-                                Paypal System
-                            </label>
-                            <div class="caption">
-                                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor
-                                    incididunt ut labore et dolore magna aliqua.</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="input-checkbox">
-                        <input type="checkbox" id="terms">
-                        <label for="terms">
-                            <span></span>Tôi đã đọc và chấp nhận các <a href="#">điều khoản và điều kiện</a>
-                        </label>
-                    </div>
-                    <a href="#" class="primary-btn order-submit">Đặt hàng</a>
-                </div>
-                <!-- /Order Details -->
+                    <!-- /Order Details -->
+                </form>
             </div>
-            <!-- /row -->
         </div>
-        <!-- /container -->
     </div>
     <!-- /SECTION -->
 </x-guest-layout>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const districtsUrl = "{{ route('getDistricts', ['provinceId' => ':provinceId']) }}";
         const wardsUrl = "{{ route('getWards', ['districtId' => ':districtId']) }}";
+
+        // Billing address
         const provinceSelect = document.getElementById('province');
         const districtSelect = document.getElementById('district');
         const wardSelect = document.getElementById('ward');
 
-        // Load districts khi trang được tải nếu đã có province_id
+        // Shipping address
+        const shippingProvinceSelect = document.getElementById('shipping_province');
+        const shippingDistrictSelect = document.getElementById('shipping_district');
+        const shippingWardSelect = document.getElementById('shipping_ward');
+
+        // New shipping address checkbox
+        const newShippingCheckbox = document.querySelector('input[name="use_new_shipping_address"]');
+        const newShippingForm = document.querySelector('.new-shipping-form');
+
+        // Load districts and wards for billing address
         if (provinceSelect.value) {
-            loadDistricts(provinceSelect.value);
+            loadDistricts(provinceSelect.value, districtSelect, wardSelect,
+                "{{ $userInfo->district_id ?? '' }}", "{{ $userInfo->ward_id ?? '' }}");
         }
 
-        // Load wards khi trang được tải nếu đã có district_id
-        if (districtSelect.value) {
-            loadWards(districtSelect.value);
-        }
+
 
         provinceSelect.addEventListener('change', function() {
             const provinceId = this.value;
@@ -224,7 +269,7 @@
             wardSelect.disabled = true;
 
             if (provinceId) {
-                loadDistricts(provinceId);
+                loadDistricts(provinceId, districtSelect, wardSelect);
             } else {
                 districtSelect.disabled = true;
             }
@@ -235,13 +280,51 @@
             wardSelect.innerHTML = '<option value="">Chọn Phường/Xã</option>';
 
             if (districtId) {
-                loadWards(districtId);
+                loadWards(districtId, wardSelect);
             } else {
                 wardSelect.disabled = true;
             }
         });
 
-        function loadDistricts(provinceId) {
+        // Load districts and wards for shipping address
+        if (shippingProvinceSelect.value) {
+            loadDistricts(shippingProvinceSelect.value, shippingDistrictSelect, shippingWardSelect,
+                "{{ old('shipping_district_id') }}", "{{ old('shipping_ward_id') }}");
+        }
+
+        shippingProvinceSelect.addEventListener('change', function() {
+            const provinceId = this.value;
+            shippingDistrictSelect.innerHTML = '<option value="">Chọn Quận/Huyện</option>';
+            shippingWardSelect.innerHTML = '<option value="">Chọn Phường/Xã</option>';
+            shippingWardSelect.disabled = true;
+
+            if (provinceId) {
+                loadDistricts(provinceId, shippingDistrictSelect, shippingWardSelect);
+            } else {
+                shippingDistrictSelect.disabled = true;
+            }
+        });
+
+        shippingDistrictSelect.addEventListener('change', function() {
+            const districtId = this.value;
+            shippingWardSelect.innerHTML = '<option value="">Chọn Phường/Xã</option>';
+
+            if (districtId) {
+                loadWards(districtId, shippingWardSelect);
+            } else {
+                shippingWardSelect.disabled = true;
+            }
+        });
+
+        // Toggle new shipping form
+        if (newShippingCheckbox) {
+            newShippingCheckbox.addEventListener('change', function() {
+                newShippingForm.style.display = this.checked ? 'block' : 'none';
+            });
+        }
+
+        function loadDistricts(provinceId, districtSelect, wardSelect, selectedDistrictId = '', selectedWardId =
+            '') {
             const url = districtsUrl.replace(':provinceId', provinceId);
 
             fetch(url)
@@ -252,20 +335,16 @@
                         const option = document.createElement('option');
                         option.value = district.code;
                         option.textContent = district.name;
-
-                        // Thêm selected nếu là district_id của user
-                        if (district.code == "{{ $userInfo->district_id ?? '' }}") {
+                        if (district.code === selectedDistrictId) {
                             option.selected = true;
-                            // Tự động load wards khi đã có district_id
-                            loadWards(district.code);
+                            loadWards(district.code, wardSelect, selectedWardId);
                         }
-
                         districtSelect.appendChild(option);
                     });
                 });
         }
 
-        function loadWards(districtId) {
+        function loadWards(districtId, wardSelect, selectedWardId = '') {
             const url = wardsUrl.replace(':districtId', districtId);
 
             fetch(url)
@@ -276,24 +355,12 @@
                         const option = document.createElement('option');
                         option.value = ward.code;
                         option.textContent = ward.name;
-
-                        // Thêm selected nếu là ward_id của user
-                        if (ward.code == "{{ $userInfo->ward_id ?? '' }}") {
+                        if (ward.code === selectedWardId) {
                             option.selected = true;
                         }
-
                         wardSelect.appendChild(option);
                     });
                 });
         }
     });
-    // Kích hoạt district select nếu đã có province_id
-    if ("{{ $userInfo->province_id ?? '' }}") {
-        districtSelect.disabled = false;
-    }
-
-    // Kích hoạt ward select nếu đã có district_id
-    if ("{{ $userInfo->district_id ?? '' }}") {
-        wardSelect.disabled = false;
-    }
 </script>

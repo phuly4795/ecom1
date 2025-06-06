@@ -41,12 +41,11 @@ Route::prefix('cart')->name('cart.')->group(function () {
     Route::delete('/cart/remove/{productId}', [CartController::class, 'remove'])->name('remove');
     Route::post('/cart/apply-coupon', [CartController::class, 'applyCoupon'])->name('applyCoupon');
     Route::get('/checkout', [CartController::class, 'checkout'])->name('checkout');
-
 });
 
 Route::prefix('checkout')->name('checkout.')->group(function () {
-    Route::get('/', [CheckoutController::class, 'index'])->name('show');
-    Route::post('/', [CheckoutController::class, 'process'])->name('process');
+    Route::post('/checkout/place-order', [CheckoutController::class, 'placeOrder'])->name('placeOrder');
+    Route::get('/thank-you', [CheckoutController::class, 'thankYou'])->name('thankyou');
 });
 
 Route::get('/districts/{provinceId}', [LocationController::class, 'getDistricts'])->name('getDistricts');

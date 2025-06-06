@@ -8,6 +8,7 @@ use App\Models\CartDetail;
 use Illuminate\Support\Facades\Session;
 use App\Models\Product;
 use App\Models\Province;
+use App\Models\ShippingAddress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -143,10 +144,12 @@ class CartController extends Controller
             // Người dùng đã đăng nhập: lấy giỏ hàng theo user_id
             $userId = Auth::id();
             $cart = Cart::with('cartDetails.product')->where('user_id', $userId)->first();
+            $ShippingAddress = ShippingAddress::where('user_id', $userId)->get();
         } else {
             // Chưa đăng nhập: lấy giỏ hàng theo session_id
             $sessionId = Session::getId();
             $cart = Cart::with('cartDetails.product')->where('session_id', $sessionId)->first();
+            $ShippingAddress = ShippingAddress::where('session_id', $sessionId)->get();
         }
 
         $cartItems = collect();
@@ -166,7 +169,7 @@ class CartController extends Controller
         $total = max($subtotal + $shippingFee - $discount, 0);
         $userInfo = Auth::user();
 
-        return view('layouts.pages.guest.checkout', compact('cartItems', 'subtotal', 'shippingFee', 'discount', 'total', 'provinces', 'userInfo', 'cart'));
+        return view('layouts.pages.guest.checkout', compact('cartItems', 'subtotal', 'shippingFee', 'discount', 'total', 'provinces', 'userInfo', 'cart', 'ShippingAddress'));
     }
 
     public function updateQty(Request $request, $productId)
