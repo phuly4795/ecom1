@@ -12,8 +12,7 @@
             @endif
 
             <h1 class="text-center" style="margin-bottom: 3%">Giỏ hàng của bạn</h1>
-
-            @if ($cartItems->isEmpty())
+            @if($cartItems == [])
                 <div class="text-center">
                     <i class="fa fa-shopping-cart fa-3x text-muted"></i>
                     <p class="lead text-muted">Giỏ hàng của bạn hiện đang trống</p>

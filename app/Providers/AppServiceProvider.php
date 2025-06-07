@@ -3,7 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Cart;
-use App\Models\CartDetail;
+use Illuminate\Pagination\Paginator;
 use App\Models\Category;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
@@ -19,6 +19,7 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        Paginator::useBootstrapFour(); // Sử dụng Bootstrap 4 cho phân trang
         View::composer('*', function ($view) {
             // Lấy danh mục cha và danh mục phụ
             $categories = Category::with('subCategories') // Eager load quan hệ subCategories

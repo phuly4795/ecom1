@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Guest\AccountController;
 use App\Http\Controllers\Guest\SubCategoryController;
 use App\Http\Controllers\Guest\CartController;
 use App\Http\Controllers\Guest\CategoryController;
@@ -46,6 +48,13 @@ Route::prefix('cart')->name('cart.')->group(function () {
 Route::prefix('checkout')->name('checkout.')->group(function () {
     Route::post('/checkout/place-order', [CheckoutController::class, 'placeOrder'])->name('placeOrder');
     Route::get('/thank-you', [CheckoutController::class, 'thankYou'])->name('thankyou');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/my-account', [AccountController::class, 'index'])->name('my.account');
+    Route::get('/order/track/{id}', [AccountController::class, 'track'])->name('order.track');
+    Route::get('/account/orders/{id}', [AccountController::class, 'show'])->name('account.order.detail');
+
 });
 
 Route::get('/districts/{provinceId}', [LocationController::class, 'getDistricts'])->name('getDistricts');

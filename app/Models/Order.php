@@ -15,6 +15,7 @@ class Order extends Model
     protected $fillable = [
         'id',
         'user_id',
+        'order_code',
         'shipping_address_id',
         'billing_full_name',
         'billing_email',
@@ -44,5 +45,21 @@ class Order extends Model
     public function orderDetails()
     {
         return $this->hasMany(OrderDetail::class);
+    }
+    
+    // Thêm relationship cho địa chỉ thanh toán
+    public function billingProvince()
+    {
+        return $this->belongsTo(Province::class, 'billing_province_id', 'code');
+    }
+
+    public function billingDistrict()
+    {
+        return $this->belongsTo(District::class, 'billing_district_id', 'code');
+    }
+
+    public function billingWard()
+    {
+        return $this->belongsTo(Ward::class, 'billing_ward_id', 'code');
     }
 }

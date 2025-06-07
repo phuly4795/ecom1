@@ -34,7 +34,6 @@
     <!-- Custom stlylesheet -->
     <link type="text/css" rel="stylesheet" href="{{ asset('asset/guest/css/style.css') }}" />
     <link type="text/css" rel="stylesheet" href="{{ asset('asset/guest/css/custom.css') }}" />
-
 </head>
 
 <!-- HEADER -->

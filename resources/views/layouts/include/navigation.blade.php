@@ -46,7 +46,16 @@
     <li class="nav-item {{ request()->routeIs('admin.product.*') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('admin.product.index') }}">
             <i class="fas fa-fw fa-tags"></i>
-            <span>Sản phẩm</span></a>
+            <span>Quản lí sản phẩm</span></a>
+    </li>
+
+    <!-- Divider -->
+    <hr class="sidebar-divider">
+
+    <li class="nav-item {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('admin.orders.index') }}">
+            <i class="fas fa-fw fa-tags"></i>
+            <span>Quản lí đơn hàng</span></a>
     </li>
 
     <!-- Divider -->

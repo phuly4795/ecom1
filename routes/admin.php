@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\HomeController;
+use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\SubCategoryController;
 use App\Http\Controllers\LocationController;
@@ -84,6 +85,17 @@ Route::middleware('auth', 'verified', 'checkRole')->group(function () {
             Route::get('/get-subcategories/{category_id}', [ProductController::class, 'getSubcategories'])->name('getSubcategories');
             Route::patch('{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('toggleStatus');
         });
+
+        Route::prefix('order')->name('orders.')->group(function () {
+            Route::get('', [OrderController::class, 'index'])->name('index');
+            Route::get('/data', [OrderController::class, 'getData'])->name('data');
+            Route::get('/{id}', [OrderController::class, 'show'])->name('show');
+            Route::get('/{id}/edit', [OrderController::class, 'edit'])->name('edit');
+            Route::put('/{id}', [OrderController::class, 'update'])->name('update');
+            Route::delete('/mass-destroy', [OrderController::class, 'massDestroy'])->name('massDestroy');
+            Route::delete('/{id}', [OrderController::class, 'destroy'])->name('destroy');
+        });
+
 
         Route::get('/dashboard', function () {
             return view('layouts.pages.admin.dashboard');

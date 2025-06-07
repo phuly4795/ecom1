@@ -77,7 +77,7 @@
                                     @endfor
                                 </div>
                             </div>
-                            <a class="review-link" href="#tab2">{{ $product->reviews->count() ?? 0 }} Đánh giá | Thêm
+                            <a class="review-link" href="#tab3">{{ $product->reviews->count() ?? 0 }} Đánh giá | Thêm
                                 đánh giá</a>
                         </div>
                         <div>
@@ -361,24 +361,33 @@
                                     <div class="col-md-6">
                                         <div id="reviews">
                                             <ul class="reviews">
-                                                @foreach ($reviews as $review)
-                                                    <li>
-                                                        <div class="review-heading">
-                                                            <h5 class="name">{{ $review->user_name }}</h5>
-                                                            <p class="date">
-                                                                {{ $review->created_at->format('d M Y, h:i A') }}</p>
-                                                            <div class="review-rating">
-                                                                @for ($i = 1; $i <= 5; $i++)
-                                                                    <i
-                                                                        class="fa fa-star{{ $i <= $review->rating ? '' : '-o empty' }}"></i>
-                                                                @endfor
+                                                @if (count($reviews) > 0)
+                                                    @foreach ($reviews as $review)
+                                                        <li>
+                                                            <div class="review-heading">
+                                                                <h5 class="name">{{ $review->user_name }}</h5>
+                                                                <p class="date">
+                                                                    {{ $review->created_at->format('d M Y, h:i A') }}
+                                                                </p>
+                                                                <div class="review-rating">
+                                                                    @for ($i = 1; $i <= 5; $i++)
+                                                                        <i
+                                                                            class="fa fa-star{{ $i <= $review->rating ? '' : '-o empty' }}"></i>
+                                                                    @endfor
+                                                                </div>
                                                             </div>
-                                                        </div>
+                                                            <div class="review-body">
+                                                                <p>{{ $review->comment }}</p>
+                                                            </div>
+                                                        </li>
+                                                    @endforeach
+                                                @else
+                                                    <li>
                                                         <div class="review-body">
-                                                            <p>{{ $review->comment }}</p>
+                                                            <p>Hiện chưa có đánh giá của sản phẩm</p>
                                                         </div>
                                                     </li>
-                                                @endforeach
+                                                @endif
                                             </ul>
                                             <ul class="reviews-pagination">
                                                 {{ $reviews->links('pagination::tailwind') }}

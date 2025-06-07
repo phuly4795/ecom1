@@ -74,10 +74,15 @@ class CheckoutController extends Controller
                     $shippingAddressId = $shippingAddress->id;
                 }
             }
+            // Lấy số thứ tự tiếp theo
+            $lastOrder = Order::orderBy('id', 'desc')->first();
+            $nextId = $lastOrder ? $lastOrder->id + 1 : 1;
+            $orderCode = 'ORD-' . str_pad($nextId, 6, '0', STR_PAD_LEFT);
 
             // Tạo đơn hàng
             $order = Order::create([
                 'user_id' => $user->id ?? null,
+                'order_code' => $orderCode,
                 'shipping_address_id' => $shippingAddressId,
                 'billing_full_name' => $request->billing_full_name,
                 'billing_email' => $request->billing_email,
