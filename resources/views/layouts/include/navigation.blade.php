@@ -46,7 +46,7 @@
     <li class="nav-item {{ request()->routeIs('admin.product.*') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('admin.product.index') }}">
             <i class="fas fa-fw fa-tags"></i>
-            <span>Quản lí sản phẩm</span></a>
+            <span>Quản lý sản phẩm</span></a>
     </li>
 
     <!-- Divider -->
@@ -55,9 +55,14 @@
     <li class="nav-item {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('admin.orders.index') }}">
             <i class="fas fa-fw fa-tags"></i>
-            <span>Quản lí đơn hàng</span></a>
+            <span>Quản lý đơn hàng</span></a>
     </li>
 
+    <li class="nav-item {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('admin.coupons.index') }}">
+            <i class="fas fa-fw fa-tags"></i>
+            <span>Quản lý khuyến mãi</span></a>
+    </li>
     <!-- Divider -->
     <hr class="sidebar-divider">
 

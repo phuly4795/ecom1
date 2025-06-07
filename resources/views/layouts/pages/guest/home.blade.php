@@ -50,7 +50,8 @@
                         <div class="products-tabs">
                             <!-- tab -->
                             <div id="tab1" class="tab-pane active">
-                                <div class="products-slick" data-nav="#slick-nav-1">
+                                <div class="products-slick" data-nav="#slick-nav-1" data-slidesToShow="2"
+                                    data-slidesToScroll="1">
                                     <!-- product -->
                                     @foreach ($productLatest as $item)
                                         <div class="product">
@@ -87,30 +88,49 @@
                                                     {{ $item->category ? $item->category->name : ($item->subCategory ? $item->subCategory->categories->pluck('name')->implode(', ') : 'Chưa có') }}
                                                 </p>
                                                 <h3 class="product-name"><a
-                                                        href="{{ route('product.show', ['slug' => $item->slug]) }}">{{ $item->title }}</a>
+                                                        href="{{ route('product.show', ['slug' => $item->slug]) }}">{{ Str::limit($item->title, 20, '...') }}</a>
                                                 </h3>
-                                                <h4 class="product-price"> {{ number_format($item->price) }} vnđ<del
+                                                {{-- <h4 class="product-price"> {{ number_format($item->price) }} vnđ<del
                                                         class="product-old-price">{{ $item->compare_price != 0 ? number_format($item->compare_price) . ' vnđ' : '' }}
-                                                    </del></h4>
+                                                    </del></h4> --}}
+                                                {{-- @dd($item->productVariants->where('product_id', $item->id)->first(), $) --}}
+                                                <h4 class="product-price">
+                                                    {{ isset($item->productVariants) && $item->productVariants != '[]' ? number_format($item->productVariants->where('product_id', $item->id)->first()->price) : number_format($item->price) }}
+                                                    vnđ</p>
+                                                </h4>
+                                                <?php
+                                                $averageRating = $item->reviews->avg('rating') ?? 0;
+                                                ?>
                                                 <div class="product-rating">
-                                                    <i class="fa fa-star"></i>
-                                                    <i class="fa fa-star"></i>
-                                                    <i class="fa fa-star"></i>
-                                                    <i class="fa fa-star"></i>
-                                                    <i class="fa fa-star"></i>
+                                                    @for ($i = 1; $i <= 5; $i++)
+                                                        <i class="fa fa-star{{ $i <= $averageRating ? '' : '-o' }}"
+                                                            style="color: red"></i>
+                                                    @endfor
                                                 </div>
                                                 <div class="product-btns">
                                                     <button class="add-to-wishlist"><i class="fa fa-heart-o"></i><span
                                                             class="tooltipp">Yêu thích</span></button>
                                                     <button class="add-to-compare"><i class="fa fa-exchange"></i><span
                                                             class="tooltipp">add to compare</span></button>
-                                                    <button class="quick-view"><i class="fa fa-eye"></i><span
-                                                            class="tooltipp">Xem sản phẩm</span></button>
+                                                    <button class="quick-view"
+                                                        onclick="window.location='{{ route('product.show', ['slug' => $item->slug]) }}'"><i
+                                                            class="fa fa-eye"></i><span class="tooltipp">Xem sản
+                                                            phẩm</span></button>
                                                 </div>
                                             </div>
                                             <div class="add-to-cart">
-                                                <button class="add-to-cart-btn"><i class="fa fa-shopping-cart"></i> Thêm
-                                                    giỏ hàng</button>
+                                                <?php
+                                                $variant = isset($item->productVariants) && $item->productVariants != '[]' ? $item->productVariants->where('product_id', $item->id)->first()->id : null;
+                                                ?>
+                                                <form action="{{ route('cart.add', $item->id) }}" method="POST">
+                                                    @csrf
+                                                    <input type="hidden" name="qty" value="1">
+                                                    <input type="hidden" name="product_variant_id"
+                                                        value="{{ $variant }}">
+                                                    <button type="submit" class="add-to-cart-btn">
+                                                        <i class="fa fa-shopping-cart"></i> Thêm giỏ hàng
+                                                    </button>
+                                                </form>
                                             </div>
                                         </div>
                                     @endforeach

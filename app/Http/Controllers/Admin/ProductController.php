@@ -15,6 +15,7 @@ use Illuminate\Support\HtmlString;
 use Yajra\DataTables\DataTables;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
+use Intervention\Image\Facades\Image;
 
 class ProductController extends Controller
 {
@@ -432,6 +433,26 @@ class ProductController extends Controller
         return response()->json(['success' => 'success', 'message' => 'Xóa hàng loạt thành công']);
     }
 
+    // public function uploadImage(Request $request)
+    // {
+    //     if (!$request->hasFile('file')) {
+    //         return response()->json(['error' => 'No file uploaded'], 400);
+    //     }
+
+    //     $file = $request->file('file');
+    //     if (!$file->isValid()) {
+    //         return response()->json(['error' => 'Invalid file'], 400);
+    //     }
+
+    //     $fileName = time() . '_' . $file->getClientOriginalName();
+    //     $filePath = Storage::disk('public')->putFileAs('products', $file, $fileName);
+
+    //     return response()->json([
+    //         'filePath' => 'products/' . $fileName, // <-- đảm bảo lưu đúng
+    //         'url' => Storage::url('products/' . $fileName),
+    //     ]);
+    // }
+
     public function uploadImage(Request $request)
     {
         if (!$request->hasFile('file')) {
@@ -443,12 +464,26 @@ class ProductController extends Controller
             return response()->json(['error' => 'Invalid file'], 400);
         }
 
+        // Định nghĩa kích thước cố định (ví dụ: 800x600 pixel)
+        $width = 600;
+        $height = 600;
+
+        // Tạo tên file duy nhất
         $fileName = time() . '_' . $file->getClientOriginalName();
-        $filePath = Storage::disk('public')->putFileAs('products', $file, $fileName);
+        $filePath = 'products/' . $fileName;
+
+        // Resize và lưu ảnh
+        $image = Image::make($file)->resize($width, $height, function ($constraint) {
+            $constraint->aspectRatio(); // Giữ tỷ lệ khung hình
+            $constraint->upsize(); // Không phóng to nếu ảnh nhỏ hơn
+        })->encode(null, 90); // Chất lượng 90%
+
+        // Lưu vào storage
+        Storage::disk('public')->put($filePath, (string) $image);
 
         return response()->json([
-            'filePath' => 'products/' . $fileName, // <-- đảm bảo lưu đúng
-            'url' => Storage::url('products/' . $fileName),
+            'filePath' => $filePath,
+            'url' => Storage::url($filePath),
         ]);
     }
 

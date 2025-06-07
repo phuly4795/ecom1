@@ -20,7 +20,7 @@
 
     <!-- Bootstrap -->
     <link type="text/css" rel="stylesheet" href="{{ asset('asset/guest/css/bootstrap.min.css') }}" />
-
+    {{-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"> --}}
     <!-- Slick -->
     <link type="text/css" rel="stylesheet" href="{{ asset('asset/guest/css/slick.css') }}" />
     <link type="text/css" rel="stylesheet" href="{{ asset('asset/guest/css/slick-theme.css') }}" />
@@ -34,6 +34,7 @@
     <!-- Custom stlylesheet -->
     <link type="text/css" rel="stylesheet" href="{{ asset('asset/guest/css/style.css') }}" />
     <link type="text/css" rel="stylesheet" href="{{ asset('asset/guest/css/custom.css') }}" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 </head>
 
 <!-- HEADER -->
@@ -44,8 +45,14 @@
 @include('layouts.include.guest.navigation')
 <!-- /NAVIGATION -->
 <!-- CONTENT -->
+@if (session('status') && session('message'))
+    <x-alert-modal-guest :status="session('status')" :content="session('message')" />
+@endif
 {{ $slot }}
 <!-- /CONTENT -->
+<!-- Modal thông báo -->
+
+
 
 <!-- FOOTER -->
 @include('layouts.include.guest.footer')
@@ -57,6 +64,73 @@
 <script src="{{ asset('asset/guest/js/nouislider.min.js') }}"></script>
 <script src="{{ asset('asset/guest/js/jquery.zoom.min.js') }}"></script>
 <script src="{{ asset('asset/guest/js/main.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    /**
+     * Hiển thị alert modal cho người dùng
+     * @param {string} message - Nội dung thông báo
+     * @param {string} status - success | error | warning | info
+     * @param {object} options - Các tuỳ chọn: autoClose, closeTimeout, redirectUrl
+     */
+    function showUserAlertModal(message, status = 'info', options = {}) {
+        const icons = {
+            success: '<i class="fa fa-check-circle text-success" style="font-size: 40px;"></i>',
+            error: '<i class="fa fa-times-circle text-danger" style="font-size: 40px;"></i>',
+            warning: '<i class="fa fa-exclamation-circle text-warning" style="font-size: 40px;"></i>',
+            info: '<i class="fa fa-info-circle text-info" style="font-size: 40px;"></i>'
+        };
 
+        const defaultOptions = {
+            autoClose: false,
+            closeTimeout: 3000,
+            redirectUrl: null
+        };
+
+        options = {
+            ...defaultOptions,
+            ...options
+        };
+
+        const modalContent = `
+            <div class="mb-2">${icons[status]}</div>
+            <p class="text-${status}">${message}</p>
+        `;
+
+        $('#userAlertModalContent').html(modalContent);
+        $('#userAlertModal').modal('show');
+
+        if (options.autoClose) {
+            setTimeout(() => {
+                $('#userAlertModal').modal('hide');
+                if (options.redirectUrl) {
+                    window.location.href = options.redirectUrl;
+                }
+            }, options.closeTimeout);
+        }
+
+        $('#userAlertModal').on('hidden.bs.modal', function() {
+            $('#userAlertModalContent').html('');
+            if (!options.autoClose && options.redirectUrl) {
+                window.location.href = options.redirectUrl;
+            }
+        });
+    }
+
+    // Tự động gọi nếu có session flash từ Laravel
+    @if (session('status') && session('message'))
+        $(document).ready(function() {
+            showUserAlertModal(
+                "{{ session('message') }}",
+                "{{ session('status') }}", {
+                    autoClose: true,
+                    closeTimeout: 3000,
+                    @if (session('redirect'))
+                        redirectUrl: "{{ session('redirect') }}"
+                    @endif
+                }
+            );
+        });
+    @endif
+</script>
 
 </html>

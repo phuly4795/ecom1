@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController;
@@ -96,6 +97,7 @@ Route::middleware('auth', 'verified', 'checkRole')->group(function () {
             Route::delete('/{id}', [OrderController::class, 'destroy'])->name('destroy');
         });
 
+        Route::resource('coupons', CouponController::class);
 
         Route::get('/dashboard', function () {
             return view('layouts.pages.admin.dashboard');

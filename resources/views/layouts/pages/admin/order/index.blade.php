@@ -73,7 +73,7 @@
                         {
                             data: 'total_items',
                             name: 'total_items',
-                            width: '8%',
+                            width: '10%',
                             className: 'text-center'
                         },
                         {

@@ -10,9 +10,17 @@
                     <i class="fa fa-check-circle"></i> {{ session('success') }}
                 </div>
             @endif
+            @if (session('error'))
+                <div class="alert alert-danger alert-dismissable">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                    <i class="fa fa-exclamation-triangle"></i> {{ session('error') }}
+                </div>
+            @endif
+
 
             <h1 class="text-center" style="margin-bottom: 3%">Giỏ hàng của bạn</h1>
-            @if($cartItems == [])
+            {{-- @dd($cartItems) --}}
+            @if ($cartItems == '[]')
                 <div class="text-center">
                     <i class="fa fa-shopping-cart fa-3x text-muted"></i>
                     <p class="lead text-muted">Giỏ hàng của bạn hiện đang trống</p>
@@ -40,9 +48,11 @@
                                                 alt="{{ $item->product->title }}" class="media-object product-image">
                                         </div>
                                         <div class="media-body">
-                                            <h4 class="media-heading">{{ $item->product->title }}</h4>
-                                            <p class="text-muted">Màu:
-                                                {{ isset($item->productVariant) ? $item->productVariant->variant_name : 'N/A' }}
+                                            <h4 class="media-heading"><a class="h4" style="font-weight: 700"
+                                                    href="{{ route('product.show', ['slug' => $item->product->slug]) }}">{{ $item->product->title }}</a>
+                                            </h4>
+                                            <p class="text-muted"><strong>Tuỳ chọn:</strong>
+                                                {{ isset($item->productVariant) ? $item->productVariant->variant_name : 'Mặc định' }}
                                             </p>
                                         </div>
                                     </div>
@@ -68,14 +78,21 @@
                                 </div>
                                 <div class="col-sm-2 col-xs-12 text-center">
                                     <p class="item-total">
-                                        {{ number_format($item->product->price * $item->qty) }} vnđ</p>
+                                        <?php
+                                        $price = isset($item->productVariant) ? $item->productVariant->price : $item->product->price;
+                                        ?>
+                                        {{ number_format($price * $item->qty) }} vnđ</p>
                                 </div>
                                 <div class="col-sm-1 col-xs-12 text-center">
-                                    <form method="POST" action="{{ route('cart.remove', $item->id) }}">
+                                    <form method="POST"
+                                        action="{{ route('cart.remove', [
+                                            'productId' => $item->product_id,
+                                            'productVariantId' => $item->product_variant_id ?? null, // hoặc giá trị mặc định
+                                        ]) }}">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-danger btn-sm remove-btn"
-                                            title="Xóa sản phẩm">
+                                        <button type="submit" onclick="return confirm('Bạn có chắc chắn muốn xóa?')"
+                                            data-toggle="tooltip" title="Xóa sản phẩm" class="btn btn-danger btn-sm">
                                             <i class="fa fa-trash"></i>
                                         </button>
                                     </form>
@@ -114,8 +131,23 @@
                                 </div>
                                 <div class="row summary-row discount">
                                     <div class="col-xs-6">Giảm giá:</div>
-                                    <div class="col-xs-6 text-right">-{{ number_format($discount) }} vnđ</div>
+                                    <div class="col-xs-6 text-right text-danger">
+                                        -{{ number_format(abs($cart->discount_amount)) }} vnđ
+                                    </div>
                                 </div>
+                                @if ($cart->coupon_code)
+                                    <form action="{{ route('cart.removeCoupon') }}" method="POST">
+                                        @csrf
+                                        <div class="row summary-row coupon-code">
+                                            <div class="col-xs-6">Mã giảm giá:</div>
+                                            <div class="col-xs-6 text-right">
+                                                <strong>{{ $cart->coupon_code }}</strong>
+                                                <button class="btn btn-sm btn-link text-danger" data-toggle="tooltip"
+                                                    title="Xóa mã giảm giá" type="submit">X</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                @endif
                                 <div class="row summary-row total">
                                     <div class="col-xs-6"><strong>Tổng cộng:</strong></div>
                                     <div class="col-xs-6 text-right"><strong>{{ number_format($total) }} vnđ</strong>
@@ -123,7 +155,8 @@
                                 </div>
                                 <a href="{{ route('cart.checkout') }}"
                                     class="btn btn-primary btn-block checkout-btn">Thanh toán</a>
-                                <a href="{{ route('home') }}" class="btn btn-link btn-block continue-shopping">Tiếp tục
+                                <a href="{{ route('home') }}" class="btn btn-link btn-block continue-shopping">Tiếp
+                                    tục
                                     mua
                                     sắm</a>
                             </div>
@@ -223,33 +256,84 @@
 </style>
 
 <script>
-    // Quantity controls
+    const updateTimeouts = {}; // Tạm lưu timeout cho từng sản phẩm
+
+    function updateCartQuantity(id, qty) {
+        if (qty < 1) qty = 1;
+
+        // Nếu đã có timeout trước đó thì clear để reset
+        if (updateTimeouts[id]) {
+            clearTimeout(updateTimeouts[id]);
+        }
+
+        // Đặt lại timeout sau 500ms mới gọi API
+        updateTimeouts[id] = setTimeout(() => {
+            fetch('{{ route('cart.updateQuantity') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        id,
+                        qty
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const itemTotal = document.querySelector(`.qty-input[data-id="${id}"]`)
+                            .closest('.cart-item')
+                            .querySelector('.item-total');
+                        itemTotal.textContent = `${data.item_total} vnđ`;
+
+                        document.querySelector('.summary-row:nth-child(1) .text-right')
+                            .textContent = `${data.subtotal} vnđ`;
+                        document.querySelector('.summary-row.total .text-right')
+                            .textContent = `${data.total} vnđ`;
+                    }
+                });
+        }, 500); // Gửi request sau 500ms nếu không có thao tác mới
+    }
+
+    // Nút tăng
     document.querySelectorAll('.increment').forEach(button => {
         button.addEventListener('click', function() {
             const id = this.dataset.id;
             const input = document.querySelector(`.qty-input[data-id="${id}"]`);
             input.value = parseInt(input.value) + 1;
+            updateCartQuantity(id, input.value);
         });
     });
 
+    // Nút giảm
     document.querySelectorAll('.decrement').forEach(button => {
         button.addEventListener('click', function() {
             const id = this.dataset.id;
             const input = document.querySelector(`.qty-input[data-id="${id}"]`);
-            if (parseInt(input.value) > 1) {
-                input.value = parseInt(input.value) - 1;
-            }
+            input.value = Math.max(1, parseInt(input.value) - 1);
+            updateCartQuantity(id, input.value);
         });
     });
 
-    // Input validation
+    // Nhập tay
     document.querySelectorAll('.qty-input').forEach(input => {
         input.addEventListener('change', function() {
-            if (this.value < 1) {
-                this.value = 1;
-            }
-            console.log(this.value);
-            
+            const id = this.dataset.id;
+            this.value = Math.max(1, parseInt(this.value));
+            updateCartQuantity(id, this.value);
         });
+    });
+    // Tự động ẩn alert 
+    setTimeout(function() {
+        const alert = document.querySelector('.alert');
+        if (alert) {
+            alert.style.transition = "opacity 0.5s ease";
+            alert.style.opacity = 0;
+            setTimeout(() => alert.remove(), 500);
+        }
+    }, 3000); // 3 giây
+    $('body').tooltip({
+        selector: '[data-toggle="tooltip"]'
     });
 </script>

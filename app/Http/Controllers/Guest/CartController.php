@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Guest;
 use App\Http\Controllers\Controller;
 use App\Models\Cart;
 use App\Models\CartDetail;
+use App\Models\Coupon;
 use Illuminate\Support\Facades\Session;
 use App\Models\Product;
 use App\Models\Province;
 use App\Models\ShippingAddress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Carbon;
 
 class CartController extends Controller
 {
@@ -45,7 +47,7 @@ class CartController extends Controller
 
         $total = max($subtotal + $shippingFee - $discount, 0);
 
-        return view('layouts.pages.guest.cart', compact('cartItems', 'subtotal', 'shippingFee', 'discount', 'total'));
+        return view('layouts.pages.guest.cart', compact('cartItems', 'subtotal', 'shippingFee', 'discount', 'total', 'cart'));
     }
 
     // Cập nhật số lượng sản phẩm trong giỏ
@@ -71,14 +73,19 @@ class CartController extends Controller
     }
 
     // Xóa sản phẩm khỏi giỏ hàng
-    public function remove($productId)
+    public function remove($productId, $productVariantId = null)
     {
-        $cart = Session::get('cart', []);
 
-        if (isset($cart[$productId])) {
-            unset($cart[$productId]);
-            Session::put('cart', $cart);
-            return redirect()->back()->with('success', 'Đã xóa sản phẩm khỏi giỏ hàng.');
+        $cartDetail = CartDetail::whereHas('cart', function ($q) {
+            $q->where('user_id', Auth::id());
+        })
+            ->where('product_id', $productId)
+            ->when($productVariantId, fn($q) => $q->where('product_variant_id', $productVariantId))
+            ->first();
+
+        if (isset($cartDetail)) {
+            $cartDetail->delete();
+            return redirect()->back()->with(['status' => 'success', 'success' => 'Đã xóa sản phẩm khỏi giỏ hàng.']);
         }
 
         return redirect()->back()->with('error', 'Sản phẩm không tồn tại trong giỏ hàng.');
@@ -87,16 +94,45 @@ class CartController extends Controller
     // Áp dụng mã giảm giá
     public function applyCoupon(Request $request)
     {
-        $code = $request->input('coupon_code');
 
-        // Ví dụ kiểm tra mã coupon đơn giản
-        if ($code === 'DISCOUNT10') {
-            // Giảm 10$ cố định (ví dụ)
-            Session::put('discount', 10);
-            return redirect()->back()->with('success', 'Áp dụng mã giảm giá thành công.');
+        $request->validate([
+            'coupon_code' => 'required|string'
+        ]);
+        $now = Carbon::now();
+
+        $cart = Cart::where('user_id', auth()->id())->firstOrFail();
+
+        $couponCode = strtolower($request->coupon_code);
+
+        // Giả sử bạn có model Coupon
+        $coupon = Coupon::whereRaw('LOWER(code) = ?', [$couponCode])
+            ->where('is_active', true)
+            ->where(function ($q) use ($now) {
+                $q->whereNull('start_date')->orWhere('start_date', '<=', $now);
+            })
+            ->where(function ($q) use ($now) {
+                $q->whereNull('end_date')->orWhere('end_date', '>=', $now);
+            })
+            ->first();
+
+        if (!$coupon) {
+            return back()->with('error', 'Mã giảm giá không hợp lệ hoặc đã hết hạn.');
         }
 
-        return redirect()->back()->with('error', 'Mã giảm giá không hợp lệ hoặc đã hết hạn.');
+        if ($coupon->usage_limit !== null && $coupon->used >= $coupon->usage_limit) {
+            return response()->json(['error' => 'Mã giảm giá đã được sử dụng quá số lần cho phép.'], 400);
+        }
+
+        if (strtolower($cart->coupon_code) == $couponCode) {
+            return back()->with('error', 'Mã giảm giá đã được áp dụng.');
+        }
+
+
+        $cart->coupon_code = $coupon->code;
+        $cart->discount_amount = $coupon->value; // hoặc tính theo %
+        $cart->save();
+
+        return back()->with('success', 'Áp dụng mã giảm giá thành công!');
     }
 
 
@@ -123,17 +159,19 @@ class CartController extends Controller
             $cartDetail->qty = $cartDetail->qty + $qty;
             $cartDetail->save();
         } else {
+            $productPrice = (isset($product->productVariants) && $product->productVariants != '[]') ? $product->productVariants->where('id', $productVariantId)->first()->price : $product->price;
+
             // Nếu chưa có → thêm mới
             CartDetail::create([
                 'cart_id'    => $cart->id,
                 'product_id' => $productId,
                 'qty'        => $qty,
-                'price'      => $product->price,
+                'price'      => $productPrice,
                 'product_variant_id' => $productVariantId
             ]);
         }
 
-        return redirect()->back()->with('success', 'Đã thêm vào giỏ hàng!');
+        return redirect()->back()->with(['status' => 'success', 'message' => 'Đã thêm vào giỏ hàng!']);
     }
 
     public function checkout()
@@ -204,5 +242,45 @@ class CartController extends Controller
                 'product_variant_id' => $productVariantId
             ]);
         }
+    }
+
+    // app/Http/Controllers/CartController.php
+
+    public function updateQuantity(Request $request)
+    {
+        $itemId = $request->input('id');
+        $qty = (int) $request->input('qty');
+
+        // Cập nhật giỏ hàng (nếu bạn dùng một Cart package, ví dụ Gloudemans)
+        $cartItem = CartDetail::find($itemId);
+        if ($cartItem) {
+            $cartItem->qty = $qty;
+            $cartItem->save();
+        }
+
+        // Tính lại tổng
+        $cartItems = auth()->user()->cart->cartDetails; // Hoặc session-based tùy bạn
+        // dd($cartItems);
+        $subtotal = $cartItems->sum(fn($item) => ($item->productVariant->price ?? $item->product->price) * $item->qty);
+        $shippingFee = 20000;
+        $discount = 0; // nếu có mã thì tính sau
+        $total = $subtotal + $shippingFee - $discount;
+
+        return response()->json([
+            'success' => true,
+            'item_total' => number_format(($cartItem->productVariant->price ?? $cartItem->product->price) * $qty),
+            'subtotal' => number_format($subtotal),
+            'total' => number_format($total),
+        ]);
+    }
+
+    public function removeCoupon(Request $request)
+    {
+        $cart = Cart::where('user_id', auth()->id())->firstOrFail();
+        $cart->coupon_code = null;
+        $cart->discount_amount = null; // hoặc tính theo %
+        $cart->save();
+
+        return redirect()->back()->with('success', 'Đã xóa mã giảm giá.');
     }
 }

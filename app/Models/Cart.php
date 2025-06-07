@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Cart extends Model
 {
-    protected $fillable = ['user_id', 'session_id'];
+    protected $fillable = ['user_id', 'session_id', 'discount_amount', 'coupon_code'];
 
     public function cartDetails()
     {

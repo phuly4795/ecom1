@@ -38,11 +38,14 @@ Route::prefix('product')->name('product.')->group(function () {
 
 Route::prefix('cart')->name('cart.')->group(function () {
     Route::get('/', [CartController::class, 'index'])->name('show');
-    Route::post('/cart/add/{productId}', [CartController::class, 'addToCart'])->name('add');
-    Route::post('/cart/updateQty', [CartController::class, 'updateQty'])->name('updateQty');
-    Route::delete('/cart/remove/{productId}', [CartController::class, 'remove'])->name('remove');
-    Route::post('/cart/apply-coupon', [CartController::class, 'applyCoupon'])->name('applyCoupon');
+    Route::post('/add/{productId}', [CartController::class, 'addToCart'])->name('add');
+    Route::post('/updateQty', [CartController::class, 'updateQty'])->name('updateQty');
+    Route::delete('/remove/{productId}/{productVariantId?}', [CartController::class, 'remove'])->name('remove');
+    Route::post('/apply-coupon', [CartController::class, 'applyCoupon'])->name('applyCoupon');
     Route::get('/checkout', [CartController::class, 'checkout'])->name('checkout');
+
+    Route::post('/update-quantity', [CartController::class, 'updateQuantity'])->name('updateQuantity');
+    Route::post('/remove-coupon', [CartController::class, 'removeCoupon'])->name('removeCoupon');
 });
 
 Route::prefix('checkout')->name('checkout.')->group(function () {
@@ -54,7 +57,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/my-account', [AccountController::class, 'index'])->name('my.account');
     Route::get('/order/track/{id}', [AccountController::class, 'track'])->name('order.track');
     Route::get('/account/orders/{id}', [AccountController::class, 'show'])->name('account.order.detail');
-
 });
 
 Route::get('/districts/{provinceId}', [LocationController::class, 'getDistricts'])->name('getDistricts');
