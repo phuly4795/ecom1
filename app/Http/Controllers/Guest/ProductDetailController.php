@@ -15,7 +15,8 @@ class ProductDetailController extends Controller
     {
         $productDetail = Product::with(['productImages', 'brand', 'reviews', 'productVariants'])->where('slug', $slug)->firstOrFail();
         $productLastest = Product::with('productImages')->latest()->get()->take(4);
-        $mainCategory = $productDetail->category ? $productDetail->category : $productDetail->subCategory;
+        $categoryParent = $productDetail->category;
+        $categoryChild = $productDetail->subCategory;
 
         // Tính toán thông tin đánh giá
         $averageRating = $productDetail->reviews->avg('rating') ?? 0;
@@ -45,14 +46,22 @@ class ProductDetailController extends Controller
             ->orderByDesc('created_at')
             ->paginate(5); // mỗi trang 5 review
 
+
+        $breadcrumbs = [
+            ['name' => 'Trang chủ', 'url' => route('home')],
+            ['name' => $categoryParent->name, 'url' => route('category.show', $categoryParent->slug)],
+        ];
+
+        if ($categoryChild) {
+            $breadcrumbs[] = ['name' => $categoryChild->name, 'url' => route('subcategory.show', $categoryChild->slug)];
+        }
+
+        $breadcrumbs[] = ['name' => $productDetail->title, 'url' => null];
+
         return view('layouts.pages.guest.product_detail', [
             'product' => $productDetail,
             'productLastest' => $productLastest,
-            'breadcrumbs' => [
-                ['name' => 'Trang chủ', 'url' => route('home')],
-                ['name' => $mainCategory->name, 'url' => route('category.show', $mainCategory->slug)],
-                ['name' => $productDetail->title, 'url' => null],
-            ],
+            'breadcrumbs' => $breadcrumbs,
             'averageRating' => $averageRating,
             'ratings' => $ratings,
             'selectedVariant' => $selectedVariant,

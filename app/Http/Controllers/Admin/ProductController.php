@@ -10,6 +10,7 @@ use App\Models\SubCategory;
 use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 use Yajra\DataTables\DataTables;
@@ -129,17 +130,26 @@ class ProductController extends Controller
             })
             ->editColumn('category', function ($product) {
                 $html = '<div>';
-                $cate = "Không có";
-                if ($product->subcategory_id && $product->subcategory && $product->subcategory->categories) {
-                    $cate = $product->subcategory->categories[0]->name;
-                } elseif ($product->category_id && $product->categories) {
-                    $cate = $product->categories[0]->name;
+
+                $categoryName = 'Không có';
+
+                if ($product->subcategory && $product->subcategory->categories->isNotEmpty()) {
+                    // Danh mục con + cha
+                    $parentCategory = $product->subcategory->categories->first();
+                    $categoryName = $parentCategory->name . ' > ' . $product->subcategory->name;
+                } elseif ($product->category && is_object($product->category)) {
+                    // Chỉ có danh mục cha
+                    $categoryName = $product->category->name;
                 }
-                $html .= '<span class="badge badge-info">' . $cate . '</span>';
-                if ($product->is_featured == 'yes') {
+
+                $html .= '<span class="badge badge-info">' . e($categoryName) . '</span>';
+
+                if ($product->is_featured === 'yes') {
                     $html .= '<span class="badge badge-warning ml-1">Nổi bật</span>';
                 }
+
                 $html .= '</div>';
+
                 return new HtmlString($html);
             })
             ->editColumn('sku', function ($product) {
@@ -216,7 +226,7 @@ class ProductController extends Controller
             'discount_end_date' => $request->input('product_type') == 'single' ? 'nullable|date|after_or_equal:discount_start_date' : 'nullable|date|after_or_equal:discount_start_date',
             'qty' => $request->input('product_type') == 'single' ? 'nullable|numeric|min:0' : 'nullable|numeric|min:0',
             'status' => 'required|in:0,1',
-            'category_id' => 'required|integer',
+            'category_json' => 'required|json',
             'brand_id' => 'nullable|exists:brands,id',
             'image' => 'nullable|string',
             'is_featured' => 'required|in:yes,no',
@@ -254,18 +264,15 @@ class ProductController extends Controller
         ]);
 
         // Xử lý category_id và subcategory_id
-        $selectedCategoryId = $validated['category_id'];
-        $subcategory = SubCategory::find($selectedCategoryId);
-        $category = Category::find($selectedCategoryId);
 
-        if ($subcategory) {
-            $validated['category_id'] = $subcategory->category_id;
-            $validated['subcategory_id'] = $selectedCategoryId;
-        } elseif ($category) {
-            $validated['category_id'] = $selectedCategoryId;
-            $validated['subcategory_id'] = null;
+        $categoryJson = $request->input('category_json');
+        $categoryData = json_decode($categoryJson, true);
+
+        if ($categoryData) {
+            $validated['category_id'] = $categoryData['category_id'];
+            $validated['subcategory_id'] = $categoryData['sub_category_id'];
         } else {
-            return redirect()->back()->withErrors(['category_id' => 'Danh mục không hợp lệ.']);
+            return redirect()->back()->withErrors(['category_json' => 'Danh mục không hợp lệ.']);
         }
 
         // Gán specifications vào validated
@@ -508,19 +515,21 @@ class ProductController extends Controller
         $categoryList = [];
 
         foreach ($categories as $category) {
-            // Thêm danh mục cha
-            $categoryList[$category->id] = $category->name;
+            // Danh mục cha
+            $categoryList[json_encode(['category_id' => $category->id, 'sub_category_id' => null])] = $category->name;
 
-            // Thêm danh mục con (nếu có)
-            if ($category->subcategories->isNotEmpty()) {
-                foreach ($category->subcategories as $subcategory) {
-                    $categoryList[$subcategory->id] = $category->name . ' > ' . $subcategory->name;
-                }
+            // Danh mục con
+            foreach ($category->subcategories as $subcategory) {
+                $categoryList[json_encode([
+                    'category_id' => $category->id,
+                    'sub_category_id' => $subcategory->id
+                ])] = $category->name . ' > ' . $subcategory->name;
             }
         }
 
         return $categoryList;
     }
+
     public function toggleStatus(Product $product)
     {
         $product->update([

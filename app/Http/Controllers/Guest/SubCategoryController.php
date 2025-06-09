@@ -3,20 +3,41 @@
 namespace App\Http\Controllers\Guest;
 
 use App\Http\Controllers\Controller;
+use App\Models\Brand;
+use App\Models\Product;
 use App\Models\SubCategory;
+use Illuminate\Support\Facades\DB;
 
 class SubCategoryController extends Controller
 {
     public function show($slug)
     {
-        $subCategory = SubCategory::with('categories')
+        $subCategory = SubCategory::with('categories', 'products')
             ->where('slug', $slug)
-            ->where('status', 1)
             ->firstOrFail();
 
-        // Lấy danh sách sản phẩm thuộc danh mục phụ (giả sử có quan hệ với products)
-        $products = $subCategory->products; // Cần định nghĩa quan hệ trong model nếu có
+        $products = $subCategory->products()
+            ->orderBy('created_at', 'desc')
+            ->paginate(12);
+        $brandIds = $products->pluck('brand_id')->unique()->filter()->values();
 
-        return view('layouts.pages.guest.category', compact('subCategory', 'products'));
+        $brands = Brand::whereIn('id', $brandIds)->get();
+        $bestSellingProducts = Product::with('category')
+            ->select('products.*', DB::raw('SUM(order_details.quantity) as total_sold'))
+            ->join('order_details', 'order_details.product_id', '=', 'products.id')
+            ->groupBy('products.id')
+            ->orderByDesc('total_sold')
+            ->take(3)
+            ->get();
+
+        $productCountsByBrand = Product::where('subcategory_id', $subCategory->id)
+            ->selectRaw('brand_id, COUNT(*) as total')
+            ->groupBy('brand_id')
+            ->pluck('total', 'brand_id');
+
+        $priceMin = $subCategory->products()->min('price');
+        $priceMax = $subCategory->products()->max('price');
+
+        return view('layouts.pages.guest.category', compact('subCategory', 'products', 'brands', 'bestSellingProducts', 'productCountsByBrand', 'priceMin', 'priceMax'));
     }
 }

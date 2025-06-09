@@ -25,4 +25,9 @@ class SubCategory extends Model
         return $this->belongsToMany(Category::class, 'category_sub_category', 'sub_category_id', 'category_id')
             ->withTimestamps();
     }
+
+    public function products()
+    {
+        return $this->hasMany(Product::class, 'subcategory_id');
+    }
 }

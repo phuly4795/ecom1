@@ -110,8 +110,6 @@
                                                 <div class="product-btns">
                                                     <button class="add-to-wishlist"><i class="fa fa-heart-o"></i><span
                                                             class="tooltipp">Yêu thích</span></button>
-                                                    <button class="add-to-compare"><i class="fa fa-exchange"></i><span
-                                                            class="tooltipp">add to compare</span></button>
                                                     <button class="quick-view"
                                                         onclick="window.location='{{ route('product.show', ['slug' => $item->slug]) }}'"><i
                                                             class="fa fa-eye"></i><span class="tooltipp">Xem sản

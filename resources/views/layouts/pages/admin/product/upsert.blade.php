@@ -349,17 +349,27 @@
                                 Ngừng bán</option>
                         </select>
                     </div>
-
                     <div class="card p-4 mb-3 shadow-sm rounded bg-white">
                         <div class="mb-3">
                             <label for="category" class="form-label h5 mb-3" style="font-weight: 700">Danh mục sản
                                 phẩm</label>
-                            <select name="category_id" id="category" class="form-control">
+                            @php
+                                // Giá trị mặc định được chọn
+                                $selectedJson = json_encode([
+                                    'category_id' => $product->category_id ?? '',
+                                    'sub_category_id' => $product->subcategory_id ?? null,
+                                ]);
+
+                                // Ưu tiên lấy lại giá trị từ form cũ (nếu có)
+                                $selectedJson = old('category_json', $selectedJson);
+                            @endphp
+
+                            <select name="category_json" id="category" class="form-control">
                                 <option value="">Chọn danh mục sản phẩm</option>
-                                @foreach ($categoryList as $id => $name)
-                                    <option value="{{ $id }}"
-                                        {{ old('category_id', $product->subcategory_id ?? ($product->category_id ?? '')) == $id ? 'selected' : '' }}>
-                                        {{ $name }}
+                                @foreach ($categoryList as $jsonValue => $label)
+                                    <option value="{{ $jsonValue }}"
+                                        {{ $selectedJson === $jsonValue ? 'selected' : '' }}>
+                                        {{ $label }}
                                     </option>
                                 @endforeach
                             </select>
@@ -507,13 +517,9 @@
         // Xử lý form submit
         document.getElementById('product-form').addEventListener('submit', function(e) {
             e.preventDefault();
-            console.log('Form submit triggered');
-
             try {
                 const specData = {};
                 const specGroups = document.querySelectorAll('.spec-group');
-                console.log('Number of spec groups:', specGroups.length);
-
                 specGroups.forEach(group => {
                     const groupNameInput = group.querySelector('input[name*="[name]"]');
                     const groupName = groupNameInput ? groupNameInput.value.trim() : '';
@@ -540,13 +546,10 @@
                 });
 
                 const jsonString = Object.keys(specData).length > 0 ? JSON.stringify(specData) : '{}';
-                console.log('specData:', specData);
-                console.log('JSON string:', jsonString);
 
                 const specInput = document.getElementById('specifications-json');
                 if (specInput) {
                     specInput.value = jsonString;
-                    console.log('Input value set:', specInput.value);
                 } else {
                     console.error('Hidden input #specifications-json not found');
                 }
