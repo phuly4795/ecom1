@@ -40,7 +40,7 @@ class AccountController extends Controller
     }
     public function show($id)
     {
-        $order = Order::with(['orderDetails.product'])
+        $order = Order::with(['orderDetails.product', 'shippingAddress'])
             ->where('id', $id)
             ->where('user_id', Auth::id())
             ->firstOrFail();
@@ -48,10 +48,19 @@ class AccountController extends Controller
         return response()->json([
             'order' => $order,
             'items' => $order->orderDetails->map(function ($item) {
+                $image = $item->product->productImages->where('type', 1)->first()->image ?? '';
+                $imagePath = $image
+                    ? asset('storage/' . $image)
+                    : asset('asset/img/no-image.png');
+                $variant = isset($item->product->productVariants) && $item->product->productVariants != '[]' ? $item->product->productVariants->where('product_id', $item->product_id)->first()->variant_name : null;
                 return [
+                    // 'a' => $product,
+                    'image' => $imagePath,
                     'name' => $item->product->title,
+                    'variant_name' => $variant ?? "-",
                     'quantity' => $item->quantity,
-                    'price' => $item->price,
+                    'price' => number_format($item->price) . ' vnđ',
+                    'total_price' => number_format($item->total_price) . ' vnđ',
                 ];
             }),
         ]);

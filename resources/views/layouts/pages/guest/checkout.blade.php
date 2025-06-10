@@ -171,19 +171,46 @@
                             <div class="order-products">
                                 @foreach ($cart->cartDetails as $item)
                                     <div class="order-col">
-                                        <div>{{ $item->qty }}x {{ Str::limit($item->product->title, 30, '...') }}
+                                        <div>{{ $item->qty }}x {{ Str::limit($item->product->title, 20, '...') }}
                                         </div>
-                                        <div>{{ number_format($item->price * $item->qty) . ' VNĐ' }}</div>
+                                        <div>
+                                            <p class="item-price">
+                                                {{ number_format($item->final_price * $item->qty) }} vnđ
+                                            </p>
+                                        </div>
+
                                     </div>
                                 @endforeach
                             </div>
                             <div class="order-col">
                                 <div>Vận chuyển</div>
-                                <div><strong>{{ number_format(20000) . ' VNĐ' }}</strong></div>
+                                <div><strong>{{ number_format($shippingFee) . ' vnđ' }}</strong></div>
                             </div>
+
+                            @if (isset($cart->coupon_code))
+                                <div class="order-col">
+                                    <div class="col-xs-6">Giảm giá:</div>
+                                    <div class="col-xs-6 text-right text-danger">
+                                        -{{ isset($cart->discount_amount) ? number_format(abs($cart->discount_amount)) : 0 }}
+                                        vnđ
+                                    </div>
+                                </div>
+                                <form action="{{ route('cart.removeCoupon') }}" method="POST">
+                                    @csrf
+                                    <div class="order-col">
+                                        <div class="col-xs-6">Mã giảm giá:</div>
+                                        <div class="col-xs-6 text-right">
+                                            <strong>{{ $cart->coupon_code }}</strong>
+                                            <button class="btn btn-sm btn-link text-danger" data-toggle="tooltip"
+                                                title="Xóa mã giảm giá" type="submit">X</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            @endif
                             <div class="order-col">
                                 <div><strong>Tổng tiền</strong></div>
-                                <div><strong class="order-total">{{ number_format($total + 20000) . ' VNĐ' }}</strong>
+                                <div><strong
+                                        class="order-total">{{ number_format($total) . ' vnđ' }}</strong>
                                 </div>
                             </div>
                         </div>
@@ -234,7 +261,14 @@
     </div>
     <!-- /SECTION -->
 </x-guest-layout>
-
+<style>
+    .order-col .item-price {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 150px;
+    }
+</style>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const districtsUrl = "{{ route('getDistricts', ['provinceId' => ':provinceId']) }}";

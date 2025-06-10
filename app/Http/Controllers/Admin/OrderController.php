@@ -65,6 +65,13 @@ class OrderController extends Controller
                     <button class="btn btn-sm btn-danger delete-order" data-id="' . $order->id . '" data-toggle="tooltip" title="Xóa"><i class="fas fa-trash"></i></button>
                 ';
                 })
+                ->editColumn('payment_method', function ($order) {
+                    $statuses = [
+                        'cash' => 'Tiền mặt',
+                        'cheque' => 'Thanh toán bằng séc',
+                    ];
+                    return $statuses[$order->payment_method];
+                })
                 ->editColumn('created_at', function ($order) {
                     return $order->created_at->format('d/m/Y');
                 })
@@ -151,6 +158,4 @@ class OrderController extends Controller
             return response()->json(['success' => false, 'message' => 'Lỗi khi xóa đơn hàng']);
         }
     }
-
-    
 }

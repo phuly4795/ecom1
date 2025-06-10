@@ -124,7 +124,21 @@
                                                 </h3>
                                                 <h4 class="product-price"><span
                                                         class="qty">{{ $item->qty }}x</span>
-                                                    {{ number_format($item->product->price) . ' vnđ' }}</h4>
+                                                    <?php
+                                                    $product = $item->productVariant ?? $item->product;
+                                                    $newFinalPrice = $product->is_on_sale ? $product->display_price : $product->original_price;
+                                                    ?>
+                                                    @if ($product->is_on_sale)
+                                                        <span
+                                                            class="text-danger fw-bold">{{ number_format($newFinalPrice) }}
+                                                            vnđ</span>
+                                                        <del class="text-muted">{{ number_format($product->original_price) }}
+                                                            vnđ</del>
+                                                    @else
+                                                        <span>{{ number_format($product->original_price) }}
+                                                            vnđ</span>
+                                                    @endif
+                                                </h4>
                                             </div>
                                             <form action="{{ route('cart.remove', $item->id) }}" method="POST"
                                                 style="display:inline;">
@@ -140,7 +154,8 @@
                                 </div>
                                 <div class="cart-summary">
                                     <small>Có {{ $countQtyCart }} sản phẩm trong giỏ hàng</small>
-                                    <h5>Tổng tiền: {{ number_format($totalPrice) . ' vnđ' }}</h5>
+                                    <h5>Tổng tiền: {{ number_format($totalPrice) . ' vnđ' }} </h5>
+                                    <span>(Đã gồm phí vận chuyển và giảm giá)</span>
                                 </div>
                                 <div class="cart-btns">
                                     <a href="{{ route('cart.show') }}">Xem giỏ hàng</a>

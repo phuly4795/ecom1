@@ -54,6 +54,11 @@
                                     data-slidesToScroll="1">
                                     <!-- product -->
                                     @foreach ($productLatest as $item)
+                                        @php
+                                            // Chọn item để hiển thị giá: nếu có variant thì dùng variant đầu tiên
+                                            $variant = $item->productVariants->first();
+                                            $displayItem = $variant ?? $item;
+                                        @endphp
                                         <div class="product">
                                             <div class="product-img">
                                                 @php
@@ -68,18 +73,10 @@
                                                     <img src="{{ $imagePath }}" alt="" class="product-img">
                                                 </div>
 
-                                                @if (isset($item->compare_price) && $item->compare_price < $item->price)
-                                                    @php
-                                                        $discount = round(
-                                                            (($item->price - $item->compare_price) / $item->price) *
-                                                                100,
-                                                        );
-                                                    @endphp
-                                                @endif
-
                                                 <div class="product-label">
-                                                    {!! isset($discount) ? '<span class="sale">-' . $discount . '%</span>' : '' !!}
-
+                                                    @if ($displayItem->getIsOnSaleAttribute() && $displayItem->discount_percentage > 0)
+                                                        {!! isset($displayItem->discount_percentage) ? '<span class="sale">-' . $displayItem->discount_percentage . '%</span>' : '' !!}
+                                                    @endif
                                                     <span class="new">Mới</span>
                                                 </div>
                                             </div>
@@ -90,13 +87,23 @@
                                                 <h3 class="product-name"><a
                                                         href="{{ route('product.show', ['slug' => $item->slug]) }}">{{ Str::limit($item->title, 20, '...') }}</a>
                                                 </h3>
-                                                {{-- <h4 class="product-price"> {{ number_format($item->price) }} vnđ<del
-                                                        class="product-old-price">{{ $item->compare_price != 0 ? number_format($item->compare_price) . ' vnđ' : '' }}
-                                                    </del></h4> --}}
-                                                {{-- @dd($item->productVariants->where('product_id', $item->id)->first(), $) --}}
                                                 <h4 class="product-price">
-                                                    {{ isset($item->productVariants) && $item->productVariants != '[]' ? number_format($item->productVariants->where('product_id', $item->id)->first()->price) : number_format($item->price) }}
-                                                    vnđ</p>
+
+                                                    <h4 class="product-price">
+                                                        @if ($displayItem->getIsOnSaleAttribute())
+                                                            <span class="text-danger fw-bold">
+                                                                {{ number_format($displayItem->getDisplayPriceAttribute()) }}
+                                                                vnđ
+                                                            </span>
+                                                            <del class="text-muted">
+                                                                {{ number_format($displayItem->original_price) }} vnđ
+                                                            </del>
+                                                        @else
+                                                            <span>
+                                                                {{ number_format($displayItem->original_price) }} vnđ
+                                                            </span>
+                                                        @endif
+                                                    </h4>
                                                 </h4>
                                                 <?php
                                                 $averageRating = $item->reviews->avg('rating') ?? 0;

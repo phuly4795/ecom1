@@ -48,10 +48,12 @@ class AppServiceProvider extends ServiceProvider
                 $cartItems = $cart->cartDetails;
                 foreach ($cartItems as $item) {
                     $countQtyCart += $item->qty;
-                    $totalPrice += $item->qty * $item->product->price;
+                    $totalPrice += $item->qty * $item->final_price;
                 }
             }
-
+            $discount = auth()->user()->cart->discount_amount ?? 0; // nếu có mã thì tính sau
+            $shippingFee = $countQtyCart > 0 ? 20000 : 0;
+            $totalPrice = max($totalPrice + $shippingFee - $discount, 0);
             $view->with([
                 'globalCategories' => $categories,
                 'countQtyCart' => $countQtyCart,

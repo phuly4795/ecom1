@@ -56,8 +56,8 @@ class ProductController extends Controller
                 $html = '<div>';
 
                 if ($product->product_type == 'single') {
-                    $html .= '<span class="text-primary font-weight-bold">' . number_format($product->price) . ' VNĐ</span>';
-                    if ($product->original_price && $product->original_price > $product->price) {
+                    $html .= '<span class="text-primary font-weight-bold">' . number_format($product->original_price) . ' VNĐ</span>';
+                    if ($product->original_price && $product->original_price > $product->original_price) {
                         $html .= '<br><del class="text-muted">' . number_format($product->original_price) . ' VNĐ</del>';
                         $discount = $product->discount_percentage ? $product->discount_percentage . '%' : 'N/A';
                         $html .= '<span class="badge badge-danger ml-1">' . $discount . '</span>';
@@ -219,7 +219,7 @@ class ProductController extends Controller
             'title' => 'required|string|max:255',
             'slug' => ['required', 'string', 'max:255', Rule::unique('products')->ignore($id)],
             'description' => 'nullable|string',
-            'price' => $request->input('product_type') == 'single' ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
+            // 'price' => $request->input('product_type') == 'single' ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
             'original_price' => $request->input('product_type') == 'single' ? 'nullable|numeric|min:0' : 'nullable|numeric|min:0',
             'discount_percentage' => $request->input('product_type') == 'single' ? 'nullable|numeric|min:0|max:100' : 'nullable|numeric|min:0|max:100',
             'discount_start_date' => $request->input('product_type') == 'single' ? 'nullable|date' : 'nullable|date',
@@ -257,7 +257,7 @@ class ProductController extends Controller
             'product_type' => 'required|in:single,variant',
         ], [
             'slug.unique' => 'Slug này đã tồn tại, vui lòng chọn tên khác.',
-            'price.required' => 'Vui lòng nhập giá bán.',
+            // 'price.required' => 'Vui lòng nhập giá bán.',
             'original_price.required' => 'Vui lòng nhập giá gốc.',
             'discount_percentage.max' => 'Phần trăm giảm giá không được vượt quá 100%.',
             'discount_end_date.after_or_equal' => 'Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.',
@@ -278,9 +278,6 @@ class ProductController extends Controller
         // Gán specifications vào validated
         $validated['specifications'] = $specificationsArray; // Lưu mảng đã giải mã thay vì chuỗi JSON
         $validated['track_qty'] = $track_qty;
-
-        // Loại bỏ cột variants nếu không cần thiết
-        unset($validated['variants']);
 
         if ($product) {
             // Cập nhật sản phẩm

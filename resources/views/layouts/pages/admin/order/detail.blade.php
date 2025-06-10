@@ -76,14 +76,32 @@
                                 @enderror
                             @else
                                 <span
-                                    class="badge {{ match ($order->status) {'pending' => 'bg-warning','processing' => 'bg-info','completed' => 'bg-success','cancelled' => 'bg-danger',default => 'bg-secondary'} }}">
-                                    {{ ucfirst($order->status) }}
+                                    class="badge {{ match ($order->status) {
+                                        'pending' => 'bg-warning',
+                                        'processing' => 'bg-info',
+                                        'completed' => 'bg-success',
+                                        'delivered' => 'bg-success',
+                                        'cancelled' => 'bg-danger',
+                                        default => 'bg-secondary',
+                                    } }}">
+                                    {{ match ($order->status) {
+                                        'pending' => 'Đang chờ',
+                                        'processing' => 'Đang xử lý',
+                                        'completed' => 'Hoàn thành',
+                                        'delivered' => 'Đã giao',
+                                        'cancelled' => 'Đã hủy',
+                                        default => ucfirst($order->status),
+                                    } }}
                                 </span>
                             @endif
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <p><strong>Phương thức thanh toán:</strong> {{ $order->payment_method }}</p>
+                        <p><strong>Phương thức thanh toán:</strong>
+                            {{ match ($order->payment_method) {
+                                'cash' => 'Tiền mặt',
+                                default => ucfirst($order->payment_method),
+                            } }}
                         <p><strong>Tổng tiền:</strong> {{ number_format($order->total_amount) }} đ</p>
                         <p><strong>Ngày tạo:</strong> {{ $order->created_at->format('d/m/Y H:i') }}</p>
                     </div>
@@ -116,7 +134,7 @@
             <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">Chi tiết sản phẩm</h6>
             </div>
-            <div class="card-body"> 
+            <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-bordered">
                         <thead>

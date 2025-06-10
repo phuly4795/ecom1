@@ -230,7 +230,6 @@
                                         </button>
                                     </div>
                                     <div class="modal-body" id="orderDetailContent">
-                                        <!-- Nội dung chi tiết sẽ được điền bằng JavaScript -->
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary"
@@ -440,15 +439,52 @@
 
                     modalBody.innerHTML = `
     <div class="card shadow mb-4">
-        <div class="card-header py-3">
-          
-        </div>
         <div class="card-body">
-            <p><strong>Mã đơn hàng:</strong> ${order.order_code}</p>
-            <p><strong>Ngày đặt:</strong> ${new Date(order.created_at).toLocaleDateString('vi-VN')}</p>
-            <p><strong>Địa chỉ giao hàng:</strong> ${order.shipping_address || 'Chưa cập nhật'}</p>
-            <p><strong>Ghi chú:</strong> ${order.note || 'Không có ghi chú'}</p>
-            <h6 class="m-0 font-weight-bold text-primary">Chi tiết đơn hàng</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="font-weight-bold text-primary">Địa chỉ thanh toán</h6>
+                        <p><strong>Khách hàng:</strong> {{ $order->billing_full_name }}</p>
+                        <p><strong>Email:</strong> {{ $order->billing_email }}</p>
+                        <p><strong>Số điện thoại:</strong> {{ $order->billing_telephone }}</p>
+                        <p><strong>Địa chỉ:</strong>
+                            {{ implode(
+                                ', ',
+                                array_filter([
+                                    $order->billing_address,
+                                    $order->billingWard ? $order->billingWard->name : null,
+                                    $order->billingDistrict ? $order->billingDistrict->name : null,
+                                    $order->billingProvince ? $order->billingProvince->name : null,
+                                ]),
+                            ) }}
+                        </p>
+                </div>
+                <div class="col-md-6">
+                        <h6 class="font-weight-bold text-primary">Địa chỉ nhận hàng</h6>
+                        @if ($order->shippingAddress)
+                            <p><strong>Khách hàng:</strong> {{ $order->shippingAddress->full_name }}</p>
+                            <p><strong>Email:</strong> {{ $order->shippingAddress->email }}</p>
+                            <p><strong>Số điện thoại:</strong> {{ $order->shippingAddress->telephone }}</p>
+                            <p><strong>Địa chỉ:</strong>
+                                {{ implode(
+                                    ', ',
+                                    array_filter([
+                                        $order->shippingAddress->address,
+                                        $order->shippingAddress->ward?->name,
+                                        $order->shippingAddress->district?->name,
+                                        $order->shippingAddress->province?->name,
+                                    ]),
+                                ) }}
+                            </p>
+                        @else
+                            <p>Không có địa chỉ nhận hàng riêng, sử dụng địa chỉ thanh toán.</p>
+                        @endif
+                    </div>
+            </div>
+         
+
+
+
+            <h6 class="m-0 font-weight-bold text-primary">Chi tiết sản phẩm</h6>
             <div class="table-responsive">
                 <table class="table table-bordered">
                     <thead>
@@ -467,16 +503,16 @@
                             ? items.map(item => `
                                 <tr>
                                     <td>
-                                        <img src="${item.product_image_url || 'https://via.placeholder.com/60'}" 
+                                        <img src="${item.image}" 
                                              alt="Ảnh sản phẩm" 
                                              style="width: 60px; height: 60px; object-fit: cover;" 
                                              class="img-thumbnail" />
                                     </td>
                                     <td>${item.name}</td>
                                     <td>${item.variant_name || '-'}</td>
-                                    <td>${item.price.toLocaleString('vi-VN')} đ</td>
+                                    <td>${item.price} </td>
                                     <td>${item.quantity}</td>
-                                    <td>${(item.price * item.quantity).toLocaleString('vi-VN')} đ</td>
+                                    <td>${item.total_price}</td>
                                 </tr>
                             `).join('')
                             : `<tr><td colspan="6" class="text-center">Không có sản phẩm</td></tr>`

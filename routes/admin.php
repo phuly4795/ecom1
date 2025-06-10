@@ -38,9 +38,6 @@ Route::middleware('auth', 'verified', 'checkRole')->group(function () {
 
             Route::delete('/mass-destroy', [CategoryController::class, 'massDestroy'])->name('massDestroy');
             Route::delete('/{category}', [CategoryController::class, 'destroy'])->name('destroy');
-
-            Route::post('/upload-image', [CategoryController::class, 'uploadImage'])->name('uploadImage');
-            Route::post('update-order', [CategoryController::class, 'updateOrder'])->name('updateOrder');
         });
 
         Route::prefix('sub_category')->name('sub_category.')->group(function () {
@@ -97,7 +94,17 @@ Route::middleware('auth', 'verified', 'checkRole')->group(function () {
             Route::delete('/{id}', [OrderController::class, 'destroy'])->name('destroy');
         });
 
-        Route::resource('coupons', CouponController::class);
+        Route::prefix('coupons')->name('coupons.')->group(function () {
+            Route::get('/', [CouponController::class, 'index'])->name('index');
+            Route::get('/data', [CouponController::class, 'data'])->name('data');
+            Route::get('/create', [CouponController::class, 'create'])->name('create');
+            Route::get('/{coupon}/edit', [CouponController::class, 'edit'])->name('edit');
+            Route::post('coupon', [CouponController::class, 'storeOrUpdate'])->name('store');
+            Route::put('Coupon/{id}', [CouponController::class, 'storeOrUpdate'])->name('update');
+            Route::delete('/mass-destroy', [CouponController::class, 'massDestroy'])->name('massDestroy');
+            Route::delete('/{Coupon}', [CouponController::class, 'destroy'])->name('destroy');
+            Route::patch('{coupon}/toggle-status', [CouponController::class, 'toggleStatus'])->name('toggleStatus');
+        });
 
         Route::get('/dashboard', function () {
             return view('layouts.pages.admin.dashboard');

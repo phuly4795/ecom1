@@ -22,33 +22,50 @@ class CartController extends Controller
         $cart = null;
 
         if (Auth::check()) {
-            // Người dùng đã đăng nhập: lấy giỏ hàng theo user_id
             $userId = Auth::id();
-            $cart = Cart::with('cartDetails.product')->where('user_id', $userId)->first();
+            $cart = Cart::with(['cartDetails.product', 'cartDetails.productVariant'])->where('user_id', $userId)->first();
         } else {
-            // Chưa đăng nhập: lấy giỏ hàng theo session_id
             $sessionId = Session::getId();
-            $cart = Cart::with('cartDetails.product')->where('session_id', $sessionId)->first();
+            $cart = Cart::with(['cartDetails.product', 'cartDetails.productVariant'])->where('session_id', $sessionId)->first();
         }
-
-        $cartItems = collect();
 
         if ($cart && $cart->cartDetails) {
-            $cartItems = $cart->cartDetails;
+            foreach ($cart->cartDetails as $item) {
+                $product = $item->productVariant ?? $item->product;
+
+                // Kiểm tra nếu đang khuyến mãi thì cập nhật giá
+                $newFinalPrice = $product->is_on_sale ? $product->display_price : $product->original_price;
+
+                if ($item->final_price != $newFinalPrice) {
+                    $item->final_price = $newFinalPrice;
+                    $item->save();
+                }
+            }
+
+            // Tính tổng tạm tính từ final_price
+            $subtotal = $cart->cartDetails->reduce(function ($carry, $item) {
+                return $carry + ($item->final_price * $item->qty);
+            }, 0);
+        } else {
+            $subtotal = 0;
         }
 
-        // Tính tổng tạm tính
-        $subtotal = $cartItems->reduce(function ($carry, $item) {
-            return $carry + ($item->price * $item->qty);
-        }, 0);
-
         $shippingFee = 20000;
-        $discount = Session::get('discount', 0);
-
+        $discount = auth()->user()->cart->discount_amount; // nếu có mã thì tính sau
         $total = max($subtotal + $shippingFee - $discount, 0);
 
-        return view('layouts.pages.guest.cart', compact('cartItems', 'subtotal', 'shippingFee', 'discount', 'total', 'cart'));
+        $cartItems = $cart ? $cart->cartDetails : collect();
+
+        return view('layouts.pages.guest.cart', compact(
+            'cartItems',
+            'subtotal',
+            'shippingFee',
+            'discount',
+            'total',
+            'cart'
+        ));
     }
+
 
     // Cập nhật số lượng sản phẩm trong giỏ
     public function update(Request $request)
@@ -120,7 +137,7 @@ class CartController extends Controller
         }
 
         if ($coupon->usage_limit !== null && $coupon->used >= $coupon->usage_limit) {
-            return response()->json(['error' => 'Mã giảm giá đã được sử dụng quá số lần cho phép.'], 400);
+            return back()->with('error', 'Mã giảm giá đã được sử dụng quá số lần cho phép.');
         }
 
         if (strtolower($cart->coupon_code) == $couponCode) {
@@ -138,36 +155,53 @@ class CartController extends Controller
 
     public function addToCart(Request $request, $productId)
     {
-        $product = Product::findOrFail($productId);
-        $qty = max(1, (int) $request->input('qty', 1)); // Đảm bảo >= 1
+        $product = Product::with('productVariants')->findOrFail($productId);
+        $qty = max(1, (int) $request->input('qty', 1));
         $userId = auth()->check() ? auth()->id() : null;
         $sessionId = session()->getId();
         $productVariantId = $request->input('product_variant_id', null);
-        // 1. Tìm hoặc tạo giỏ hàng của người dùng / khách
+
+        // Tìm hoặc tạo giỏ hàng
         $cart = Cart::firstOrCreate(
             ['user_id' => $userId, 'session_id' => $userId ? null : $sessionId]
         );
 
-        // 2. Kiểm tra sản phẩm đã có trong giỏ chưa
+        // Kiểm tra sản phẩm có trong giỏ chưa
         $cartDetail = CartDetail::where('cart_id', $cart->id)
             ->where('product_id', $productId)
             ->where('product_variant_id', $productVariantId)
             ->first();
 
+        // Lấy variant nếu có
+        $variant = $productVariantId
+            ? $product->productVariants->where('id', $productVariantId)->first()
+            : null;
+
+        // Kiểm tra số lượng tồn kho
+        $availableQty = $variant ? $variant->qty : $product->qty;
+        if ($qty > $availableQty) {
+            return redirect()->back()->with(['status' => 'error', 'message' => 'Số lượng sản phẩm vượt quá tồn kho!']);
+        }
+
+        // Tính giá
+        $item = $variant ?? $product;
+        $originalPrice = $item->original_price;
+        $finalPrice = $item->getIsOnSaleAttribute() == true ? $item->getDisplayPriceAttribute() : $originalPrice;
+
         if ($cartDetail) {
             // Nếu đã có → tăng số lượng
-            $cartDetail->qty = $cartDetail->qty + $qty;
+            $cartDetail->qty += $qty;
+            $cartDetail->final_price = $finalPrice; // cập nhật giá mới nếu có
             $cartDetail->save();
         } else {
-            $productPrice = (isset($product->productVariants) && $product->productVariants != '[]') ? $product->productVariants->where('id', $productVariantId)->first()->price : $product->price;
-
             // Nếu chưa có → thêm mới
             CartDetail::create([
-                'cart_id'    => $cart->id,
-                'product_id' => $productId,
-                'qty'        => $qty,
-                'price'      => $productPrice,
-                'product_variant_id' => $productVariantId
+                'cart_id'            => $cart->id,
+                'product_id'         => $productId,
+                'qty'                => $qty,
+                'original_price'     => $originalPrice,
+                'final_price'        => $finalPrice,
+                'product_variant_id' => $productVariantId,
             ]);
         }
 
@@ -198,11 +232,11 @@ class CartController extends Controller
 
         // Tính tổng tạm tính
         $subtotal = $cartItems->reduce(function ($carry, $item) {
-            return $carry + ($item->price * $item->qty);
+            return $carry + ($item->final_price * $item->qty);
         }, 0);
 
         $shippingFee = 20000;
-        $discount = Session::get('discount', 0);
+        $discount = auth()->user()->cart->discount_amount; // nếu có mã thì tính sau
 
         $total = max($subtotal + $shippingFee - $discount, 0);
         $userInfo = Auth::user();
@@ -244,7 +278,6 @@ class CartController extends Controller
         }
     }
 
-    // app/Http/Controllers/CartController.php
 
     public function updateQuantity(Request $request)
     {
@@ -260,15 +293,14 @@ class CartController extends Controller
 
         // Tính lại tổng
         $cartItems = auth()->user()->cart->cartDetails; // Hoặc session-based tùy bạn
-        // dd($cartItems);
-        $subtotal = $cartItems->sum(fn($item) => ($item->productVariant->price ?? $item->product->price) * $item->qty);
+        $subtotal = $cartItems->sum(fn($item) => ($item->final_price) * $item->qty);
         $shippingFee = 20000;
-        $discount = 0; // nếu có mã thì tính sau
+        $discount = auth()->user()->cart->discount_amount; // nếu có mã thì tính sau
         $total = $subtotal + $shippingFee - $discount;
 
         return response()->json([
             'success' => true,
-            'item_total' => number_format(($cartItem->productVariant->price ?? $cartItem->product->price) * $qty),
+            'item_total' => number_format(($cartItem->final_price) * $qty),
             'subtotal' => number_format($subtotal),
             'total' => number_format($total),
         ]);

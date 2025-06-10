@@ -53,7 +53,6 @@ class BrandController extends Controller
 
     public function create()
     {
-
         return view('layouts.pages.admin.brand.upsert');
     }
     public function edit(Brand $brand)

@@ -82,33 +82,18 @@
                         </div>
                         <div>
                             <h3 class="product-price" id="product-price">
-                                {{ number_format($selectedVariant ? ($isDiscountActive ? $selectedVariant->discounted_price : $selectedVariant->price) : $product->price) }}
-                                vnđ
-                                @if (
-                                    ($selectedVariant && $selectedVariant->price != ($selectedVariant->discounted_price ?? $selectedVariant->price)) ||
-                                        (!$selectedVariant && ($product->compare_price != 0 || $product->original_price != 0)))
-                                    <del class="product-old-price">
-                                        {{ number_format($selectedVariant ? $selectedVariant->price : ($product->compare_price != 0 ? $product->compare_price : ($product->original_price != 0 ? $product->original_price : ''))) }}
-                                        vnđ
-                                    </del>
-                                @endif
-                                @php
-                                    $discountPercentage =
-                                        $selectedVariant &&
-                                        $selectedVariant->discounted_price &&
-                                        $selectedVariant->price > 0
-                                            ? round(
-                                                (($selectedVariant->price - $selectedVariant->discounted_price) /
-                                                    $selectedVariant->price) *
-                                                    100,
-                                            )
-                                            : $product->discount_percentage ?? 0;
-                                @endphp
-                                @if ($discountPercentage > 0 && $isDiscountActive)
+                                @if ($product->getIsOnSaleAttribute())
+                                    <span
+                                        class="text-danger fw-bold">{{ number_format($product->getDisplayPriceAttribute()) }}
+                                        vnđ</span>
+                                    <del class="text-muted">{{ number_format($product->original_price) }}
+                                        vnđ</del>
                                     <span class="discount-label"
-                                        style="color: red; font-weight: bold; margin-left: 10px;">
-                                        Giảm {{ $discountPercentage }}%
-                                    </span>
+                                        style="color: red; font-weight: bold; margin-left: 10px;">Giảm
+                                        {{ $product->discount_percentage }}%</span>
+                                @else
+                                    <span>{{ number_format($product->original_price) }}
+                                        vnđ</span>
                                 @endif
                             </h3>
                             <span class="product-available" id="product-availability">
@@ -182,44 +167,16 @@
                                             $currentDate = \Carbon\Carbon::now();
                                         @endphp
                                         @foreach ($product->productVariants as $variant)
-                                            @php
-                                                $startDate = $variant->discount_start_date
-                                                    ? \Carbon\Carbon::parse($variant->discount_start_date)
-                                                    : null;
-                                                $endDate = $variant->discount_end_date
-                                                    ? \Carbon\Carbon::parse($variant->discount_end_date)
-                                                    : null;
-                                                $isDiscountActive =
-                                                    $variant->discounted_price &&
-                                                    $startDate &&
-                                                    $endDate &&
-                                                    $currentDate->between($startDate, $endDate);
-                                                $variantDisplayPrice = $isDiscountActive
-                                                    ? $variant->discounted_price
-                                                    : $variant->price;
-                                                $variantDiscountPercentage =
-                                                    $isDiscountActive && $variant->price > 0
-                                                        ? round(
-                                                            (($variant->price - $variant->discounted_price) /
-                                                                $variant->price) *
-                                                                100,
-                                                        )
-                                                        : 0;
-                                            @endphp
                                             <option
                                                 value="{{ route('product.show', [$product->slug, $variant->variant_name]) }}"
-                                                data-original-price="{{ $variant->price }}"
+                                                data-original-price="{{ $variant->original_price }}"
                                                 data-original-id="{{ $variant->id }}"
-                                                data-discounted-price="{{ $variant->discounted_price ?? $variant->price }}"
-                                                data-discount-percentage="{{ $variantDiscountPercentage }}"
+                                                data-discount-percentage="{{ $variant->discount_percentage }}"
                                                 data-qty="{{ $variant->qty }}"
+                                                data-sale-start = "{{ $variant->discount_start_date }}"
+                                                data-sale-end = "{{ $variant->discount_end_date }}"
                                                 {{ $selectedVariant && $selectedVariant->id === $variant->id ? 'selected' : '' }}>
-                                                {{ $variant->variant_name }} -
-                                                {{ number_format($variantDisplayPrice) }} VNĐ (Còn:
-                                                {{ $variant->qty }})
-                                                @if ($variantDiscountPercentage > 0 && $isDiscountActive)
-                                                    (-{{ $variantDiscountPercentage }}%)
-                                                @endif
+                                                {{ $variant->variant_name }} (Còn:{{ $variant->qty }})
                                             </option>
                                         @endforeach
                                     </select>
@@ -555,31 +512,47 @@
         const selectedOption = select.options[select.selectedIndex];
         const url = selectedOption.value;
         const variantId = selectedOption.getAttribute('data-original-id');
-        const originalPrice = selectedOption.getAttribute('data-original-price');
-        const discountedPrice = selectedOption.getAttribute('data-discounted-price');
-        const discountPercentage = selectedOption.getAttribute('data-discount-percentage');
-        const productVariantId = document.getElementById('product_variant_id');
-        const qty = selectedOption.getAttribute('data-qty');
+        const originalPrice = parseFloat(selectedOption.getAttribute('data-original-price'));
+        const discountPercentage = parseFloat(selectedOption.getAttribute('data-discount-percentage'));
+        const qty = parseInt(selectedOption.getAttribute('data-qty'));
 
-        // Cập nhật URL
-        window.history.pushState({}, document.title, url);
+        // Lấy ngày bắt đầu và kết thúc khuyến mãi (nếu có)
+        const saleStartStr = selectedOption.getAttribute('data-sale-start');
+        const saleEndStr = selectedOption.getAttribute('data-sale-end');
+        const now = new Date();
+
+        let isOnSale = false;
+        if (discountPercentage > 0 && saleStartStr && saleEndStr) {
+            const saleStart = new Date(saleStartStr);
+            const saleEnd = new Date(saleEndStr);
+            // Kiểm tra nếu now nằm trong khoảng saleStart đến saleEnd (bao gồm cả 2 đầu)
+            isOnSale = now >= saleStart && now <= saleEnd;
+        }
+
+        // Tính finalPrice dựa trên isOnSale
+        const finalPrice = isOnSale ?
+            Math.round(originalPrice * (1 - discountPercentage / 100)) :
+            originalPrice;
 
         // Cập nhật giá
         const priceElement = document.getElementById('product-price');
-        priceElement.innerHTML = `${numberFormat(discountedPrice)} vnđ`;
-        if (originalPrice && discountedPrice && originalPrice != discountedPrice) {
-            priceElement.innerHTML += ` <del class="product-old-price">${numberFormat(originalPrice)} vnđ</del>`;
-        }
-        if (discountPercentage > 0) {
+        priceElement.innerHTML = `<span class="text-danger fw-bold">${numberFormat(finalPrice)} vnđ</span>`;
+
+        if (isOnSale && originalPrice != finalPrice) {
+            priceElement.innerHTML += ` <del class="text-muted">${numberFormat(originalPrice)} vnđ</del>`;
             priceElement.innerHTML +=
                 ` <span class="discount-label" style="color: red; font-weight: bold; margin-left: 10px;">Giảm ${discountPercentage}%</span>`;
         }
 
-        // Cập nhật số lượng và trạng thái hàng
+        // Cập nhật URL
+        window.history.pushState({}, document.title, url);
+
+        // Cập nhật số lượng
         const qtyInput = document.getElementById('product-qty');
         const availabilityElement = document.getElementById('product-availability');
         qtyInput.setAttribute('max', qty);
-        qtyInput.value = Math.min(qtyInput.value, qty); // Đảm bảo số lượng không vượt quá qty
+        qtyInput.value = Math.min(qtyInput.value, qty);
+        const productVariantId = document.getElementById('product_variant_id');
         productVariantId.value = variantId;
         availabilityElement.textContent = qty > 0 ? 'Còn hàng' : 'Hết hàng';
     }

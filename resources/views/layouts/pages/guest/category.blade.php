@@ -158,16 +158,18 @@
                                         </div>
                                         <div class="product-body">
                                             <p class="product-category">
-                                                {{ $product->subCategory->name ?? ($product->category->name ?? 'Không rõ') }}
+                                                {{ ($product->category->name ?? 'Không rõ') }}
                                             </p>
                                             <h3 class="product-name"><a
                                                     href="{{ route('product.show', ['slug' => $product->slug]) }}">{{ Str::limit($product->title, 20, '...') }}</a>
                                             </h3>
-                                            <h4 class="product-price">{{ number_format($product->price) }}đ
-                                                @if ($product->old_price)
+                                            <h4 class="product-price">
+                                                {{-- {{ number_format($product->price) }}đ --}}
+                                                {{-- @if ($product->old_price)
                                                     <del
                                                         class="product-old-price">{{ number_format($product->old_price) }}đ</del>
-                                                @endif
+                                                @endif --}}
+                                                {{ isset($product->productVariants) && $product->productVariants != '[]' ? number_format($product->productVariants->where('product_id', $product->id)->first()->price) : number_format($product->price) . ' vnđ' }}
                                             </h4>
                                             <?php
                                             $averageRating = $product->reviews->avg('rating') ?? 0;

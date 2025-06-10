@@ -189,26 +189,20 @@
                             <label class="form-label h5 mb-3" style="font-weight: 700">Giá sản phẩm</label>
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <label for="price" class="form-label">Giá bán</label>
-                                    <input type="number" name="price" id="price" class="form-control"
-                                        required placeholder="Nhập giá bán"
-                                        value="{{ old('price', $product->price ?? '') }}">
-                                </div>
-                                <div class="col-md-6">
                                     <label for="original_price" class="form-label">Giá gốc</label>
                                     <input type="number" name="original_price" id="original_price"
                                         class="form-control" placeholder="Nhập giá gốc"
                                         value="{{ old('original_price', $product->original_price ?? '') }}">
                                 </div>
-                            </div>
-                            <div class="row">
                                 <div class="col-md-6">
                                     <label for="discount_percentage" class="form-label">Phần trăm giảm giá (%)</label>
                                     <input type="number" name="discount_percentage" id="discount_percentage"
                                         class="form-control" min="0" max="100"
                                         value="{{ old('discount_percentage', $product->discount_percentage ?? 0) }}">
                                 </div>
-                                <div class="col-md-6">
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mt-3">
                                     <label for="discount_start_date" class="form-label">Ngày bắt đầu khuyến
                                         mãi</label>
                                     <input type="date" name="discount_start_date" id="discount_start_date"

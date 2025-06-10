@@ -49,9 +49,9 @@ class CheckoutController extends Controller
         DB::beginTransaction();
         try {
             // Tính tổng
-            $subtotal = $cart->cartDetails->sum(fn($item) => $item->price * $item->qty);
+            $subtotal = $cart->cartDetails->sum(fn($item) => $item->final_price * $item->qty);
             $shippingFee = 20000;
-            $discount = Session::get('discount', 0);
+            $discount = auth()->user()->cart->discount_amount ?? 0; // nếu có mã thì tính sau
             $total = max($subtotal + $shippingFee - $discount, 0);
 
             // Xử lý địa chỉ giao hàng
@@ -94,6 +94,8 @@ class CheckoutController extends Controller
                 'payment_method' => $request->payment_method,
                 'note' => $request->note,
                 'total_amount' => $total,
+                'coupon_code' => $cart->coupon_code,
+                'discount_amount' => $cart->discount_amount,
                 'status' => 'pending',
             ]);
 
@@ -104,9 +106,9 @@ class CheckoutController extends Controller
                     'product_id' => $item->product_id,
                     'product_variant_id' => $item->product_variant_id,
                     'product_name' => $item->product->title,
-                    'price' => $item->price,
+                    'price' => $item->final_price,
                     'quantity' => $item->qty,
-                    'total_price' => $item->price * $item->qty,
+                    'total_price' => $item->final_price * $item->qty,
                 ]);
             }
 

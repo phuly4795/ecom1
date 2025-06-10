@@ -19,8 +19,7 @@
 
 
             <h1 class="text-center" style="margin-bottom: 3%">Giỏ hàng của bạn</h1>
-            {{-- @dd($cartItems) --}}
-            @if ($cartItems == '[]')
+            @if (empty($cartItems) && $cartItems == [])
                 <div class="text-center">
                     <i class="fa fa-shopping-cart fa-3x text-muted"></i>
                     <p class="lead text-muted">Giỏ hàng của bạn hiện đang trống</p>
@@ -44,8 +43,17 @@
                                 <div class="col-sm-5 col-xs-12">
                                     <div class="media">
                                         <div class="media-left">
-                                            <img src="{{ asset('storage/' . $item->product->productImages->where('type', 1)->first()->image ?? 'asset/guest/img/product01.png') }}"
-                                                alt="{{ $item->product->title }}" class="media-object product-image">
+                                            @php
+                                                $image =
+                                                    $item->product->productImages->where('type', 1)->first()->image ??
+                                                    '';
+                                                $imagePath = $image
+                                                    ? asset('storage/' . $image)
+                                                    : asset('asset/img/no-image.png');
+                                            @endphp
+
+                                            <img src="{{ $imagePath }}" alt="{{ $item->product->title }}"
+                                                class="media-object product-image">
                                         </div>
                                         <div class="media-body">
                                             <h4 class="media-heading"><a class="h4" style="font-weight: 700"
@@ -59,9 +67,18 @@
                                 </div>
                                 <div class="col-sm-2 col-xs-12 text-center">
                                     <p class="item-price">
-                                        {{ isset($item->productVariant) ? number_format($item->productVariant->price) : number_format($item->product->price) }}
-                                        vnđ</p>
+                                        @if ($item->final_price < $item->original_price)
+                                            <span class="text-danger">
+                                                {{ number_format($item->final_price) }} vnđ
+                                                <del class="text-muted">{{ number_format($item->original_price) }}
+                                                    vnđ</del>
+                                            </span>
+                                        @else
+                                            <span>{{ number_format($item->original_price) }} vnđ</span>
+                                        @endif
+                                    </p>
                                 </div>
+
                                 <div class="col-sm-2 col-xs-12 text-center">
                                     <div class="input-group input-group-sm quantity-control">
                                         <span class="input-group-btn">
@@ -78,10 +95,8 @@
                                 </div>
                                 <div class="col-sm-2 col-xs-12 text-center">
                                     <p class="item-total">
-                                        <?php
-                                        $price = isset($item->productVariant) ? $item->productVariant->price : $item->product->price;
-                                        ?>
-                                        {{ number_format($price * $item->qty) }} vnđ</p>
+                                        {{ number_format($item->final_price * $item->qty) }} vnđ
+                                    </p>
                                 </div>
                                 <div class="col-sm-1 col-xs-12 text-center">
                                     <form method="POST"
@@ -132,10 +147,11 @@
                                 <div class="row summary-row discount">
                                     <div class="col-xs-6">Giảm giá:</div>
                                     <div class="col-xs-6 text-right text-danger">
-                                        -{{ number_format(abs($cart->discount_amount)) }} vnđ
+                                        -{{ isset($cart->discount_amount) ? number_format(abs($cart->discount_amount)) : 0 }}
+                                        vnđ
                                     </div>
                                 </div>
-                                @if ($cart->coupon_code)
+                                @if (isset($cart->coupon_code))
                                     <form action="{{ route('cart.removeCoupon') }}" method="POST">
                                         @csrf
                                         <div class="row summary-row coupon-code">

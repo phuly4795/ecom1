@@ -27,6 +27,8 @@ class Order extends Model
         'payment_method',
         'note',
         'total_amount',
+        'coupon_code',
+        'discount_amount',
         'status',
         'created_at',
         'updated_at',

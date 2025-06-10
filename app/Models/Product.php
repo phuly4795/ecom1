@@ -13,8 +13,9 @@ class Product extends Model
     use HasFactory, SoftDeletes;
     protected $dates = ['deleted_at'];
     protected $casts = [
-        'specifications' => 'array',
+        'specifications' => 'array'
     ];
+
     protected $fillable = [
         'title',
         'slug',
@@ -76,5 +77,20 @@ class Product extends Model
     public function productVariants()
     {
         return $this->hasMany(ProductVariant::class);
+    }
+
+    public function getIsOnSaleAttribute(): bool
+    {
+        return $this->discount_percentage > 0
+            && $this->discount_start_date
+            && $this->discount_end_date
+            && now()->between($this->discount_start_date, $this->discount_end_date);
+    }
+
+    public function getDisplayPriceAttribute()
+    {
+        return $this->is_on_sale
+            ? round($this->original_price * (1 - $this->discount_percentage / 100))
+            : $this->original_price;
     }
 }

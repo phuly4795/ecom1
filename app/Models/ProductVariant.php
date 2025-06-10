@@ -18,10 +18,11 @@ class ProductVariant extends Model
     protected $fillable = [
         'product_id',
         'variant_name',
-        'discounted_price',
+        'discount_percentage',
         'discount_start_date',
         'discount_end_date',
         'price',
+        'original_price',
         'sku',
         'qty'
     ];
@@ -29,5 +30,20 @@ class ProductVariant extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function getIsOnSaleAttribute(): bool
+    {
+        return $this->discount_percentage > 0
+            && $this->discount_start_date
+            && $this->discount_end_date
+            && now()->between($this->discount_start_date, $this->discount_end_date);
+    }
+
+    public function getDisplayPriceAttribute()
+    {
+        return $this->is_on_sale
+            ? round($this->original_price * (1 - $this->discount_percentage / 100))
+            : $this->original_price;
     }
 }
