@@ -116,6 +116,18 @@
         });
     }
 
+    function showAlertModal(message, type = 'success') {
+        Swal.fire({
+            title: type === 'success' ? 'Thành công!' : 'Lỗi!',
+            text: message,
+            icon: type,
+            confirmButtonText: 'OK',
+            buttonsStyling: false,
+            customClass: {
+                confirmButton: `btn btn-${type}`
+            }
+        });
+    }
     // Tự động gọi nếu có session flash từ Laravel
     @if (session('status') && session('message'))
         $(document).ready(function() {

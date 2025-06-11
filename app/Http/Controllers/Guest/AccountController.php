@@ -38,6 +38,7 @@ class AccountController extends Controller
         // Trả về view theo dõi (tạo file resources/views/order/track.blade.php nếu cần)
         return view('layouts.pages.guest.track', compact('order', 'trackingInfo'));
     }
+
     public function show($id)
     {
         $order = Order::with(['orderDetails.product', 'shippingAddress'])
@@ -45,24 +46,58 @@ class AccountController extends Controller
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
+        $shippingAddress = [
+            'full_name' => $order->shippingAddress->full_name ?? null,
+            'email' => $order->shippingAddress->email ?? null,
+            'telephone' => $order->shippingAddress->telephone ?? null,
+            'address' => $order->shippingAddress->address ?? null,
+            'ward' => $order->shippingAddress->ward ? ['name' => $order->shippingAddress->ward->full_name] : null,
+            'district' => $order->shippingAddress->district ? ['name' => $order->shippingAddress->district->full_name] : null,
+            'province' => $order->shippingAddress->province ? ['name' => $order->shippingAddress->province->full_name] : null,
+        ];
+
         return response()->json([
-            'order' => $order,
+            'order' => [
+                'id' => $order->id,
+                'billing_full_name' => $order->billing_full_name ?? null,
+                'billing_email' => $order->billing_email ?? null,
+                'billing_telephone' => $order->billing_telephone ?? null,
+                'billing_address' => $order->billing_address ?? null,
+                'billingWard' => $order->billingWard ? ['name' => $order->billingWard->full_name] : null,
+                'billingDistrict' => $order->billingDistrict ? ['name' => $order->billingDistrict->full_name] : null,
+                'billingProvince' => $order->billingProvince ? ['name' => $order->billingProvince->full_name] : null,
+                'status' => $order->status,
+                'shippingAddress' => $shippingAddress,
+            ],
             'items' => $order->orderDetails->map(function ($item) {
                 $image = $item->product->productImages->where('type', 1)->first()->image ?? '';
                 $imagePath = $image
                     ? asset('storage/' . $image)
                     : asset('asset/img/no-image.png');
-                $variant = isset($item->product->productVariants) && $item->product->productVariants != '[]' ? $item->product->productVariants->where('product_id', $item->product_id)->first()->variant_name : null;
+                $variant = isset($item->product->productVariants) && $item->product->productVariants != '[]'
+                    ? $item->product->productVariants->where('product_id', $item->product_id)->first()->variant_name
+                    : null;
                 return [
-                    // 'a' => $product,
                     'image' => $imagePath,
                     'name' => $item->product->title,
                     'variant_name' => $variant ?? "-",
                     'quantity' => $item->quantity,
-                    'price' => number_format($item->price) . ' vnđ',
-                    'total_price' => number_format($item->total_price) . ' vnđ',
+                    'price' => number_format($item->price, 0, ',', '.') . ' VNĐ',
+                    'total_price' => number_format($item->total_price, 0, ',', '.') . ' VNĐ',
                 ];
             }),
         ]);
+    }
+    public function cancelOrder($id)
+    {
+        $order = Order::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
+
+        if (in_array($order->status, ['pending', 'processing'])) {
+            $order->status = 'cancelled';
+            $order->save();
+            return response()->json(['success' => true, 'message' => 'Đơn hàng đã được hủy']);
+        }
+
+        return response()->json(['success' => false, 'message' => 'Không thể hủy đơn hàng ở trạng thái này'], 422);
     }
 }

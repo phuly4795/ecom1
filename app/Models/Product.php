@@ -79,6 +79,16 @@ class Product extends Model
         return $this->hasMany(ProductVariant::class);
     }
 
+    public function favoritedByUsers()
+    {
+        return $this->belongsTo(FavoriteProduct::class);
+    }
+
+    public function isFavoritedBy($userId)
+    {
+        return $this->favoritedByUsers->contains('id', $userId);
+    }
+
     public function getIsOnSaleAttribute(): bool
     {
         return $this->discount_percentage > 0

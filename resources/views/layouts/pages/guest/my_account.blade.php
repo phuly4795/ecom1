@@ -429,6 +429,7 @@
         button.addEventListener('click', function() {
             const orderId = this.dataset.orderId;
             const modalBody = document.getElementById('orderDetailContent');
+            const modalFooter = document.querySelector('#orderDetailModal .modal-footer');
             modalBody.innerHTML = '<p>Đang tải dữ liệu...</p>';
 
             fetch(`/account/orders/${orderId}`)
@@ -437,98 +438,125 @@
                     const order = data.order;
                     const items = data.items;
 
+                    // Điền nội dung modal
                     modalBody.innerHTML = `
-    <div class="card shadow mb-4">
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <h6 class="font-weight-bold text-primary">Địa chỉ thanh toán</h6>
-                        <p><strong>Khách hàng:</strong> {{ $order->billing_full_name }}</p>
-                        <p><strong>Email:</strong> {{ $order->billing_email }}</p>
-                        <p><strong>Số điện thoại:</strong> {{ $order->billing_telephone }}</p>
-                        <p><strong>Địa chỉ:</strong>
-                            {{ implode(
-                                ', ',
-                                array_filter([
-                                    $order->billing_address,
-                                    $order->billingWard ? $order->billingWard->name : null,
-                                    $order->billingDistrict ? $order->billingDistrict->name : null,
-                                    $order->billingProvince ? $order->billingProvince->name : null,
-                                ]),
-                            ) }}
-                        </p>
-                </div>
-                <div class="col-md-6">
-                        <h6 class="font-weight-bold text-primary">Địa chỉ nhận hàng</h6>
-                        @if ($order->shippingAddress)
-                            <p><strong>Khách hàng:</strong> {{ $order->shippingAddress->full_name }}</p>
-                            <p><strong>Email:</strong> {{ $order->shippingAddress->email }}</p>
-                            <p><strong>Số điện thoại:</strong> {{ $order->shippingAddress->telephone }}</p>
-                            <p><strong>Địa chỉ:</strong>
-                                {{ implode(
-                                    ', ',
-                                    array_filter([
-                                        $order->shippingAddress->address,
-                                        $order->shippingAddress->ward?->name,
-                                        $order->shippingAddress->district?->name,
-                                        $order->shippingAddress->province?->name,
-                                    ]),
-                                ) }}
-                            </p>
-                        @else
-                            <p>Không có địa chỉ nhận hàng riêng, sử dụng địa chỉ thanh toán.</p>
-                        @endif
+                    <div class="card shadow mb-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="font-weight-bold text-primary">Địa chỉ thanh toán</h6>
+                                    <p><strong>Khách hàng:</strong> ${order.billing_full_name || 'N/A'}</p>
+                                    <p><strong>Email:</strong> ${order.billing_email || 'N/A'}</p>
+                                    <p><strong>Số điện thoại:</strong> ${order.billing_telephone || 'N/A'}</p>
+                                    <p><strong>Địa chỉ:</strong>
+                                        ${[
+                                            order.billing_address,
+                                            order.billingWard?.name,
+                                            order.billingDistrict?.name,
+                                            order.billingProvince?.name
+                                        ].filter(Boolean).join(', ') || 'N/A'}
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="font-weight-bold text-primary">Địa chỉ nhận hàng</h6>
+                                    ${order.shippingAddress ? `
+                                        <p><strong>Khách hàng:</strong> ${order.shippingAddress.full_name || 'N/A'}</p>
+                                        <p><strong>Email:</strong> ${order.shippingAddress.email || 'N/A'}</p>
+                                        <p><strong>Số điện thoại:</strong> ${order.shippingAddress.telephone || 'N/A'}</p>
+                                        <p><strong>Địa chỉ:</strong>
+                                            ${[
+                                                order.shippingAddress.address,
+                                                order.shippingAddress.ward?.name,
+                                                order.shippingAddress.district?.name,
+                                                order.shippingAddress.province?.name
+                                            ].filter(Boolean).join(', ') || 'N/A'}
+                                        </p>
+                                    ` : `<p>Không có địa chỉ nhận hàng riêng, sử dụng địa chỉ thanh toán.</p>`}
+                                </div>
+                            </div>
+                            <h6 class="m-0 font-weight-bold text-primary">Chi tiết sản phẩm</h6>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Hình ảnh</th>
+                                            <th>Sản phẩm</th>
+                                            <th>Biến thểroot
+                                            <th>Giá</th>
+                                            <th>Số lượng</th>
+                                            <th>Tổng</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${items.length > 0
+                                            ? items.map(item => `
+                                                <tr>
+                                                    <td>
+                                                        <img src="${item.image || 'https://via.placeholder.com/60'}" 
+                                                             alt="Ảnh sản phẩm" 
+                                                             style="width: 60px; height: 60px; object-fit: cover;" 
+                                                             class="img-thumbnail" />
+                                                    </td>
+                                                    <td>${item.name || 'N/A'}</td>
+                                                    <td>${item.variant_name || '-'}</td>
+                                                    <td>${item.price || '0'}</td>
+                                                    <td>${item.quantity || '0'}</td>
+                                                    <td>${item.total_price || '0'}</td>
+                                                </tr>
+                                            `).join('')
+                                            : `<tr><td colspan="6" class="text-center">Không có sản phẩm</td></tr>`
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
-            </div>
-         
+                `;
 
+                    // Thêm nút hủy có điều kiện vào footer modal
+                    const existingCancelButton = modalFooter.querySelector('.cancel-order');
+                    if (existingCancelButton) {
+                        existingCancelButton.remove();
+                    }
 
-
-            <h6 class="m-0 font-weight-bold text-primary">Chi tiết sản phẩm</h6>
-            <div class="table-responsive">
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Hình ảnh</th>
-                            <th>Sản phẩm</th>
-                            <th>Biến thể</th>
-                            <th>Giá</th>
-                            <th>Số lượng</th>
-                            <th>Tổng</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${
-                            items.length > 0
-                            ? items.map(item => `
-                                <tr>
-                                    <td>
-                                        <img src="${item.image}" 
-                                             alt="Ảnh sản phẩm" 
-                                             style="width: 60px; height: 60px; object-fit: cover;" 
-                                             class="img-thumbnail" />
-                                    </td>
-                                    <td>${item.name}</td>
-                                    <td>${item.variant_name || '-'}</td>
-                                    <td>${item.price} </td>
-                                    <td>${item.quantity}</td>
-                                    <td>${item.total_price}</td>
-                                </tr>
-                            `).join('')
-                            : `<tr><td colspan="6" class="text-center">Không có sản phẩm</td></tr>`
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-`;
-
+                    if (order.status === 'pending' || order.status === 'processing') {
+                        const cancelButton = document.createElement('button');
+                        cancelButton.type = 'button';
+                        cancelButton.className = 'btn btn-danger cancel-order';
+                        cancelButton.dataset.orderId = order.id;
+                        cancelButton.textContent = 'Hủy đơn';
+                        modalFooter.insertBefore(cancelButton, modalFooter.querySelector(
+                            '.btn-secondary'));
+                    }
                 })
                 .catch(() => {
                     modalBody.innerHTML = '<p>Lỗi tải chi tiết đơn hàng.</p>';
                 });
         });
+    });
+    document.addEventListener('click', function(event) {
+        if (event.target.classList.contains('cancel-order')) {
+            const orderId = event.target.dataset.orderId;
+            if (confirm('Bạn có chắc muốn hủy đơn hàng này?')) {
+                fetch(`/account/orders/${orderId}/cancel`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Đơn hàng đã được hủy.');
+                            location.reload();
+                        } else {
+                            alert('Lỗi khi hủy đơn hàng: ' + (data.message || 'Không xác định'));
+                        }
+                    })
+                    .catch(() => alert('Lỗi khi hủy đơn hàng.'));
+            }
+        }
     });
 </script>
 <script>

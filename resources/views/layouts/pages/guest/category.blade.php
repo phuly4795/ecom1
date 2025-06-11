@@ -78,6 +78,8 @@
                         <h3 class="aside-title">Sản phẩm bán chạy</h3>
                         @foreach ($bestSellingProducts as $productSelling)
                             @php
+                                $variantBestSelling = $productSelling->productVariants->first();
+                                $displayItemBestSelling = $variantBestSelling ?? $productSelling;
                                 $image = $productSelling->productImages->where('type', 1)->first()->image ?? '';
                                 $imagePath = $image ? asset('storage/' . $image) : asset('asset/img/no-image.png');
                             @endphp
@@ -94,10 +96,18 @@
                                             href="{{ route('product.show', $productSelling->slug) }}">{{ Str::limit($productSelling->title, 15, '...') }}</a>
                                     </h3>
                                     <h4 class="product-price">
-                                        {{ number_format($productSelling->price, 0, ',', '.') }}₫
-                                        @if ($productSelling->old_price)
-                                            <del
-                                                class="product-old-price">{{ number_format($productSelling->old_price, 0, ',', '.') }}₫</del>
+                                        @if ($displayItemBestSelling->is_on_sale)
+                                            <span class="text-danger fw-bold">
+                                                {{ number_format($displayItemBestSelling->display_price) }}
+                                                vnđ
+                                            </span>
+                                            <del class="text-muted">
+                                                {{ number_format($displayItemBestSelling->original_price) }} vnđ
+                                            </del>
+                                        @else
+                                            <span class="text-danger fw-bold">
+                                                {{ number_format($displayItemBestSelling->original_price) }} vnđ
+                                            </span>
                                         @endif
                                     </h4>
                                 </div>
@@ -142,34 +152,54 @@
                         <!-- product -->
                         @if ($products->count() > 0)
                             @foreach ($products as $product)
+                                <?php
+                                $variant = $product->productVariants->first();
+                                $displayItem = $variant ?? $product;
+                                ?>
                                 <div class="col-md-4 col-xs-6">
                                     <div class="product">
-                                        <div class="product-img-wrapper">
-                                            <div class="product-img">
-                                                @php
-                                                    $image =
-                                                        $product->productImages->where('type', 1)->first()->image ?? '';
-                                                    $imagePath = $image
-                                                        ? asset('storage/' . $image)
-                                                        : asset('asset/img/no-image.png');
-                                                @endphp
-                                                <img src="{{ $imagePath }}" alt="{{ $product->title }}">
+                                        <div class="product-img">
+                                            @php
+                                                $image = $product->productImages->where('type', 1)->first()->image ?? '';
+                                                $imagePath = $image
+                                                    ? asset('storage/' . $image)
+                                                    : asset('asset/img/no-image.png');
+                                            @endphp
+
+                                            <div class="product-img-wrapper">
+                                                <img src="{{ $imagePath }}" alt="" class="product-img">
+                                            </div>
+
+                                            <div class="product-label">
+                                                @if ($displayItem->getIsOnSaleAttribute() && $displayItem->discount_percentage > 0)
+                                                    {!! isset($displayItem->discount_percentage)
+                                                        ? '<span class="sale">-' . $displayItem->discount_percentage . '%</span>'
+                                                        : '' !!}
+                                                @endif
+                                                <span class="new">Mới</span>
                                             </div>
                                         </div>
                                         <div class="product-body">
                                             <p class="product-category">
-                                                {{ ($product->category->name ?? 'Không rõ') }}
+                                                {{ $product->category->name ?? 'Không rõ' }}
                                             </p>
                                             <h3 class="product-name"><a
                                                     href="{{ route('product.show', ['slug' => $product->slug]) }}">{{ Str::limit($product->title, 20, '...') }}</a>
                                             </h3>
                                             <h4 class="product-price">
-                                                {{-- {{ number_format($product->price) }}đ --}}
-                                                {{-- @if ($product->old_price)
-                                                    <del
-                                                        class="product-old-price">{{ number_format($product->old_price) }}đ</del>
-                                                @endif --}}
-                                                {{ isset($product->productVariants) && $product->productVariants != '[]' ? number_format($product->productVariants->where('product_id', $product->id)->first()->price) : number_format($product->price) . ' vnđ' }}
+                                                @if ($displayItem->is_on_sale)
+                                                    <span class="text-danger fw-bold">
+                                                        {{ number_format($displayItem->display_price) }}
+                                                        vnđ
+                                                    </span>
+                                                    {{-- <del class="text-muted">
+                                                        {{ number_format($displayItem->original_price) }} vnđ
+                                                    </del> --}}
+                                                @else
+                                                    <span class="text-danger fw-bold">
+                                                        {{ number_format($displayItem->original_price) }} vnđ
+                                                    </span>
+                                                @endif
                                             </h4>
                                             <?php
                                             $averageRating = $product->reviews->avg('rating') ?? 0;
@@ -192,7 +222,7 @@
                                             <form action="{{ route('cart.add', $product->id) }}" method="POST">
                                                 @csrf
                                                 <input type="hidden" name="qty" value="1">
-                                                <input type="text" name="product_variant_id"
+                                                <input type="hidden" name="product_variant_id"
                                                     value="{{ $product->productVariants->first()->id ?? '' }}">
                                                 <button type="submit" class="add-to-cart-btn">
                                                     <i class="fa fa-shopping-cart"></i> Thêm giỏ hàng
@@ -214,18 +244,8 @@
 
                     <!-- store bottom filter -->
                     <div class="store-filter clearfix mt-4">
-                        {{-- <span class="store-qty">Showing 20-100 products</span> --}}
-                        {{-- <ul class="store-pagination"> --}}
-                        {{-- <li class="active">1</li>
-                            <li><a href="#">2</a></li>
-                            <li><a href="#">3</a></li>
-                            <li><a href="#">4</a></li>
-                            <li><a href="#"><i class="fa fa-angle-right"></i></a></li> --}}
-
-                        {{-- </ul> --}}
-
+                        {{ $products->links() }}
                     </div>
-                    {{ $products->links() }}
                     <!-- /store bottom filter -->
                 </div>
                 <!-- /STORE -->

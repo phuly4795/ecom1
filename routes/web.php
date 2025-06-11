@@ -6,6 +6,7 @@ use App\Http\Controllers\Guest\SubCategoryController;
 use App\Http\Controllers\Guest\CartController;
 use App\Http\Controllers\Guest\CategoryController;
 use App\Http\Controllers\Guest\CheckoutController;
+use App\Http\Controllers\Guest\FavoriteProductController;
 use App\Http\Controllers\Guest\HomeController;
 use App\Http\Controllers\Guest\ProductController;
 use App\Http\Controllers\Guest\ProductDetailController;
@@ -57,6 +58,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/my-account', [AccountController::class, 'index'])->name('my.account');
     Route::get('/order/track/{id}', [AccountController::class, 'track'])->name('order.track');
     Route::get('/account/orders/{id}', [AccountController::class, 'show'])->name('account.order.detail');
+    Route::post('/account/orders/{id}/cancel', [AccountController::class, 'cancelOrder'])->name('account.orders.cancel');
+
+    Route::post('/favorites/{product}', [FavoriteProductController::class, 'toggle'])->name('favorites.toggle');
+    Route::get('/favorites', [FavoriteProductController::class, 'index'])->name('favorites.index');
 });
 
 Route::get('/districts/{provinceId}', [LocationController::class, 'getDistricts'])->name('getDistricts');

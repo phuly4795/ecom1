@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Cart;
 use Illuminate\Pagination\Paginator;
 use App\Models\Category;
+use App\Models\FavoriteProduct;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\ServiceProvider;
@@ -54,11 +55,18 @@ class AppServiceProvider extends ServiceProvider
             $discount = auth()->user()->cart->discount_amount ?? 0; // nếu có mã thì tính sau
             $shippingFee = $countQtyCart > 0 ? 20000 : 0;
             $totalPrice = max($totalPrice + $shippingFee - $discount, 0);
+
+
+            $countFavoriteProduct =  FavoriteProduct::with(['products', 'productVariants'])
+                ->where('user_id', Auth::id())
+                ->count();
+
             $view->with([
                 'globalCategories' => $categories,
                 'countQtyCart' => $countQtyCart,
                 'cartItems' => $cartItems,
                 'totalPrice' => $totalPrice,
+                'countFavoriteProduct' => $countFavoriteProduct
             ]);
         });
     }

@@ -35,8 +35,13 @@ class SubCategoryController extends Controller
             ->groupBy('brand_id')
             ->pluck('total', 'brand_id');
 
-        $priceMin = $subCategory->products()->min('price');
-        $priceMax = $subCategory->products()->max('price');
+        $variantPrices = DB::table('product_variants')
+            ->join('products', 'products.id', '=', 'product_variants.product_id')
+            ->where('products.subcategory_id', $subCategory->id)
+            ->pluck('product_variants.original_price');
+
+        $priceMin = $variantPrices->min();
+        $priceMax = $variantPrices->max();
 
         return view('layouts.pages.guest.category', compact('subCategory', 'products', 'brands', 'bestSellingProducts', 'productCountsByBrand', 'priceMin', 'priceMax'));
     }

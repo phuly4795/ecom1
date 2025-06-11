@@ -90,10 +90,10 @@
                     <div class="header-ctn">
                         <!-- Wishlist -->
                         <div>
-                            <a href="#">
+                            <a href="{{ route('favorites.index') }}">
                                 <i class="fa fa-heart-o"></i>
                                 <span>Yêu thích</span>
-                                <div class="qty">2</div>
+                                <div class="qty">{{ $countFavoriteProduct }}</div>
                             </a>
                         </div>
                         <!-- /Wishlist -->

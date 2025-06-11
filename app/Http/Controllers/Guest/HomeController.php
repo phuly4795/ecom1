@@ -12,7 +12,7 @@ class HomeController extends Controller
     {
         $collectionCategory = Category::orderBy('sort', 'asc')->take(3)->get();
         $categories = Category::orderBy('name', 'asc')->get();
-        $productLatest = Product::with('productImages')
+        $productLatest = Product::with('productImages', 'favoritedByUsers')
             ->latest()
             ->take(5)
             ->get();

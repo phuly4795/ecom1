@@ -31,6 +31,11 @@ class ProductVariant extends Model
     {
         return $this->belongsTo(Product::class);
     }
+    
+    public function favoritedByUsers()
+    {
+        return $this->belongsToMany(User::class, 'favorite_products')->withTimestamps();
+    }
 
     public function getIsOnSaleAttribute(): bool
     {

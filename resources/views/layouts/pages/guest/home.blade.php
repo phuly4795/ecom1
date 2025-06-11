@@ -58,6 +58,11 @@
                                             // Chọn item để hiển thị giá: nếu có variant thì dùng variant đầu tiên
                                             $variant = $item->productVariants->first();
                                             $displayItem = $variant ?? $item;
+                                            $variant =
+                                                isset($item->productVariants) && $item->productVariants != '[]'
+                                                    ? $item->productVariants->where('product_id', $item->id)->first()
+                                                        ->id
+                                                    : null;
                                         @endphp
                                         <div class="product">
                                             <div class="product-img">
@@ -75,7 +80,9 @@
 
                                                 <div class="product-label">
                                                     @if ($displayItem->getIsOnSaleAttribute() && $displayItem->discount_percentage > 0)
-                                                        {!! isset($displayItem->discount_percentage) ? '<span class="sale">-' . $displayItem->discount_percentage . '%</span>' : '' !!}
+                                                        {!! isset($displayItem->discount_percentage)
+                                                            ? '<span class="sale">-' . $displayItem->discount_percentage . '%</span>'
+                                                            : '' !!}
                                                     @endif
                                                     <span class="new">Mới</span>
                                                 </div>
@@ -88,7 +95,6 @@
                                                         href="{{ route('product.show', ['slug' => $item->slug]) }}">{{ Str::limit($item->title, 20, '...') }}</a>
                                                 </h3>
                                                 <h4 class="product-price">
-
                                                     <h4 class="product-price">
                                                         @if ($displayItem->getIsOnSaleAttribute())
                                                             <span class="text-danger fw-bold">
@@ -114,9 +120,24 @@
                                                             style="color: red"></i>
                                                     @endfor
                                                 </div>
+                                                @php
+                                                    $isFavorited = $displayItem->favoritedByUsers;
+                                                @endphp
                                                 <div class="product-btns">
-                                                    <button class="add-to-wishlist"><i class="fa fa-heart-o"></i><span
-                                                            class="tooltipp">Yêu thích</span></button>
+                                                    @if (Auth::check())
+                                                        <button class="add-to-wishlist" data-id="{{ $item->id }}"
+                                                            data-variant-id="{{ $variant }}">
+                                                            <i class="fa fa-heart{{ $isFavorited ? '' : '-o' }} wishlist-icon"></i>
+                                                            <span
+                                                                class="tooltipp">{{ $isFavorited ? 'Đã yêu thích' : 'Yêu thích' }}</span>
+                                                        </button>
+                                                    @else
+                                                        <a href="{{ route('login') }}" class="add-to-wishlist">
+                                                            <i class="fa fa-heart-o"></i>
+                                                            <span class="tooltipp">Đăng nhập để yêu thích</span>
+                                                        </a>
+                                                    @endif
+
                                                     <button class="quick-view"
                                                         onclick="window.location='{{ route('product.show', ['slug' => $item->slug]) }}'"><i
                                                             class="fa fa-eye"></i><span class="tooltipp">Xem sản
@@ -124,9 +145,6 @@
                                                 </div>
                                             </div>
                                             <div class="add-to-cart">
-                                                <?php
-                                                $variant = isset($item->productVariants) && $item->productVariants != '[]' ? $item->productVariants->where('product_id', $item->id)->first()->id : null;
-                                                ?>
                                                 <form action="{{ route('cart.add', $item->id) }}" method="POST">
                                                     @csrf
                                                     <input type="hidden" name="qty" value="1">
@@ -797,3 +815,47 @@
         justify-content: center;
     }
 </style>
+<script>
+    document.querySelectorAll('.add-to-wishlist').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            const productId = this.dataset.id;
+            const variantId = this.dataset.variantId;
+
+            fetch('/favorites/' + productId, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
+                            .getAttribute('content'),
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        variant_id: variantId
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Phản hồi không hợp lệ');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'added') {
+                        this.querySelector('i').classList.remove('fa-heart-o');
+                        this.querySelector('i').classList.add('fa-heart');
+                        this.querySelector('.tooltipp').textContent = 'Đã yêu thích';
+                        showAlertModal('Đã thêm vào yêu thích', 'success');
+                    } else if (data.status === 'removed') {
+                        this.querySelector('i').classList.remove('fa-heart');
+                        this.querySelector('i').classList.add('fa-heart-o');
+                        this.querySelector('.tooltipp').textContent = 'Yêu thích';
+                        showAlertModal('Đã xóa yêu thích', 'success');
+                    }
+                })
+                .catch(err => {
+                    alert("Vui lòng đăng nhập để sử dụng tính năng này");
+                });
+        });
+    });
+</script>

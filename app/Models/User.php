@@ -8,6 +8,9 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
+/**
+ * @property \Illuminate\Database\Eloquent\Relations\BelongsToMany $favoriteProducts
+ */
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
@@ -72,5 +75,10 @@ class User extends Authenticatable
             }
         }
         return false;
+    }
+
+    public function favoriteProducts()
+    {
+        return $this->hasMany(FavoriteProduct::class, 'user_id', 'id');
     }
 }

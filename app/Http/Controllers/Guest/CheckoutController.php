@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Guest;
 use App\Http\Controllers\Controller;
 use App\Models\Cart;
 use App\Models\CartDetail;
+use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use Illuminate\Support\Facades\Session;
@@ -111,18 +112,18 @@ class CheckoutController extends Controller
                     'total_price' => $item->final_price * $item->qty,
                 ]);
             }
-
+            $coupon = Coupon::where('code', $cart->coupon_code)->first();
+            $coupon->used++;
+            $coupon->save();
             // Xóa giỏ hàng
             $cart->cartDetails()->delete();
             $cart->delete();
-            Session::forget('discount');
 
             DB::commit();
 
             return redirect()->route('checkout.thankyou')->with('success', 'Đặt hàng thành công!');
         } catch (\Exception $e) {
             DB::rollBack();
-            dd($e);
             return redirect()->back()->with('error', 'Lỗi khi đặt hàng: ' . $e->getMessage());
         }
     }

@@ -56,9 +56,8 @@ class CategoryController extends Controller
             ->orderByDesc('total_sold')
             ->take(3)
             ->get();
-        $priceMin = (clone $query)->min('price');
-        $priceMax = (clone $query)->max('price');
-
+        $priceMin = (clone $query)->min('original_price');
+        $priceMax = (clone $query)->max('original_price');
 
         if ($request->ajax()) {
             return response()->json([
