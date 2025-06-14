@@ -68,7 +68,7 @@ class ProductController extends Controller
                         foreach ($variants as $variant) {
                             $price = $variant->price ?? 0;
                             $originalPrice = $variant->original_price ?? $price; // Giá gốc, nếu không có thì dùng giá hiện tại
-                            $discountedPrice = $variant->discounted_price ?? $price; // Giá sau giảm, nếu không có thì dùng giá hiện tại
+                            $discountedPrice = $variant->discount_percentage ?? $price; // Giá sau giảm, nếu không có thì dùng giá hiện tại
                             $discountPercentage = $variant->discount_percentage ?? 0;
 
                             $html .= '<div class="mb-1">';
@@ -242,14 +242,14 @@ class ProductController extends Controller
             'imageThumbnails.*' => 'nullable|string',
             'variants.new.name' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
             'variants.new.original_price' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
-            'variants.new.discounted_price' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
+            'variants.new.discount_percentage' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
             'variants.new.discount_start_date' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
             'variants.new.discount_end_date' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
             'variants.new.sku' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
             'variants.new.qty' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
             'variants.existing.name' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
             'variants.existing.original_price' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
-            'variants.existing.discounted_price' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
+            'variants.existing.discount_percentage' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
             'variants.existing.discount_start_date' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
             'variants.existing.discount_end_date' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
             'variants.existing.sku' => $request->input('product_type') == 'variant' ? 'nullable|array' : 'nullable|array',
@@ -331,7 +331,7 @@ class ProductController extends Controller
                 $existingVariants = $product->productVariants->keyBy('id');
                 $existingNames = $request->input('variants.existing.name', []);
                 $existingOriginalPrices = $request->input('variants.existing.original_price', []);
-                $existingDiscountedPrices = $request->input('variants.existing.discounted_price', []);
+                $existingDiscountedPrices = $request->input('variants.existing.discount_percentage', []);
                 $existingDiscountStartDates = $request->input('variants.existing.discount_start_date', []);
                 $existingDiscountEndDates = $request->input('variants.existing.discount_end_date', []);
                 $existingSkus = $request->input('variants.existing.sku', []);
@@ -341,8 +341,8 @@ class ProductController extends Controller
                     if (isset($existingVariants[$variantId]) && !empty($name)) {
                         $existingVariants[$variantId]->update([
                             'variant_name' => $name,
-                            'price' => $existingOriginalPrices[$variantId] ?? 0,
-                            'discounted_price' => $existingDiscountedPrices[$variantId] ?? null,
+                            'original_price' => $existingOriginalPrices[$variantId] ?? 0,
+                            'discount_percentage' => $existingDiscountedPrices[$variantId] ?? null,
                             'discount_start_date' => $existingDiscountStartDates[$variantId] ?? null,
                             'discount_end_date' => $existingDiscountEndDates[$variantId] ?? null,
                             'sku' => $existingSkus[$variantId] ?? '',
@@ -360,7 +360,7 @@ class ProductController extends Controller
             if ($request->has('variants.new.name')) {
                 $newNames = $request->input('variants.new.name', []);
                 $newOriginalPrices = $request->input('variants.new.original_price', []);
-                $newDiscountedPrices = $request->input('variants.new.discounted_price', []);
+                $newDiscountedPrices = $request->input('variants.new.discount_percentage', []);
                 $newDiscountStartDates = $request->input('variants.new.discount_start_date', []);
                 $newDiscountEndDates = $request->input('variants.new.discount_end_date', []);
                 $newSkus = $request->input('variants.new.sku', []);
@@ -370,7 +370,7 @@ class ProductController extends Controller
                     $product->productVariants()->create([
                         'variant_name' => $name,
                         'price' => $newOriginalPrices[$index] ?? 0,
-                        'discounted_price' => $newDiscountedPrices[$index] ?? null,
+                        'discount_percentage' => $newDiscountedPrices[$index] ?? null,
                         'discount_start_date' => $newDiscountStartDates[$index] ?? null,
                         'discount_end_date' => $newDiscountEndDates[$index] ?? null,
                         'sku' => $newSkus[$index] ?? '',
@@ -398,7 +398,7 @@ class ProductController extends Controller
             if ($request->has('variants.new.name')) {
                 $newNames = $request->input('variants.new.name', []);
                 $newOriginalPrices = $request->input('variants.new.original_price', []);
-                $newDiscountedPrices = $request->input('variants.new.discounted_price', []);
+                $newDiscountedPrices = $request->input('variants.new.discount_percentage', []);
                 $newDiscountStartDates = $request->input('variants.new.discount_start_date', []);
                 $newDiscountEndDates = $request->input('variants.new.discount_end_date', []);
                 $newSkus = $request->input('variants.new.sku', []);
@@ -408,7 +408,7 @@ class ProductController extends Controller
                     $product->productVariants()->create([
                         'variant_name' => $name,
                         'price' => $newOriginalPrices[$index] ?? 0,
-                        'discounted_price' => $newDiscountedPrices[$index] ?? null,
+                        'discount_percentage' => $newDiscountedPrices[$index] ?? null,
                         'discount_start_date' => $newDiscountStartDates[$index] ?? null,
                         'discount_end_date' => $newDiscountEndDates[$index] ?? null,
                         'sku' => $newSkus[$index] ?? '',

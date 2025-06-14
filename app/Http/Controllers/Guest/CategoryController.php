@@ -16,38 +16,58 @@ class CategoryController extends Controller
         $category = Category::with('subCategories')->where('slug', $slug)->firstOrFail();
         $subCategoryIds = $category->subCategories->pluck('id');
 
-        $query = Product::where(function ($q1) use ($category, $subCategoryIds) {
+        // Lấy danh sách ID sản phẩm thuộc category này
+        $allProductIds = Product::where(function ($q1) use ($category, $subCategoryIds) {
             $q1->whereIn('subcategory_id', $subCategoryIds)
                 ->orWhere(function ($q2) use ($category) {
                     $q2->where('category_id', $category->id)
                         ->whereNull('subcategory_id');
                 });
-        })->latest();
+        })->pluck('id')->toArray();
 
-        if ($request->filled('min_price')) {
-            $query->where('price', '>=', $request->min_price);
-        }
-        if ($request->filled('max_price')) {
-            $query->where('price', '<=', $request->max_price);
-        }
-        if ($request->filled('brand_id')) {
-            $query->whereIn('brand_id', $request->brand_id);
-        }
+        // Lọc sản phẩm có biến thể thỏa điều kiện giá
+        $variantProductIds = DB::table('product_variants')
+            ->select('product_id')
+            ->whereIn('product_id', $allProductIds)
+            ->when($request->filled('min_price'), function ($q) use ($request) {
+                $q->where('original_price', '>=', (int) str_replace('.', '', $request->min_price));
+            })
+            ->when($request->filled('max_price'), function ($q) use ($request) {
+                $q->where('original_price', '<=', (int) str_replace('.', '', $request->max_price));
+            })
+            ->pluck('product_id')
+            ->toArray();
+
+        // Lọc sản phẩm không có biến thể, dùng giá từ bảng products
+        $nonVariantProductIds = Product::whereIn('id', $allProductIds)
+            ->whereNotIn('id', DB::table('product_variants')->select('product_id'))
+            ->when($request->filled('min_price'), function ($q) use ($request) {
+                $q->where('original_price', '>=', (int) str_replace('.', '', $request->min_price));
+            })
+            ->when($request->filled('max_price'), function ($q) use ($request) {
+                $q->where('original_price', '<=', (int) str_replace('.', '', $request->max_price));
+            })
+            ->pluck('id')
+            ->toArray();
+
+        // Tổng hợp danh sách sản phẩm sau khi lọc theo giá
+        $filteredProductIds = array_unique(array_merge($variantProductIds, $nonVariantProductIds));
+
+        $query = Product::whereIn('id', $filteredProductIds)
+            ->when($request->filled('brand_id'), function ($q) use ($request) {
+                $q->whereIn('brand_id', $request->brand_id);
+            })
+            ->latest();
+
+        $products = $query->paginate(12);
+
         $brandIds = (clone $query)->pluck('brand_id')->unique()->filter()->values();
         $brands = Brand::whereIn('id', $brandIds)->get();
 
-        $productCountsByBrand = Product::where(function ($q1) use ($category, $subCategoryIds) {
-            $q1->whereIn('subcategory_id', $subCategoryIds)
-                ->orWhere(function ($q2) use ($category) {
-                    $q2->where('category_id', $category->id)
-                        ->whereNull('subcategory_id');
-                });
-        })
+        $productCountsByBrand = Product::whereIn('id', $filteredProductIds)
             ->selectRaw('brand_id, COUNT(*) as total')
             ->groupBy('brand_id')
             ->pluck('total', 'brand_id');
-
-        $products = $query->paginate(12);
 
         $bestSellingProducts = Product::with('category')
             ->select('products.*', DB::raw('SUM(order_details.quantity) as total_sold'))
@@ -56,14 +76,41 @@ class CategoryController extends Controller
             ->orderByDesc('total_sold')
             ->take(3)
             ->get();
-        $priceMin = (clone $query)->min('original_price');
-        $priceMax = (clone $query)->max('original_price');
+
+        // Tính min/max giá từ bảng product_variants của tất cả sản phẩm trong category này
+        $variantPrices = DB::table('product_variants')
+            ->whereIn('product_id', $allProductIds)
+            ->pluck('original_price');
+
+        $variantPricesFiltered = DB::table('product_variants')
+            ->whereIn('product_id', $filteredProductIds)
+            ->pluck('original_price');
+
+        $nonVariantPricesFiltered = Product::whereIn('id', $filteredProductIds)
+            ->whereNotIn('id', DB::table('product_variants')->select('product_id'))
+            ->pluck('original_price');
+
+        // Kết hợp cả giá sản phẩm có biến thể và không có biến thể
+        $allPrices = $variantPricesFiltered->merge($nonVariantPricesFiltered);
+
+        // Gán min và max
+        $priceMin = $allPrices->min() ?? 0;
+        $priceMax = $allPrices->max() ?? 0;
 
         if ($request->ajax()) {
             return response()->json([
                 'html' => view('partials.products', compact('products'))->render()
             ]);
         }
-        return view('layouts.pages.guest.category', compact('subCategoryIds', 'products', 'brands', 'productCountsByBrand', 'bestSellingProducts', 'priceMin', 'priceMax'));
+
+        return view('layouts.pages.guest.category', compact(
+            'subCategoryIds',
+            'products',
+            'brands',
+            'productCountsByBrand',
+            'bestSellingProducts',
+            'priceMin',
+            'priceMax'
+        ));
     }
 }

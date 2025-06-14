@@ -7,7 +7,7 @@
                 <h1 class="h3 mb-4 text-gray-800">Thêm thương hiệu</h1>
             @endif
 
-            @if ($errors->any())
+            {{-- @if ($errors->any())
                 <div class="alert alert-danger">
                     <ul class="mb-0">
                         @foreach ($errors->all() as $error)
@@ -15,7 +15,7 @@
                         @endforeach
                     </ul>
                 </div>
-            @endif
+            @endif --}}
 
             <form
                 action="{{ isset($brand->id) ? route('admin.brand.update', $brand->id) : route('admin.brand.store') }}"
@@ -28,9 +28,9 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="name" class="form-label">Tên thương hiệu</label>
-                        <input type="text" name="name" id="name" class="form-control" required
-                            placeholder="Name" value="{{ old('name', $brand->name ?? '') }}">
-                        @error('name')
+                        <input type="text" name="name" id="name" class="form-control @error('slug') is-invalid @enderror" required
+                            placeholder="Nhập tên thương hiệu" value="{{ old('name', $brand->name ?? '') }}">
+                        @error('slug')
                             <span class="text-danger">{{ $message }}</span>
                         @enderror
                     </div>

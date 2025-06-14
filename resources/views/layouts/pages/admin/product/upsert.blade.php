@@ -246,13 +246,14 @@
                                                         <input type="number"
                                                             name="variants[existing][original_price][{{ $variant->id }}]"
                                                             class="form-control" placeholder="Giá gốc"
-                                                            value="{{ $variant->price }}">
+                                                            value="{{ $variant->original_price }}">
                                                     </div>
                                                     <div class="col-md-2">
                                                         <input type="number"
-                                                            name="variants[existing][discounted_price][{{ $variant->id }}]"
-                                                            class="form-control" placeholder="Giá giảm"
-                                                            value="{{ $variant->discounted_price ?? '' }}">
+                                                            name="variants[existing][discount_percentage][{{ $variant->id }}]"
+                                                            class="form-control" placeholder="% giảm"
+                                                            value="{{ $variant->discount_percentage ?? '' }}"
+                                                            min="0" max="100">
                                                     </div>
                                                     <div class="col-md-2">
                                                         <input type="date"
@@ -297,9 +298,9 @@
                                                     value="{{ old('variants.new.original_price.0') }}">
                                             </div>
                                             <div class="col-md-2">
-                                                <input type="number" name="variants[new][discounted_price][]"
+                                                <input type="number" name="variants[new][discount_percentage][]"
                                                     class="form-control" placeholder="Giá giảm"
-                                                    value="{{ old('variants.new.discounted_price.0') }}">
+                                                    value="{{ old('variants.new.discount_percentage.0') }}">
                                             </div>
                                             <div class="col-md-2">
                                                 <input type="date" name="variants[new][discount_start_date][]"
@@ -707,7 +708,7 @@
                     newRow.innerHTML = `
                         <div class="col-md-2"><input type="text" name="variants[new][name][]" class="form-control" placeholder="Tên biến thể (VD: Size S)"></div>
                         <div class="col-md-2"><input type="number" name="variants[new][original_price][]" class="form-control" placeholder="Giá gốc"></div>
-                        <div class="col-md-2"><input type="number" name="variants[new][discounted_price][]" class="form-control" placeholder="Giá giảm"></div>
+                        <div class="col-md-2"><input type="number" name="variants[new][discount_percentage][]" class="form-control" placeholder="Giá giảm"></div>
                         <div class="col-md-2"><input type="date" name="variants[new][discount_start_date][]" class="form-control" placeholder="Ngày bắt đầu giảm giá"></div>
                         <div class="col-md-2"><input type="date" name="variants[new][discount_end_date][]" class="form-control" placeholder="Ngày kết thúc giảm giá"></div>
                         <div class="col-md-2"><input type="text" name="variants[new][sku][]" class="form-control" placeholder="SKU"></div>

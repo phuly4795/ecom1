@@ -35,9 +35,10 @@ Route::middleware('auth', 'verified', 'checkRole')->group(function () {
 
             Route::post('category', [CategoryController::class, 'storeOrUpdate'])->name('store');
             Route::put('category/{id}', [CategoryController::class, 'storeOrUpdate'])->name('update');
-
+            Route::post('upload-image', [CategoryController::class, 'uploadImage'])->name('uploadImage');
             Route::delete('/mass-destroy', [CategoryController::class, 'massDestroy'])->name('massDestroy');
             Route::delete('/{category}', [CategoryController::class, 'destroy'])->name('destroy');
+            Route::post('updateOrder', [CategoryController::class, 'updateOrder'])->name('updateOrder');
         });
 
         Route::prefix('sub_category')->name('sub_category.')->group(function () {
@@ -106,7 +107,7 @@ Route::middleware('auth', 'verified', 'checkRole')->group(function () {
             Route::patch('{coupon}/toggle-status', [CouponController::class, 'toggleStatus'])->name('toggleStatus');
         });
 
-        Route::get('/dashboard', function () {
+        Route::get('/', function () {
             return view('layouts.pages.admin.dashboard');
         })->middleware(['auth', 'verified'])->name('dashboard');
     });

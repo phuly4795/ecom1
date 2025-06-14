@@ -13,7 +13,7 @@ class FavoriteProductController extends Controller
     // Danh sách sản phẩm yêu thích
     public function index()
     {
-        $favorites = FavoriteProduct::with(['products', 'productVariants'])
+        $favorites = FavoriteProduct::with(['products', 'productVariants', 'products.productImages'])
             ->where('user_id', Auth::id())
             ->latest()
             ->paginate(12);
@@ -49,14 +49,10 @@ class FavoriteProductController extends Controller
         if ($productFavorite) {
             $productFavorite->delete();
 
-            // if (request()->ajax()) {
-            //     return response()->json(['status' => 'removed']);
-            // }
             if (request()->expectsJson()) {
                 return response()->json(['status' => 'removed']);
             }
 
-            // return back()->with(['status' => 'success', 'message' => 'Đã xóa khỏi danh sách yêu thích']);
         } else {
             FavoriteProduct::create([
                 'user_id'            => $user->id,
@@ -68,7 +64,6 @@ class FavoriteProductController extends Controller
                 return response()->json(['status' => 'added']);
             }
 
-            // return back()->with(['status' => 'success', 'message' => 'Đã thêm vào danh sách yêu thích']);
         }
     }
 }

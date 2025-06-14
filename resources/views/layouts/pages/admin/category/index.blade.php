@@ -16,7 +16,7 @@
                     <thead>
                         <tr>
                             <th width="20px"><input type="checkbox" id="select-all"></th>
-                            <th>ID</th>
+                            <th>STT</th>
                             <th>Tên danh mục</th>
                             <th>Slug</th>
                             <th>Vị trí</th>

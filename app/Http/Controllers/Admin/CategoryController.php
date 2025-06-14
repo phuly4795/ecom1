@@ -67,25 +67,24 @@ class CategoryController extends Controller
 
     public function storeOrUpdate(Request $request, $id = null)
     {
+        $rules = [
+            'name' => 'required|string|max:255',
+            'slug' => 'required|string|max:255|unique:categories,slug,' . $id,
+            'status' => 'required|in:0,1',
+            'sort' => 'required|integer|min:1',
+        ];
+
+        // Chỉ thêm rule hình ảnh nếu có file
+        if ($request->hasFile('image')) {
+            $rules['image'] = 'image|mimes:jpeg,png,jpg,gif|max:2048';
+        }
+
+        $validated = $request->validate($rules, [
+            'slug.unique' => 'Danh mục này đã tồn tại, vui lòng chọn tên khác.',
+            'sort.required' => 'Vui lòng chọn vị trí.',
+            'image.image' => 'File phải là hình ảnh.',
+        ]);
         try {
-            $rules = [
-                'name' => 'required|string|max:255',
-                'slug' => 'required|string|max:255|unique:categories,slug,' . $id,
-                'status' => 'required|in:0,1',
-                'sort' => 'required|integer|min:1',
-            ];
-
-            // Chỉ thêm rule hình ảnh nếu có file
-            if ($request->hasFile('image')) {
-                $rules['image'] = 'image|mimes:jpeg,png,jpg,gif|max:2048';
-            }
-
-            $validated = $request->validate($rules, [
-                'slug.unique' => 'Slug này đã tồn tại, vui lòng chọn tên khác.',
-                'sort.required' => 'Vui lòng chọn vị trí.',
-                'image.image' => 'File phải là hình ảnh.',
-            ]);
-
             if ($id) {
                 $category = Category::findOrFail($id);
                 $oldSort = $category->sort;
@@ -136,10 +135,9 @@ class CategoryController extends Controller
 
             return redirect()->back()->with(['status' => 'success', 'message' => $message]);
         } catch (\Exception $e) {
-            return redirect()->back()->with([
-                'status' => 'error',
-                'message' => 'Có lỗi xảy ra: ' . $e->getMessage()
-            ]);
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['error' => 'Có lỗi xảy ra: ' . $e->getMessage()]);
         }
     }
 

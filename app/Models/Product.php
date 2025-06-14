@@ -42,7 +42,6 @@ class Product extends Model
         'meta_title',
         'meta_description',
         'meta_keywords',
-        'variants',
         'created_at',
         'updated_at',
         'deleted_at',
@@ -81,14 +80,14 @@ class Product extends Model
 
     public function favoritedByUsers()
     {
-        return $this->belongsTo(FavoriteProduct::class);
+        return $this->belongsToMany(User::class, 'favorite_products', 'product_id', 'user_id');
     }
 
     public function isFavoritedBy($userId)
     {
         return $this->favoritedByUsers->contains('id', $userId);
     }
-
+    
     public function getIsOnSaleAttribute(): bool
     {
         return $this->discount_percentage > 0

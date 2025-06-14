@@ -9,7 +9,7 @@
                 <h1 class="h3 mb-4 text-gray-800">Thêm danh mục phụ</h1>
             @endif
 
-            @if ($errors->any())
+            {{-- @if ($errors->any())
                 <div class="alert alert-danger">
                     <ul class="mb-0">
                         @foreach ($errors->all() as $error)
@@ -17,7 +17,7 @@
                         @endforeach
                     </ul>
                 </div>
-            @endif
+            @endif --}}
 
             <form
                 action="{{ isset($subCategory->id) ? route('admin.sub_category.update', $subCategory->id) : route('admin.sub_category.store') }}"
@@ -30,9 +30,10 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="name" class="form-label">Tên danh mục phụ</label>
-                        <input type="text" name="name" id="name" class="form-control" required
-                            placeholder="Name" value="{{ old('name', $subCategory->name ?? '') }}">
-                        @error('name')
+                        <input type="text" name="name" id="name"
+                            class="form-control @error('slug') is-invalid @enderror" required placeholder="Nhập danh mục phụ"
+                            value="{{ old('name', $subCategory->name ?? '') }}">
+                        @error('slug')
                             <span class="text-danger">{{ $message }}</span>
                         @enderror
                     </div>
@@ -47,7 +48,8 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="category_ids" class="form-label">Danh mục cha</label>
-                        <select name="category_ids[]" multiple class="form-control select2" id="category_ids">
+                        <select name="category_ids[]" multiple
+                            class="form-control select2 @error('category_ids') is-invalid @enderror " id="category_ids">
                             @foreach ($category as $cat)
                                 <option value="{{ $cat->id }}"
                                     {{ isset($subCategory) && $subCategory->categories->contains($cat->id) ? 'selected' : '' }}>
@@ -55,7 +57,7 @@
                                 </option>
                             @endforeach
                         </select>
-                        @error('status')
+                        @error('category_ids')
                             <span class="text-danger">{{ $message }}</span>
                         @enderror
                     </div>

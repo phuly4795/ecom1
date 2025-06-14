@@ -40,9 +40,6 @@
                             <li class="list-group-item"><a href="{{ route('my.account') }}?tab=orders"
                                     class="{{ request()->query('tab') == 'orders' ? 'active' : '' }}"><i
                                         class="fa fa-shopping-cart"></i> Đơn hàng của tôi</a></li>
-                            <li class="list-group-item"><a href="{{ route('my.account') }}?tab=wishlist"
-                                    class="{{ request()->query('tab') == 'wishlist' ? 'active' : '' }}"><i
-                                        class="fa fa-heart"></i> Danh sách yêu thích</a></li>
                             <li class="list-group-item"><a href="{{ route('my.account') }}?tab=change-password"
                                     class="{{ request()->query('tab') == 'change-password' ? 'active' : '' }}"><i
                                         class="fa fa-lock"></i> Thay đổi mật khẩu</a></li>
@@ -202,13 +199,9 @@
                                     </div>
                                 </div>
                             </div>
-                        @elseif ($tab == 'wishlist')
-                            <!-- Wishlist (Placeholder) -->
-                            <h2 class="account-welcome">Wishlist</h2>
-                            <p class="account-description">Xem danh sách sản phẩm yêu thích của bạn tại đây.</p>
                         @elseif ($tab == 'change-password')
                             <!-- Change Password (Placeholder) -->
-                            <h2 class="account-welcome">Change Password</h2>
+                            <h2 class="account-welcome">Thay đổi mật khẩu</h2>
                             <p class="account-description">Thay đổi mật khẩu của bạn tại đây.</p>
                         @else
                             <!-- Default Welcome Message -->

@@ -56,13 +56,19 @@ class CartController extends Controller
 
         $cartItems = $cart ? $cart->cartDetails : collect();
 
+        $coupons = Coupon::where('is_active', true)
+            ->whereColumn('used', '<', 'usage_limit')
+            ->whereDate('end_date', '>=', now())
+            ->get();
+
         return view('layouts.pages.guest.cart', compact(
             'cartItems',
             'subtotal',
             'shippingFee',
             'discount',
             'total',
-            'cart'
+            'cart',
+            'coupons'
         ));
     }
 
@@ -144,6 +150,12 @@ class CartController extends Controller
             return back()->with('error', 'Mã giảm giá đã được áp dụng.');
         }
 
+        // $value = 0;
+        // if ($coupon->type == 'fixed') {
+        //     $value = $coupon->value;
+        // } elseif($coupon->type == 'percent') {
+
+        // }
 
         $cart->coupon_code = $coupon->code;
         $cart->discount_amount = $coupon->value; // hoặc tính theo %

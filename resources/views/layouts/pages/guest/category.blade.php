@@ -9,25 +9,6 @@
                 <!-- ASIDE -->
                 <div id="aside" class="col-md-3">
                     <!-- aside Widget -->
-                    @if (isset($subCategoryIds) && $subCategoryIds != '[]')
-                        <div class="aside">
-                            <h3 class="aside-title">Danh mục</h3>
-                            <div class="checkbox-filter">
-                                @foreach ($subCategoryIds as $item)
-                                    <div class="input-checkbox">
-                                        <input type="checkbox" id="category-1">
-                                        <label for="category-1">
-                                            <span></span>
-                                            Laptops
-                                            <small>(120)</small>
-                                        </label>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
-                    <!-- /aside Widget -->
-                    <!-- aside Widget -->
                     @if ($products->count() > 0)
                         <div class="aside">
                             <h3 class="aside-title">Giá</h3>
@@ -121,32 +102,6 @@
 
                 <!-- STORE -->
                 <div id="store" class="col-md-9">
-                    <!-- store top filter -->
-                    {{-- <div class="store-filter clearfix">
-                        <div class="store-sort">
-                            <label>
-                                Sort By:
-                                <select class="input-select">
-                                    <option value="0">Popular</option>
-                                    <option value="1">Position</option>
-                                </select>
-                            </label>
-
-                            <label>
-                                Show:
-                                <select class="input-select">
-                                    <option value="0">20</option>
-                                    <option value="1">50</option>
-                                </select>
-                            </label>
-                        </div>
-                        <ul class="store-grid">
-                            <li class="active"><i class="fa fa-th"></i></li>
-                            <li><a href="#"><i class="fa fa-th-list"></i></a></li>
-                        </ul>
-                    </div> --}}
-                    <!-- /store top filter -->
-
                     <!-- store products -->
                     <div class="row">
                         <!-- product -->
@@ -155,12 +110,16 @@
                                 <?php
                                 $variant = $product->productVariants->first();
                                 $displayItem = $variant ?? $product;
+                                $variantId = $variant?->id; // Dùng null-safe nếu cần lấy ID
+                                $isFavorited = $displayItem->favoritedByUsers->contains(auth()->id()); // luôn check từ $product
+
                                 ?>
                                 <div class="col-md-4 col-xs-6">
                                     <div class="product">
                                         <div class="product-img">
                                             @php
-                                                $image = $product->productImages->where('type', 1)->first()->image ?? '';
+                                                $image =
+                                                    $product->productImages->where('type', 1)->first()->image ?? '';
                                                 $imagePath = $image
                                                     ? asset('storage/' . $image)
                                                     : asset('asset/img/no-image.png');
@@ -192,9 +151,9 @@
                                                         {{ number_format($displayItem->display_price) }}
                                                         vnđ
                                                     </span>
-                                                    {{-- <del class="text-muted">
+                                                    <del class="text-muted">
                                                         {{ number_format($displayItem->original_price) }} vnđ
-                                                    </del> --}}
+                                                    </del>
                                                 @else
                                                     <span class="text-danger fw-bold">
                                                         {{ number_format($displayItem->original_price) }} vnđ
@@ -211,7 +170,22 @@
                                                 @endfor
                                             </div>
                                             <div class="product-btns">
-                                                <button class="add-to-wishlist"><i class="fa fa-heart-o"></i></button>
+                                                @auth
+                                                    <button class="add-to-wishlist" data-id="{{ $product->id }}"
+                                                        data-variant-id="{{ $variantId }}">
+                                                        <i
+                                                            class="fa fa-heart{{ $isFavorited ? '' : '-o' }} wishlist-icon"></i>
+                                                        <span
+                                                            class="tooltipp">{{ $isFavorited ? 'Đã yêu thích' : 'Yêu thích' }}</span>
+                                                    </button>
+                                                @endauth
+                                                @guest
+                                                    <button onclick="window.location='{{ route('login') }}'"
+                                                        class="add-to-wishlist">
+                                                        <i class="fa fa-heart-o"></i>
+                                                        <span class="tooltipp">Đăng nhập để yêu thích</span>
+                                                    </button>
+                                                @endguest
                                                 <button class="quick-view"
                                                     onclick="window.location='{{ route('product.show', ['slug' => $product->slug]) }}'"><i
                                                         class="fa fa-eye"></i><span class="tooltipp">Xem sản
@@ -315,5 +289,49 @@
         // Gắn sự kiện onchange / blur / click tùy theo nhu cầu
         $('#price-min, #price-max').on('change', filterProducts);
         $('input[id^="brand-"]').on('change', filterProducts);
+    });
+</script>
+<script>
+    document.querySelectorAll('.add-to-wishlist').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            const productId = this.dataset.id;
+            const variantId = this.dataset.variantId;
+
+            fetch('/favorites/' + productId, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
+                            .getAttribute('content'),
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        variant_id: variantId
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Phản hồi không hợp lệ');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'added') {
+                        this.querySelector('i').classList.remove('fa-heart-o');
+                        this.querySelector('i').classList.add('fa-heart');
+                        this.querySelector('.tooltipp').textContent = 'Đã yêu thích';
+                        showAlertModal('Đã thêm vào yêu thích', 'success');
+                    } else if (data.status === 'removed') {
+                        this.querySelector('i').classList.remove('fa-heart');
+                        this.querySelector('i').classList.add('fa-heart-o');
+                        this.querySelector('.tooltipp').textContent = 'Yêu thích';
+                        showAlertModal('Đã xóa yêu thích', 'success');
+                    }
+                })
+                .catch(err => {
+                    showAlertModal('Vui lòng đăng nhập để sử dụng tính năng này', 'warning');
+                });
+        });
     });
 </script>

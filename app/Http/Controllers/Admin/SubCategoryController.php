@@ -67,18 +67,17 @@ class SubCategoryController extends Controller
 
     public function storeOrUpdate(Request $request, $id = null)
     {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'slug' => 'required|string|max:255|unique:sub_categories,slug,' . $id,
+            'status' => 'required|in:0,1',
+            'category_ids' => 'required|array',
+            'category_ids.*' => 'exists:categories,id',
+        ], [
+            'slug.unique' => 'Danh mục này đã tồn tại, vui lòng chọn tên khác.',
+            'category_ids.required' => 'Vui lòng chọn ít nhất một danh mục cha.',
+        ]);
         try {
-            $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'slug' => 'required|string|max:255|unique:sub_categories,slug,' . $id,
-                'status' => 'required|in:0,1',
-                'category_ids' => 'required|array',
-                'category_ids.*' => 'exists:categories,id',
-            ], [
-                'slug.unique' => 'Slug này đã tồn tại, vui lòng chọn tên khác.',
-                'category_ids.required' => 'Vui lòng chọn ít nhất một danh mục cha.',
-            ]);
-
             $subCategory = SubCategory::updateOrCreate(
                 ['id' => $id],
                 $request->only(['name', 'slug', 'status'])
@@ -91,7 +90,9 @@ class SubCategoryController extends Controller
                 'message' => $id ? 'Cập nhật thành công' : 'Thêm mới thành công',
             ]);
         } catch (\Exception $e) {
-            return redirect()->back()->with(['status' => 'error', 'message' => 'Có lỗi xảy ra: ' . $e->getMessage()]);
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['error' => 'Có lỗi xảy ra: ' . $e->getMessage()]);
         }
     }
 

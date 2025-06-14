@@ -31,10 +31,15 @@ class ProductVariant extends Model
     {
         return $this->belongsTo(Product::class);
     }
-    
+
     public function favoritedByUsers()
     {
-        return $this->belongsToMany(User::class, 'favorite_products')->withTimestamps();
+        return $this->belongsToMany(User::class, 'favorite_products', 'product_variant_id', 'user_id');
+    }
+
+    public function isFavoritedBy($userId)
+    {
+        return $this->favoritedByUsers->contains('id', $userId);
     }
 
     public function getIsOnSaleAttribute(): bool

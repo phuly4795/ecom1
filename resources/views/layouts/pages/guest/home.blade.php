@@ -63,6 +63,8 @@
                                                     ? $item->productVariants->where('product_id', $item->id)->first()
                                                         ->id
                                                     : null;
+                                            $isFavorited = $displayItem->favoritedByUsers->contains(auth()->id()); // luôn check từ $product
+
                                         @endphp
                                         <div class="product">
                                             <div class="product-img">
@@ -120,22 +122,22 @@
                                                             style="color: red"></i>
                                                     @endfor
                                                 </div>
-                                                @php
-                                                    $isFavorited = $displayItem->favoritedByUsers;
-                                                @endphp
+
                                                 <div class="product-btns">
                                                     @if (Auth::check())
                                                         <button class="add-to-wishlist" data-id="{{ $item->id }}"
                                                             data-variant-id="{{ $variant }}">
-                                                            <i class="fa fa-heart{{ $isFavorited ? '' : '-o' }} wishlist-icon"></i>
+                                                            <i
+                                                                class="fa fa-heart{{ $isFavorited ? '' : '-o' }} wishlist-icon"></i>
                                                             <span
                                                                 class="tooltipp">{{ $isFavorited ? 'Đã yêu thích' : 'Yêu thích' }}</span>
                                                         </button>
                                                     @else
-                                                        <a href="{{ route('login') }}" class="add-to-wishlist">
+                                                        <button onclick="window.location='{{ route('login') }}'"
+                                                            class="add-to-wishlist">
                                                             <i class="fa fa-heart-o"></i>
                                                             <span class="tooltipp">Đăng nhập để yêu thích</span>
-                                                        </a>
+                                                        </button>
                                                     @endif
 
                                                     <button class="quick-view"
@@ -854,7 +856,7 @@
                     }
                 })
                 .catch(err => {
-                    alert("Vui lòng đăng nhập để sử dụng tính năng này");
+                    showAlertModal('Vui lòng đăng nhập để sử dụng tính năng này', 'warning');
                 });
         });
     });

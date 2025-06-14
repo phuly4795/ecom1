@@ -10,33 +10,28 @@
             <ul class="header-links pull-right"
                 style="list-style: none; display: flex; align-items: center; padding: 0; margin: 0;">
                 @if (Auth::user())
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
-                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            Xin chào, {{ Illuminate\Support\Str::limit(Auth::user()->name, 20, '...') }}
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button">
+                            <i class="fa fa-user-circle"></i> {{ Str::limit(Auth::user()->name, 20, '...') }} <span
+                                class="caret"></span>
                         </a>
-
-                        <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
-                            aria-labelledby="userDropdown">
-
-                            <a class="dropdown-item" href="{{ route('my.account') }}">
-                                <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
-                                Hồ sơ cá nhân
-                            </a>
-
-                            <div class="dropdown-divider"></div>
-
-                            <a class="dropdown-item" href="#"
-                                onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                                <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
-                                Đăng xuất
-                            </a>
-
-                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="{{ route('my.account') }}">
+                                    <i class="fa fa-user"></i> Hồ sơ cá nhân
+                                </a>
+                            </li>
+                            {{-- <li role="separator" class="divider"></li> --}}
+                            <li>
+                                <a href="#"
+                                    onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                    <i class="fa fa-sign-out"></i> Đăng xuất
+                                </a>
+                            </li>
+                            <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
                                 @csrf
                             </form>
-                        </div>
-
+                        </ul>
                     </li>
                 @else
                     <li style="display: flex; align-items: center;">
@@ -184,3 +179,44 @@
     </div>
     <!-- /MAIN HEADER -->
 </header>
+<style>
+
+</style>
+<style>
+    .dropdown-menu {
+        padding: 10px;
+        min-width: 180px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        border-radius: 6px;
+    }
+
+    .dropdown-menu li a {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .dropdown-menu li a i {
+        width: 20px;
+        text-align: center;
+    }
+
+    /* Dropdown menu chỉnh màu chữ & icon bình thường và khi hover */
+    .dropdown-menu li a {
+        color: #333 !important;
+        /* màu chữ bình thường */
+        background-color: transparent;
+    }
+
+    .dropdown-menu li a:hover {
+        color: #c70101 !important;
+        /* màu khi hover */
+        background-color: #f5f5f5;
+    }
+
+    /* Icon trong menu rõ ràng hơn */
+    .dropdown-menu li a i {
+        color: #c70101 !important;
+        /* hoặc #333 nếu muốn đen */
+    }
+</style>

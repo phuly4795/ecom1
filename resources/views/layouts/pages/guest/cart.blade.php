@@ -128,7 +128,11 @@
                             </div>
                             <button type="submit" class="btn btn-default">Áp dụng</button>
                         </form>
+                        <button type="button" class="btn btn-success" data-toggle="modal" data-target="#couponModal">
+                            Nhận mã giảm giá
+                        </button>
                     </div>
+
                     <div class="col-sm-6 col-xs-12 text-right">
                         <!-- Cart Summary -->
                         <div class="panel panel-default cart-summary">
@@ -179,7 +183,65 @@
                         </div>
                     </div>
                 </div>
-
+                <div class="modal fade" id="couponModal" tabindex="-1" role="dialog"
+                    aria-labelledby="couponModalLabel">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Đóng">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                                <h4 class="modal-title" id="couponModalLabel">Danh sách mã giảm giá còn hiệu lực</h4>
+                            </div>
+                            <div class="modal-body">
+                                @if ($coupons->isEmpty())
+                                    <p class="text-muted">Hiện tại không có mã giảm giá khả dụng.</p>
+                                @else
+                                    <table class="table table-bordered table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Mã</th>
+                                                <th>Loại giảm giá</th>
+                                                <th>Giá trị</th>
+                                                <th>Hạn sử dụng</th>
+                                                <th>Lượt dùng</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($coupons as $coupon)
+                                                <tr>
+                                                    <td>
+                                                        <span class="copy-code" data-code="{{ $coupon->code }}"
+                                                            data-toggle="tooltip" data-placement="top"
+                                                            title="Nhấn để sao chép"
+                                                            style="cursor: pointer; color: #007bff;">
+                                                            <strong>{{ $coupon->code }}</strong>
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        @if ($coupon->type === 'percent')
+                                                            Phần trăm
+                                                        @else
+                                                            Giảm thẳng
+                                                        @endif
+                                                    </td>
+                                                    <td>{{ $coupon->type == 'fixed' ? number_format($coupon->value) . ' vnđ' : (int) $coupon->value . '%' }}
+                                                    </td>
+                                                    <td>{{ \Carbon\Carbon::parse($coupon->expired_at)->format('H:i:s d/m/Y') }}
+                                                    </td>
+                                                    <td>{{ $coupon->used }}/{{ $coupon->usage_limit }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                @endif
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Đóng</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
             @endif
         </div>
@@ -351,5 +413,33 @@
     }, 3000); // 3 giây
     $('body').tooltip({
         selector: '[data-toggle="tooltip"]'
+    });
+</script>
+<script>
+    $(document).ready(function() {
+        $('[data-toggle="tooltip"]').tooltip();
+
+        $('.copy-code').on('click', function() {
+            var code = $(this).data('code');
+            var $el = $(this);
+
+            var $temp = $('<input>');
+            $('body').append($temp);
+            $temp.val(code).select();
+
+            try {
+                var success = document.execCommand('copy');
+                if (success) {
+                    $el.attr('data-original-title', '✓ Đã sao chép').tooltip('show');
+                    setTimeout(function() {
+                        $el.attr('data-original-title', 'Nhấn để sao chép');
+                    }, 1500);
+                }
+            } catch (err) {
+                alert('Trình duyệt của bạn không hỗ trợ sao chép.');
+            }
+
+            $temp.remove();
+        });
     });
 </script>
