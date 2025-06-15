@@ -122,7 +122,23 @@
                         </form>
 
                         <ul class="product-btns">
-                            <li><a href="#"><i class="fa fa-heart-o"></i> Thêm yêu thích</a></li>
+                            @if (Auth::check())
+                                <?php
+                                $variant = $product->productVariants->first();
+                                $displayItem = $variant ?? $product;
+                                $isFavorited = $displayItem->favoritedByUsers->contains(auth()->id()); // luôn check từ $product
+                                ?>
+                                <button class="add-to-wishlist" data-id="{{ $product->id }}" data-variant-id>
+                                    <i class="fa fa-heart{{ $isFavorited ? '' : '-o' }} wishlist-icon"></i>
+                                    <span class="tooltipp">{{ $isFavorited ? 'Đã yêu thích' : 'Yêu thích' }}</span>
+                                </button>
+                            @else
+                                <button onclick="window.location='{{ route('login') }}'" class="add-to-wishlist">
+                                    <i class="fa fa-heart-o"></i>
+                                    <span class="tooltipp">Đăng nhập để yêu thích</span>
+                                </button>
+                            @endif
+
                         </ul>
 
                         <ul class="product-links">
@@ -488,6 +504,9 @@
     }
 </style>
 <script>
+    $('body').tooltip({
+        selector: '[data-toggle="tooltip"]'
+    });
     $(document).ready(function() {
         $('.review-link').click(function(e) {
             e.preventDefault();
@@ -519,6 +538,7 @@
         // Lấy ngày bắt đầu và kết thúc khuyến mãi (nếu có)
         const saleStartStr = selectedOption.getAttribute('data-sale-start');
         const saleEndStr = selectedOption.getAttribute('data-sale-end');
+        const VariantId1 = selectedOption.getAttribute('data-variant-id');
         const now = new Date();
 
         let isOnSale = false;
@@ -554,6 +574,7 @@
         qtyInput.value = Math.min(qtyInput.value, qty);
         const productVariantId = document.getElementById('product_variant_id');
         productVariantId.value = variantId;
+        VariantId1.value = variantId;
         availabilityElement.textContent = qty > 0 ? 'Còn hàng' : 'Hết hàng';
     }
 

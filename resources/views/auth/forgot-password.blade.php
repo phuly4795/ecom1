@@ -1,25 +1,116 @@
 <x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-        {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
-    </div>
-
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <form method="POST" action="{{ route('password.email') }}">
-        @csrf
+    <div class="container">
+        <div class="forgot-password-container">
+            <div class="forgot-password-logo">
+                <i class="fa fa-lock"></i>
+            </div>
+            <h2 class="forgot-password-title">Quên mật khẩu</h2>
 
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
-        </div>
+            <!-- Hiển thị thông báo lỗi nếu có -->
+            @if (session('status'))
+                <div class="alert alert-success">
+                    {{ session('status') }}
+                </div>
+            @endif
 
-        <div class="flex items-center justify-end mt-4">
-            <x-primary-button>
-                {{ __('Email Password Reset Link') }}
-            </x-primary-button>
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul>
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <form method="POST" action="{{ route('password.email') }}">
+                @csrf
+
+                <!-- Email -->
+                <div class="form-group {{ $errors->has('email') ? 'has-error' : '' }}">
+                    <label for="email">Email</label>
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="fa fa-envelope"></i></span>
+                        <input type="email" id="email" name="email" class="form-control"
+                            value="{{ old('email') }}" placeholder="Nhập email của bạn" required autofocus>
+                    </div>
+                    @if ($errors->has('email'))
+                        <span class="help-block">
+                            <strong>{{ $errors->first('email') }}</strong>
+                        </span>
+                    @endif
+                </div>
+
+                <!-- Nút đăng nhập -->
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary forgot-password-btn">
+                        <i class="fa fa-sign-in"></i> Xác nhận
+                    </button>
+                </div>
+
+            </form>
+
         </div>
-    </form>
+    </div>
+    <style>
+        body {
+            background-color: #f5f5f5;
+        }
+
+        .forgot-password-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .forgot-password-logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .forgot-password-logo i {
+            font-size: 60px;
+            color: #337ab7;
+        }
+
+        .forgot-password-title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #555;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .forgot-password-btn {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        .forgot-password-footer {
+            margin-top: 20px;
+            text-align: center;
+            color: #777;
+        }
+
+        .forgot-password-footer a {
+            color: #337ab7;
+        }
+
+        .has-error .form-control {
+            border-color: #a94442;
+        }
+
+        .help-block {
+            color: #a94442;
+        }
+    </style>
 </x-guest-layout>

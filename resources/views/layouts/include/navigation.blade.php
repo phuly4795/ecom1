@@ -66,6 +66,14 @@
     <!-- Divider -->
     <hr class="sidebar-divider">
 
+    <li class="nav-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('admin.users.index') }}">
+            <i class="fas fa-fw fa-tags"></i>
+            <span>Quản lý người dùng</span></a>
+    </li>
+    <!-- Divider -->
+    <hr class="sidebar-divider">
+
     <li class="nav-item">
         <a class="nav-link" href="{{ route('home') }}">
             <i class="fas fa-fw fa-tags"></i>

@@ -32,9 +32,9 @@ Route::get('/category/{slug}', [CategoryController::class, 'index'])->name('cate
 Route::get('/subcategory/{slug}', [SubCategoryController::class, 'show'])->name('subcategory.show');
 
 Route::prefix('product')->name('product.')->group(function () {
-    Route::post('/products/{product}/reviews', [ProductController::class, 'storeReview'])->name('review.store');
+    Route::post('/{product}/reviews', [ProductController::class, 'storeReview'])->name('review.store');
 
-    Route::get('/product/product_detail/{slug}/{variant?}', [ProductDetailController::class, 'show'])->name('show');
+    Route::get('/product_detail/{slug}/{variant?}', [ProductDetailController::class, 'show'])->name('show');
 });
 
 Route::prefix('cart')->name('cart.')->group(function () {
@@ -66,6 +66,6 @@ Route::middleware(['auth'])->group(function () {
 
 Route::get('/districts/{provinceId}', [LocationController::class, 'getDistricts'])->name('getDistricts');
 Route::get('/wards/{districtId}', [LocationController::class, 'getWards'])->name('getWards');
-
+Route::get('/search-products', [ProductController::class, 'search']);
 require __DIR__ . '/auth.php';
 require __DIR__ . '/admin.php';

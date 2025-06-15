@@ -27,7 +27,7 @@ class CheckoutController extends Controller
             'billing_province_id' => 'required|exists:provinces,code',
             'billing_district_id' => 'required|exists:districts,code',
             'billing_ward_id' => 'required|exists:wards,code',
-            'payment_method' => 'required|in:cash,cheque,paypal',
+            'payment_method' => 'required|in:cash,transfer',
             'terms' => 'accepted',
             'shipping_address_id' => 'nullable|exists:shipping_addresses,id',
             'shipping_full_name' => 'required_if:use_new_shipping_address,on|string|nullable',
@@ -113,8 +113,11 @@ class CheckoutController extends Controller
                 ]);
             }
             $coupon = Coupon::where('code', $cart->coupon_code)->first();
-            $coupon->used++;
-            $coupon->save();
+            if (isset($coupon)) {
+                $coupon->used++;
+                $coupon->save();
+            }
+
             // Xóa giỏ hàng
             $cart->cartDetails()->delete();
             $cart->delete();

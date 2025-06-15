@@ -100,6 +100,7 @@
                         <p><strong>Phương thức thanh toán:</strong>
                             {{ match ($order->payment_method) {
                                 'cash' => 'Tiền mặt',
+                                'transfer' => 'Chuyển khoản'
                                 default => ucfirst($order->payment_method),
                             } }}
                         <p><strong>Tổng tiền:</strong> {{ number_format($order->total_amount) }} đ</p>

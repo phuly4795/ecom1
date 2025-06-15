@@ -1,4 +1,5 @@
 <header>
+
     <!-- TOP HEADER -->
     <div id="top-header">
         <div class="container">
@@ -16,12 +17,18 @@
                                 class="caret"></span>
                         </a>
                         <ul class="dropdown-menu">
+                            @if (Auth::user()->hasRoles('admin'))
+                                <li>
+                                    <a href="{{ route('admin.dashboard') }}">
+                                        <i class="fa fa-user"></i> Quản trị
+                                    </a>
+                                </li>
+                            @endif
                             <li>
                                 <a href="{{ route('my.account') }}">
                                     <i class="fa fa-user"></i> Hồ sơ cá nhân
                                 </a>
                             </li>
-                            {{-- <li role="separator" class="divider"></li> --}}
                             <li>
                                 <a href="#"
                                     onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
@@ -40,7 +47,7 @@
                     </li>
                     <li style="color: #aaa;">|</li>
                     <li style="display: flex; align-items: center;">
-                        <a href="#">Đăng ký</a>
+                        <a href="{{route('register')}}">Đăng ký</a>
                     </li>
                 @endif
             </ul>
@@ -68,13 +75,17 @@
                 <div class="col-md-6">
                     <div class="header-search">
                         <form>
-                            <select class="input-select" style="height: 41px;">
-                                <option value="0">All Categories</option>
-                                <option value="1">Category 01</option>
-                                <option value="1">Category 02</option>
+                            <select class="input-select" id="category-input">
+                                <option value="">Tất cả</option>
+                                @foreach ($globalCategories as $category)
+                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                @endforeach
                             </select>
-                            <input class="input" placeholder="Nhập sản phẩm muốn tìm kiếm...">
+                            <input class="input" id="search-input" placeholder="Nhập sản phẩm muốn tìm kiếm..."
+                                autocomplete="off">
                             <button class="search-btn">Tìm kíếm</button>
+                            <div id="search-results"
+                                style="position:absolute; background:#fff; width:100%; z-index:99;"></div>
                         </form>
                     </div>
                 </div>
@@ -180,9 +191,6 @@
     <!-- /MAIN HEADER -->
 </header>
 <style>
-
-</style>
-<style>
     .dropdown-menu {
         padding: 10px;
         min-width: 180px;
@@ -219,4 +227,77 @@
         color: #c70101 !important;
         /* hoặc #333 nếu muốn đen */
     }
+
+    .search-item:hover {
+        background-color: #f8f9fa;
+        transition: 0.2s ease;
+        cursor: pointer;
+    }
+
+    .search-thumb img {
+        border-radius: 6px;
+        object-fit: cover;
+    }
+
+    .search-info a {
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 230px;
+    }
 </style>
+<script>
+    let debounceTimer;
+
+    document.getElementById('search-input').addEventListener('input', function() {
+        const query = this.value;
+        const categoryId = document.getElementById('category-input').value;
+        clearTimeout(debounceTimer);
+
+        debounceTimer = setTimeout(() => {
+            if (query.length >= 2) {
+                fetch(`/search-products?query=${encodeURIComponent(query)}&category=${categoryId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const resultBox = document.getElementById('search-results');
+                        resultBox.classList.add("search-suggestion-box");
+                        resultBox.innerHTML = '';
+
+                        if (data.items.length === 0) {
+                            resultBox.innerHTML =
+                                '<div style="display: flex; align-items: center; gap: 10px;">Không tìm thấy sản phẩm nào.</div>';
+                            return;
+                        }
+
+                        data.items.forEach(product => {
+                            resultBox.innerHTML += `
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div class="search-thumb" style="flex-shrink: 0;">
+                                        <img src="${product.image}" alt="${product.name}" width="60" height="60" class="rounded" style="object-fit:cover;">
+                                    </div>
+                                    <div class="search-info" style="flex-grow: 1;">
+                                        <a href="${product.route}" class="d-block text-dark font-weight-bold mb-1" style="font-size:14px; line-height: 1.2;">
+                                            ${product.name}
+                                        </a>
+                                        <div class="product-price">
+                                            <span class="text-danger font-weight-bold">${product.price}</span>
+                                            ${product.is_on_sale
+                                                ? `<span class="text-muted ml-2" style="text-decoration:line-through;">${product.original_price}</span>`
+                                                : ''
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+
+
+
+                    });
+            } else {
+                document.getElementById('search-results').innerHTML = '';
+            }
+        }, 500); // debounce 500ms
+    });
+</script>

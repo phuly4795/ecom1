@@ -23,4 +23,41 @@ class ProductController extends Controller
 
         return redirect()->back()->with('success', 'Đánh giá của bạn đã được gửi thành công!');
     }
+    public function search(Request $request)
+    {
+        $query = $request->query('query');
+
+        $selectCategory = $request->input('category');
+
+        $products = Product::where('title', 'like', "%$query%")
+            ->when($request->filled('category'), function ($q) use ($selectCategory) {
+                $q->where('category_id', $selectCategory);
+            })
+            ->limit(10)
+            ->get();
+
+        return response()->json([
+            'items' => $products->map(function ($item) {
+                $image = $item->productImages->where('type', 1)->first()->image ?? '';
+                $imagePath = $image
+                    ? asset('storage/' . $image)
+                    : asset('asset/img/no-image.png');
+
+                $variant = $item->productVariants->first();
+                $displayItem = $variant ?? $item;
+
+                $newFinalPrice = $displayItem->is_on_sale ? $displayItem->display_price : $displayItem->original_price;
+                return [
+                    'image' => $imagePath,
+                    'name' => $item->title,
+                    'route' => route('product.show', ['slug' => $item->slug]),
+                    'variant_name' => $variant ?? "-",
+                    'original_price' => number_format($displayItem->original_price) . ' vnđ',
+                    'is_on_sale' => $displayItem->is_on_sale,
+                    'price' => number_format($newFinalPrice) . ' vnđ',
+                    'discount_percentage' => $displayItem->discount_percentage
+                ];
+            })
+        ]);
+    }
 }

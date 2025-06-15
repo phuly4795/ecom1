@@ -474,7 +474,7 @@
                                         <tr>
                                             <th>Hình ảnh</th>
                                             <th>Sản phẩm</th>
-                                            <th>Biến thểroot
+                                            <th>Biến thể</th>
                                             <th>Giá</th>
                                             <th>Số lượng</th>
                                             <th>Tổng</th>

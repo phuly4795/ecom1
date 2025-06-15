@@ -68,7 +68,7 @@ class OrderController extends Controller
                 ->editColumn('payment_method', function ($order) {
                     $statuses = [
                         'cash' => 'Tiền mặt',
-                        'cheque' => 'Thanh toán bằng séc',
+                        'transfer' => 'Chuyển khoản',
                     ];
                     return $statuses[$order->payment_method];
                 })

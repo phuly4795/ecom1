@@ -226,23 +226,16 @@
                                 </div>
                             </div>
                             <div class="input-radio">
-                                <input type="radio" name="payment_method" id="payment-2" value="cheque">
+                                <input type="radio" name="payment_method" id="payment-2" value="transfer">
                                 <label for="payment-2">
                                     <span></span>
-                                    Cheque Payment
+                                    Thanh toán chuyển khoản
                                 </label>
                                 <div class="caption">
-                                    <p>Thanh toán bằng séc.</p>
-                                </div>
-                            </div>
-                            <div class="input-radio">
-                                <input type="radio" name="payment_method" id="payment-3" value="paypal">
-                                <label for="payment-3">
-                                    <span></span>
-                                    Paypal System
-                                </label>
-                                <div class="caption">
-                                    <p>Thanh toán qua Paypal.</p>
+                                    <p>Thanh toán số tiền <b>{{ number_format($total) . ' vnđ' }}</b> đến tài khoản ngân hàng</p>
+                                    <p>TP Bank: <b>0000 1860 446</b></p>
+                                    <p>Chủ tài khoản: <b>LÝ THÀNH PHÚ</b></p>
+                                    <p><b>Khi thanh toán vui lòng điền mã đơn hàng vào nội dung chuyển khoản.</b></p>
                                 </div>
                             </div>
                         </div>

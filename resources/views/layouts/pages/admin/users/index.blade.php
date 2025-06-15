@@ -1,12 +1,12 @@
 <x-app-layout>
-    @section('title', 'Danh sách thương hiệu')
+    @section('title', 'Danh sách người dùng')
     <div class="container-fluid">
-        <h1 class="h3 mb-4 text-gray-800">Danh sách thương hiệu</h1>
+        <h1 class="h3 mb-4 text-gray-800">Danh sách người dùng</h1>
         <div class="action" id="action">
-            <a href="{{ route('admin.brand.create') }}" class="btn btn-primary mb-3">Thêm thương hiệu</a>
+            <a href="{{ route('admin.users.create') }}" class="btn btn-primary mb-3">Thêm người dùng</a>
             <div class="btn-group mb-3" id="bulk-delete" style="display: none;">
                 <button type="button" class="btn btn-primary">
-                    <span class="visually-hidden"><i class="fa-solid fa-eraser"></i> Xóa thương hiệu</span>
+                    <span class="visually-hidden"><i class="fa-solid fa-eraser"></i> Xóa người dùng</span>
                 </button>
             </div>
         </div>
@@ -16,10 +16,9 @@
                     <thead>
                         <tr>
                             <th width="20px"><input type="checkbox" id="select-all"></th>
-                            <th>ID</th>
-                            <th>Tên thương hiệu</th>
-                            <th>Slug</th>
-                            <th>Ngày tạo</th>
+                            <th>Tên người dùng</th>
+                            <th>Địa chỉ email</th>
+                            <th>Quyền hạn</th>
                             <th>Trạng thái</th>
                             <th>Hành động</th>
                         </tr>
@@ -35,7 +34,7 @@
                 var table = $('#categories-table').DataTable({
                     processing: true,
                     serverSide: true,
-                    ajax: '{{ route('admin.brand.data') }}',
+                    ajax: '{{ route('admin.users.data') }}',
                     columns: [{
                             data: 'checkbox',
                             name: 'checkbox',
@@ -44,26 +43,20 @@
                             className: 'text-center'
                         },
                         {
-                            data: 'DT_RowIndex',
-                            name: 'DT_RowIndex',
-                            orderable: false,
-                            searchable: false
-                        },
-                        {
                             data: 'name',
                             name: 'name'
                         },
                         {
-                            data: 'slug',
-                            name: 'slug'
+                            data: 'email',
+                            name: 'email'
                         },
                         {
-                            data: 'created_at',
-                            name: 'created_at'
+                            data: 'user_roles',
+                            name: 'user_roles'
                         },
                         {
-                            data: 'status',
-                            name: 'status',
+                            data: 'is_active',
+                            name: 'is_active',
                             className: 'text-center'
                         },
                         {
@@ -107,7 +100,6 @@
                 // Xóa hàng loạt
                 $('#bulk-delete').click(function(e) {
                     e.preventDefault();
-                    console.log("{{ route('admin.brand.massDestroy') }}");
 
                     var ids = [];
                     $('.row-checkbox:checked').each(function() {
@@ -121,7 +113,7 @@
 
                     if (confirm('Bạn có chắc chắn muốn xóa các danh mục đã chọn?')) {
                         $.ajax({
-                            url: '{{ route('admin.brand.massDestroy') }}',
+                            url: '{{ route('admin.users.massDestroy') }}',
                             type: 'DELETE',
                             data: {
                                 ids: ids,

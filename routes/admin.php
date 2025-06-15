@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\SubCategoryController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -105,6 +106,19 @@ Route::middleware('auth', 'verified', 'checkRole')->group(function () {
             Route::delete('/mass-destroy', [CouponController::class, 'massDestroy'])->name('massDestroy');
             Route::delete('/{Coupon}', [CouponController::class, 'destroy'])->name('destroy');
             Route::patch('{coupon}/toggle-status', [CouponController::class, 'toggleStatus'])->name('toggleStatus');
+        });
+
+        Route::prefix('users')->name('users.')->group(function () {
+            Route::get('/', [UserController::class, 'index'])->name('index');
+            Route::get('/data', [UserController::class, 'data'])->name('data');
+            Route::get('/create', [UserController::class, 'create'])->name('create');
+            Route::get('/{user}/edit', [UserController::class, 'edit'])->name('edit');
+
+            Route::post('user', [UserController::class, 'storeOrUpdate'])->name('store');
+            Route::put('user/{id}', [UserController::class, 'storeOrUpdate'])->name('update');
+
+            Route::delete('/mass-destroy', [UserController::class, 'massDestroy'])->name('massDestroy');
+            Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
         });
 
         Route::get('/', function () {
