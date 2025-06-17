@@ -45,11 +45,18 @@ class LoginRequest extends FormRequest
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
+                'email' => trans('Email hoặc mật khẩu sai, vui lòng kiểm tra lại'),
             ]);
         }
 
         RateLimiter::clear($this->throttleKey());
+        if (! Auth::user()->is_active) {
+            Auth::logout(); // Đăng xuất nếu không active
+
+            throw ValidationException::withMessages([
+                'email' => 'Tài khoản của bạn đã bị vô hiệu hóa.',
+            ]);
+        }
     }
 
     /**
@@ -80,6 +87,6 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        return Str::transliterate(Str::lower($this->string('email')) . '|' . $this->ip());
     }
 }

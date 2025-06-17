@@ -57,7 +57,7 @@ class User extends Authenticatable
 
     public function roles()
     {
-        return $this->belongsToMany(Role::class, 'user_roles');
+        return $this->belongsToMany(Role::class, 'user_roles', 'user_id', 'role_id');
     }
     public function shippingAddresses()
     {
@@ -68,14 +68,9 @@ class User extends Authenticatable
         return $this->hasOne(Cart::class);
     }
 
-    public function hasRoles(...$roles)
+    public function hasRoles($role)
     {
-        foreach ($roles as $role) {
-            if ($this->roles->contains('slug', $role)) {
-                return true;
-            }
-        }
-        return false;
+        return $this->roles()->where('name', $role)->exists();
     }
 
     public function favoriteProducts()

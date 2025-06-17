@@ -2,6 +2,7 @@
     <div class="container">
         <h2>Theo dõi đơn hàng #{{ $order->order_code }}</h2>
         <p><strong>Trạng thái:</strong> {{ match ($order->status) {
+            'waiting_pay' => 'Chờ thanh toán',
             'pending' => 'Đang chờ',
             'processing' => 'Đang xử lý',
             'completed' => 'Hoàn thành',

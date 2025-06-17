@@ -87,7 +87,7 @@ class Product extends Model
     {
         return $this->favoritedByUsers->contains('id', $userId);
     }
-    
+
     public function getIsOnSaleAttribute(): bool
     {
         return $this->discount_percentage > 0
@@ -101,5 +101,15 @@ class Product extends Model
         return $this->is_on_sale
             ? round($this->original_price * (1 - $this->discount_percentage / 100))
             : $this->original_price;
+    }
+
+    public function orderItems()
+    {
+        return $this->hasMany(OrderDetail::class, 'product_id');
+    }
+
+    public function wishlists()
+    {
+        return $this->hasMany(FavoriteProduct::class, 'product_id');
     }
 }

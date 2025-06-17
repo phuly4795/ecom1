@@ -14,7 +14,15 @@ class ProductDetailController extends Controller
     public function show($slug, $variant = null)
     {
         $productDetail = Product::with(['productImages', 'brand', 'reviews', 'productVariants'])->where('slug', $slug)->firstOrFail();
-        $productLastest = Product::with('productImages')->latest()->get()->take(4);
+        // $productLastest = Product::with('productImages')->latest()->get()->take(4);
+
+        $productLastest = Product::where('status', 1)
+            ->orderByDesc('created_at')
+            ->whereNotIn('slug', [$slug])
+            ->take(4) // lấy 8 sản phẩm mới nhất
+            ->get();
+
+
         $categoryParent = $productDetail->category;
         $categoryChild = $productDetail->subCategory;
 

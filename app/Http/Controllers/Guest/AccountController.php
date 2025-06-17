@@ -92,7 +92,7 @@ class AccountController extends Controller
     {
         $order = Order::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
 
-        if (in_array($order->status, ['pending', 'processing'])) {
+        if (in_array($order->status, ['waiting_pay','pending', 'processing'])) {
             $order->status = 'cancelled';
             $order->save();
             return response()->json(['success' => true, 'message' => 'Đơn hàng đã được hủy']);

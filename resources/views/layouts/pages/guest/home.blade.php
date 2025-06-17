@@ -63,8 +63,7 @@
                                                     ? $item->productVariants->where('product_id', $item->id)->first()
                                                         ->id
                                                     : null;
-                                            $isFavorited = $displayItem->favoritedByUsers->contains(auth()->id()); // luôn check từ $product
-
+                                            $isFavorited = $item->favoritedByUsers->contains(auth()->id()); // luôn check từ $product
                                         @endphp
                                         <div class="product">
                                             <div class="product-img">
@@ -231,15 +230,7 @@
                 <!-- section title -->
                 <div class="col-md-12">
                     <div class="section-title">
-                        <h3 class="title">Top selling</h3>
-                        <div class="section-nav">
-                            <ul class="section-tab-nav tab-nav">
-                                <li class="active"><a data-toggle="tab" href="#tab2">Laptops</a></li>
-                                <li><a data-toggle="tab" href="#tab2">Smartphones</a></li>
-                                <li><a data-toggle="tab" href="#tab2">Cameras</a></li>
-                                <li><a data-toggle="tab" href="#tab2">Accessories</a></li>
-                            </ul>
-                        </div>
+                        <h3 class="title">Sản phẩm bán chạy</h3>
                     </div>
                 </div>
                 <!-- /section title -->
@@ -252,173 +243,112 @@
                             <div id="tab2" class="tab-pane fade in active">
                                 <div class="products-slick" data-nav="#slick-nav-2">
                                     <!-- product -->
-                                    <div class="product">
-                                        <div class="product-img">
-                                            <img src="{{ asset('asset/guest/img/product06.png') }}" alt="">
-                                            <div class="product-label">
-                                                <span class="sale">-30%</span>
-                                                <span class="new">NEW</span>
+                                    @foreach ($topSellingProducts as $topSellingProduct)
+                                        @php
+                                            $variant = $topSellingProduct->productVariants->first();
+                                            $displayItem = $variant ?? $topSellingProduct;
+                                            $variant =
+                                                isset($topSellingProduct->productVariants) &&
+                                                $topSellingProduct->productVariants != '[]'
+                                                    ? $topSellingProduct->productVariants
+                                                        ->where('product_id', $topSellingProduct->id)
+                                                        ->first()->id
+                                                    : null;
+                                            $isFavorited = $topSellingProduct->favoritedByUsers->contains(auth()->id()); // luôn check từ $product
+                                        @endphp
+                                        <div class="product">
+                                            <div class="product-img">
+                                                @php
+                                                    $image =
+                                                        $topSellingProduct->productImages->where('type', 1)->first()
+                                                            ->image ?? '';
+                                                    $imagePath = $image
+                                                        ? asset('storage/' . $image)
+                                                        : asset('asset/img/no-image.png');
+                                                @endphp
+                                                <img src="{{ $imagePath }}"
+                                                    alt="{{ $topSellingProduct->title }}">
+                                                <div class="product-label">
+                                                    @if ($displayItem->getIsOnSaleAttribute() && $displayItem->discount_percentage > 0)
+                                                        {!! isset($displayItem->discount_percentage)
+                                                            ? '<span class="sale">-' . $displayItem->discount_percentage . '%</span>'
+                                                            : '' !!}
+                                                    @endif
+                                                    <span class="new">HOT</span>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div class="product-body">
-                                            <p class="product-category">Category</p>
-                                            <h3 class="product-name"><a href="#">product name goes here</a></h3>
-                                            <h4 class="product-price">$980.00 <del
-                                                    class="product-old-price">$990.00</del></h4>
-                                            <div class="product-rating">
-                                                <i class="fa fa-star"></i>
-                                                <i class="fa fa-star"></i>
-                                                <i class="fa fa-star"></i>
-                                                <i class="fa fa-star"></i>
-                                                <i class="fa fa-star"></i>
-                                            </div>
-                                            <div class="product-btns">
-                                                <button class="add-to-wishlist"><i class="fa fa-heart-o"></i><span
-                                                        class="tooltipp">add to wishlist</span></button>
-                                                <button class="add-to-compare"><i class="fa fa-exchange"></i><span
-                                                        class="tooltipp">add to compare</span></button>
-                                                <button class="quick-view"><i class="fa fa-eye"></i><span
-                                                        class="tooltipp">quick view</span></button>
-                                            </div>
-                                        </div>
-                                        <div class="add-to-cart">
-                                            <button class="add-to-cart-btn"><i class="fa fa-shopping-cart"></i> add to
-                                                cart</button>
-                                        </div>
-                                    </div>
-                                    <!-- /product -->
+                                            <div class="product-body">
+                                                <p class="product-category">
+                                                    {{ $topSellingProduct->category ? $topSellingProduct->category->name : ($topSellingProduct->subCategory ? $topSellingProduct->subCategory->categories->pluck('name')->implode(', ') : 'Chưa có') }}
+                                                </p>
+                                                <h3 class="product-name"><a
+                                                        href="{{ route('product.show', ['slug' => $topSellingProduct->slug]) }}">{{ Str::limit($topSellingProduct->title, 20, '...') }}</a>
+                                                </h3>
+                                                </h3>
+                                                <h4 class="product-price">
+                                                    <h4 class="product-price">
+                                                        @if ($displayItem->getIsOnSaleAttribute())
+                                                            <span class="text-danger fw-bold">
+                                                                {{ number_format($displayItem->getDisplayPriceAttribute()) }}
+                                                                vnđ
+                                                            </span>
+                                                            <del class="text-muted">
+                                                                {{ number_format($displayItem->original_price) }} vnđ
+                                                            </del>
+                                                        @else
+                                                            <span>
+                                                                {{ number_format($displayItem->original_price) }} vnđ
+                                                            </span>
+                                                        @endif
+                                                    </h4>
+                                                </h4>
+                                                <div class="product-rating">
+                                                    <?php
+                                                    $averageRating = $topSellingProduct->reviews->avg('rating') ?? 0;
+                                                    ?>
+                                                    @for ($i = 1; $i <= 5; $i++)
+                                                        <i class="fa fa-star{{ $i <= $averageRating ? '' : '-o' }}"
+                                                            style="color: red"></i>
+                                                    @endfor
+                                                </div>
+                                                <div class="product-btns">
+                                                    @if (Auth::check())
+                                                        <button class="add-to-wishlist"
+                                                            data-id="{{ $topSellingProduct->id }}"
+                                                            data-variant-id="{{ $variant }}">
+                                                            <i
+                                                                class="fa fa-heart{{ $isFavorited ? '' : '-o' }} wishlist-icon"></i>
+                                                            <span
+                                                                class="tooltipp">{{ $isFavorited ? 'Đã yêu thích' : 'Yêu thích' }}</span>
+                                                        </button>
+                                                    @else
+                                                        <button onclick="window.location='{{ route('login') }}'"
+                                                            class="add-to-wishlist">
+                                                            <i class="fa fa-heart-o"></i>
+                                                            <span class="tooltipp">Đăng nhập để yêu thích</span>
+                                                        </button>
+                                                    @endif
 
-                                    <!-- product -->
-                                    <div class="product">
-                                        <div class="product-img">
-                                            <img src="{{ asset('asset/guest/img/product07.png') }}" alt="">
-                                            <div class="product-label">
-                                                <span class="new">NEW</span>
+                                                    <button class="quick-view"
+                                                        onclick="window.location='{{ route('product.show', ['slug' => $topSellingProduct->slug]) }}'"><i
+                                                            class="fa fa-eye"></i><span class="tooltipp">Xem sản
+                                                            phẩm</span></button>
+                                                </div>
+                                            </div>
+                                            <div class="add-to-cart">
+                                                <form action="{{ route('cart.add', $topSellingProduct->id) }}"
+                                                    method="POST">
+                                                    @csrf
+                                                    <input type="hidden" name="qty" value="1">
+                                                    <input type="hidden" name="product_variant_id"
+                                                        value="{{ $variant }}">
+                                                    <button type="submit" class="add-to-cart-btn">
+                                                        <i class="fa fa-shopping-cart"></i> Thêm giỏ hàng
+                                                    </button>
+                                                </form>
                                             </div>
                                         </div>
-                                        <div class="product-body">
-                                            <p class="product-category">Category</p>
-                                            <h3 class="product-name"><a href="#">product name goes here</a></h3>
-                                            <h4 class="product-price">$980.00 <del
-                                                    class="product-old-price">$990.00</del></h4>
-                                            <div class="product-rating">
-                                                <i class="fa fa-star"></i>
-                                                <i class="fa fa-star"></i>
-                                                <i class="fa fa-star"></i>
-                                                <i class="fa fa-star"></i>
-                                                <i class="fa fa-star-o"></i>
-                                            </div>
-                                            <div class="product-btns">
-                                                <button class="add-to-wishlist"><i class="fa fa-heart-o"></i><span
-                                                        class="tooltipp">add to wishlist</span></button>
-                                                <button class="add-to-compare"><i class="fa fa-exchange"></i><span
-                                                        class="tooltipp">add to compare</span></button>
-                                                <button class="quick-view"><i class="fa fa-eye"></i><span
-                                                        class="tooltipp">quick view</span></button>
-                                            </div>
-                                        </div>
-                                        <div class="add-to-cart">
-                                            <button class="add-to-cart-btn"><i class="fa fa-shopping-cart"></i> add to
-                                                cart</button>
-                                        </div>
-                                    </div>
-                                    <!-- /product -->
-
-                                    <!-- product -->
-                                    <div class="product">
-                                        <div class="product-img">
-                                            <img src="{{ asset('asset/guest/img/product08.png') }}" alt="">
-                                            <div class="product-label">
-                                                <span class="sale">-30%</span>
-                                            </div>
-                                        </div>
-                                        <div class="product-body">
-                                            <p class="product-category">Category</p>
-                                            <h3 class="product-name"><a href="#">product name goes here</a></h3>
-                                            <h4 class="product-price">$980.00 <del
-                                                    class="product-old-price">$990.00</del></h4>
-                                            <div class="product-rating">
-                                            </div>
-                                            <div class="product-btns">
-                                                <button class="add-to-wishlist"><i class="fa fa-heart-o"></i><span
-                                                        class="tooltipp">add to wishlist</span></button>
-                                                <button class="add-to-compare"><i class="fa fa-exchange"></i><span
-                                                        class="tooltipp">add to compare</span></button>
-                                                <button class="quick-view"><i class="fa fa-eye"></i><span
-                                                        class="tooltipp">quick view</span></button>
-                                            </div>
-                                        </div>
-                                        <div class="add-to-cart">
-                                            <button class="add-to-cart-btn"><i class="fa fa-shopping-cart"></i> add to
-                                                cart</button>
-                                        </div>
-                                    </div>
-                                    <!-- /product -->
-
-                                    <!-- product -->
-                                    <div class="product">
-                                        <div class="product-img">
-                                            <img src="{{ asset('asset/guest/img/product09.png') }}" alt="">
-                                        </div>
-                                        <div class="product-body">
-                                            <p class="product-category">Category</p>
-                                            <h3 class="product-name"><a href="#">product name goes here</a></h3>
-                                            <h4 class="product-price">$980.00 <del
-                                                    class="product-old-price">$990.00</del></h4>
-                                            <div class="product-rating">
-                                                <i class="fa fa-star"></i>
-                                                <i class="fa fa-star"></i>
-                                                <i class="fa fa-star"></i>
-                                                <i class="fa fa-star"></i>
-                                                <i class="fa fa-star"></i>
-                                            </div>
-                                            <div class="product-btns">
-                                                <button class="add-to-wishlist"><i class="fa fa-heart-o"></i><span
-                                                        class="tooltipp">add to wishlist</span></button>
-                                                <button class="add-to-compare"><i class="fa fa-exchange"></i><span
-                                                        class="tooltipp">add to compare</span></button>
-                                                <button class="quick-view"><i class="fa fa-eye"></i><span
-                                                        class="tooltipp">quick view</span></button>
-                                            </div>
-                                        </div>
-                                        <div class="add-to-cart">
-                                            <button class="add-to-cart-btn"><i class="fa fa-shopping-cart"></i> add to
-                                                cart</button>
-                                        </div>
-                                    </div>
-                                    <!-- /product -->
-
-                                    <!-- product -->
-                                    <div class="product">
-                                        <div class="product-img">
-                                            <img src="{{ asset('asset/guest/img/product01.png') }}" alt="">
-                                        </div>
-                                        <div class="product-body">
-                                            <p class="product-category">Category</p>
-                                            <h3 class="product-name"><a href="#">product name goes here</a></h3>
-                                            <h4 class="product-price">$980.00 <del
-                                                    class="product-old-price">$990.00</del></h4>
-                                            <div class="product-rating">
-                                                <i class="fa fa-star"></i>
-                                                <i class="fa fa-star"></i>
-                                                <i class="fa fa-star"></i>
-                                                <i class="fa fa-star"></i>
-                                                <i class="fa fa-star"></i>
-                                            </div>
-                                            <div class="product-btns">
-                                                <button class="add-to-wishlist"><i class="fa fa-heart-o"></i><span
-                                                        class="tooltipp">add to wishlist</span></button>
-                                                <button class="add-to-compare"><i class="fa fa-exchange"></i><span
-                                                        class="tooltipp">add to compare</span></button>
-                                                <button class="quick-view"><i class="fa fa-eye"></i><span
-                                                        class="tooltipp">quick view</span></button>
-                                            </div>
-                                        </div>
-                                        <div class="add-to-cart">
-                                            <button class="add-to-cart-btn"><i class="fa fa-shopping-cart"></i> add to
-                                                cart</button>
-                                        </div>
-                                    </div>
+                                    @endforeach
                                     <!-- /product -->
                                 </div>
                                 <div id="slick-nav-2" class="products-slick-nav"></div>
@@ -443,199 +373,157 @@
             <div class="row">
                 <div class="col-md-4 col-xs-6">
                     <div class="section-title">
-                        <h4 class="title">Top selling</h4>
+                        <h4 class="title">Sản phẩm được đánh giá cao</h4>
                         <div class="section-nav">
                             <div id="slick-nav-3" class="products-slick-nav"></div>
                         </div>
                     </div>
 
                     <div class="products-widget-slick" data-nav="#slick-nav-3">
-                        <div>
-                            <!-- product widget -->
-                            <div class="product-widget">
-                                <div class="product-img">
-                                    <img src="{{ asset('asset/guest/img/product07.png') }}" alt="">
-                                </div>
-                                <div class="product-body">
-                                    <p class="product-category">Category</p>
-                                    <h3 class="product-name"><a href="#">product name goes here</a></h3>
-                                    <h4 class="product-price">$980.00 <del class="product-old-price">$990.00</del>
-                                    </h4>
-                                </div>
-                            </div>
-                            <!-- /product widget -->
+                        @foreach ($topRated as $topRatedGroup)
+                            <div>
+                                @foreach ($topRatedGroup as $productTopRated)
+                                    <!-- product widget -->
+                                    <div class="product-widget">
+                                        <div class="product-img">
+                                            @php
+                                                $imageProductTopRated =
+                                                    $productTopRated->productImages->where('type', 1)->first()->image ??
+                                                    '';
+                                                $imagePathProductTopRated = $imageProductTopRated
+                                                    ? asset('storage/' . $imageProductTopRated)
+                                                    : asset('asset/img/no-image.png');
+                                            @endphp
+                                            <span class="product-img" style="cursor: pointer"
+                                                onclick="window.location='{{ route('product.show', ['slug' => $productTopRated->slug]) }}'">
+                                                <img src="{{ $imagePathProductTopRated }}"
+                                                    alt="{{ $productTopRated->title }}"></span>
 
-                            <!-- product widget -->
-                            <div class="product-widget">
-                                <div class="product-img">
-                                    <img src="{{ asset('asset/guest/img/product08.png') }}" alt="">
-                                </div>
-                                <div class="product-body">
-                                    <p class="product-category">Category</p>
-                                    <h3 class="product-name"><a href="#">product name goes here</a></h3>
-                                    <h4 class="product-price">$980.00 <del class="product-old-price">$990.00</del>
-                                    </h4>
-                                </div>
-                            </div>
-                            <!-- /product widget -->
+                                        </div>
+                                        <div class="product-body">
+                                            @php
+                                                // Chọn item để hiển thị giá: nếu có variant thì dùng variant đầu tiên
+                                                $variantProductTopRated = $productTopRated->productVariants->first();
+                                                $displayProductTopRated = $variantProductTopRated ?? $productTopRated;
+                                                $variantProductTopRated =
+                                                    isset($productTopRated->productVariants) &&
+                                                    $productTopRated->productVariants != '[]'
+                                                        ? $productTopRated->productVariants
+                                                            ->where('product_id', $productTopRated->id)
+                                                            ->first()->id
+                                                        : null;
+                                                $isFavorited = $productTopRated->favoritedByUsers->contains(
+                                                    auth()->id(),
+                                                ); // luôn check từ $productTopRated
 
-                            <!-- product widget -->
-                            <div class="product-widget">
-                                <div class="product-img">
-                                    <img src="{{ asset('asset/guest/img/product09.png') }}" alt="">
-                                </div>
-                                <div class="product-body">
-                                    <p class="product-category">Category</p>
-                                    <h3 class="product-name"><a href="#">product name goes here</a></h3>
-                                    <h4 class="product-price">$980.00 <del class="product-old-price">$990.00</del>
-                                    </h4>
-                                </div>
+                                            @endphp
+                                            {{ $productTopRated->category ? $productTopRated->category->name : ($productTopRated->subCategory ? $productTopRated->subCategory->categories->pluck('name')->implode(', ') : 'Chưa có') }}
+                                            <h3 class="product-name"><a
+                                                    href="{{ route('product.show', ['slug' => $productTopRated->slug]) }}">{{ Str::limit($productTopRated->title, 20, '...') }}</a>
+                                            </h3>
+                                            <h4 class="product-price">
+                                                <h4 class="product-price">
+                                                    @if ($displayProductTopRated->getIsOnSaleAttribute())
+                                                        <span class="text-danger fw-bold">
+                                                            {{ number_format($displayProductTopRated->getDisplayPriceAttribute()) }}
+                                                            vnđ
+                                                        </span>
+                                                        <del class="text-muted">
+                                                            {{ number_format($displayProductTopRated->original_price) }}
+                                                            vnđ
+                                                        </del>
+                                                    @else
+                                                        <span>
+                                                            {{ number_format($displayProductTopRated->original_price) }}
+                                                            vnđ
+                                                        </span>
+                                                    @endif
+                                                </h4>
+                                            </h4>
+                                        </div>
+                                    </div>
+                                @endforeach
+                                <!-- /product widget -->
                             </div>
-                            <!-- product widget -->
-                        </div>
-
-                        <div>
-                            <!-- product widget -->
-                            <div class="product-widget">
-                                <div class="product-img">
-                                    <img src="{{ asset('asset/guest/img/product01.png') }}" alt="">
-                                </div>
-                                <div class="product-body">
-                                    <p class="product-category">Category</p>
-                                    <h3 class="product-name"><a href="#">product name goes here</a></h3>
-                                    <h4 class="product-price">$980.00 <del class="product-old-price">$990.00</del>
-                                    </h4>
-                                </div>
-                            </div>
-                            <!-- /product widget -->
-
-                            <!-- product widget -->
-                            <div class="product-widget">
-                                <div class="product-img">
-                                    <img src="{{ asset('asset/guest/img/product02.png') }}" alt="">
-                                </div>
-                                <div class="product-body">
-                                    <p class="product-category">Category</p>
-                                    <h3 class="product-name"><a href="#">product name goes here</a></h3>
-                                    <h4 class="product-price">$980.00 <del class="product-old-price">$990.00</del>
-                                    </h4>
-                                </div>
-                            </div>
-                            <!-- /product widget -->
-
-                            <!-- product widget -->
-                            <div class="product-widget">
-                                <div class="product-img">
-                                    <img src="{{ asset('asset/guest/img/product03.png') }}" alt="">
-                                </div>
-                                <div class="product-body">
-                                    <p class="product-category">Category</p>
-                                    <h3 class="product-name"><a href="#">product name goes here</a></h3>
-                                    <h4 class="product-price">$980.00 <del class="product-old-price">$990.00</del>
-                                    </h4>
-                                </div>
-                            </div>
-                            <!-- product widget -->
-                        </div>
+                        @endforeach
                     </div>
                 </div>
 
                 <div class="col-md-4 col-xs-6">
                     <div class="section-title">
-                        <h4 class="title">Top selling</h4>
+                        <h4 class="title">Sản phẩm nổi bật</h4>
                         <div class="section-nav">
                             <div id="slick-nav-4" class="products-slick-nav"></div>
                         </div>
                     </div>
 
                     <div class="products-widget-slick" data-nav="#slick-nav-4">
-                        <div>
-                            <!-- product widget -->
-                            <div class="product-widget">
-                                <div class="product-img">
-                                    <img src="{{ asset('asset/guest/img/product04.png') }}" alt="">
-                                </div>
-                                <div class="product-body">
-                                    <p class="product-category">Category</p>
-                                    <h3 class="product-name"><a href="#">product name goes here</a></h3>
-                                    <h4 class="product-price">$980.00 <del class="product-old-price">$990.00</del>
-                                    </h4>
-                                </div>
-                            </div>
-                            <!-- /product widget -->
+                        @foreach ($featured as $featuredGroup)
+                            <div>
+                                @foreach ($featuredGroup as $ProductFeatured)
+                                    <!-- product widget -->
+                                    <div class="product-widget">
+                                        <div class="product-img">
+                                            @php
+                                                $imageProductFeatured =
+                                                    $ProductFeatured->productImages->where('type', 1)->first()->image ??
+                                                    '';
+                                                $imagePathProductFeatured = $imageProductFeatured
+                                                    ? asset('storage/' . $imageProductFeatured)
+                                                    : asset('asset/img/no-image.png');
+                                            @endphp
+                                            <span class="product-img" style="cursor: pointer"
+                                                onclick="window.location='{{ route('product.show', ['slug' => $ProductFeatured->slug]) }}'">
+                                                <img src="{{ $imagePathProductFeatured }}"
+                                                    alt="{{ $ProductFeatured->title }}"></span>
 
-                            <!-- product widget -->
-                            <div class="product-widget">
-                                <div class="product-img">
-                                    <img src="{{ asset('asset/guest/img/product05.png') }}" alt="">
-                                </div>
-                                <div class="product-body">
-                                    <p class="product-category">Category</p>
-                                    <h3 class="product-name"><a href="#">product name goes here</a></h3>
-                                    <h4 class="product-price">$980.00 <del class="product-old-price">$990.00</del>
-                                    </h4>
-                                </div>
-                            </div>
-                            <!-- /product widget -->
+                                        </div>
+                                        <div class="product-body">
+                                            @php
+                                                // Chọn item để hiển thị giá: nếu có variant thì dùng variant đầu tiên
+                                                $variantProductFeatured = $ProductFeatured->productVariants->first();
+                                                $displayProductFeatured = $variantProductFeatured ?? $ProductFeatured;
+                                                $variantProductFeatured =
+                                                    isset($ProductFeatured->productVariants) &&
+                                                    $ProductFeatured->productVariants != '[]'
+                                                        ? $ProductFeatured->productVariants
+                                                            ->where('product_id', $ProductFeatured->id)
+                                                            ->first()->id
+                                                        : null;
+                                                $isFavorited = $ProductFeatured->favoritedByUsers->contains(
+                                                    auth()->id(),
+                                                ); // luôn check từ $ProductFeatured
 
-                            <!-- product widget -->
-                            <div class="product-widget">
-                                <div class="product-img">
-                                    <img src="{{ asset('asset/guest/img/product06.png') }}" alt="">
-                                </div>
-                                <div class="product-body">
-                                    <p class="product-category">Category</p>
-                                    <h3 class="product-name"><a href="#">product name goes here</a></h3>
-                                    <h4 class="product-price">$980.00 <del class="product-old-price">$990.00</del>
-                                    </h4>
-                                </div>
+                                            @endphp
+                                            {{ $ProductFeatured->category ? $ProductFeatured->category->name : ($ProductFeatured->subCategory ? $ProductFeatured->subCategory->categories->pluck('name')->implode(', ') : 'Chưa có') }}
+                                            <h3 class="product-name"><a
+                                                    href="{{ route('product.show', ['slug' => $ProductFeatured->slug]) }}">{{ Str::limit($ProductFeatured->title, 20, '...') }}</a>
+                                            </h3>
+                                            <h4 class="product-price">
+                                                <h4 class="product-price">
+                                                    @if ($displayProductFeatured->getIsOnSaleAttribute())
+                                                        <span class="text-danger fw-bold">
+                                                            {{ number_format($displayProductFeatured->getDisplayPriceAttribute()) }}
+                                                            vnđ
+                                                        </span>
+                                                        <del class="text-muted">
+                                                            {{ number_format($displayProductFeatured->original_price) }}
+                                                            vnđ
+                                                        </del>
+                                                    @else
+                                                        <span>
+                                                            {{ number_format($displayProductFeatured->original_price) }}
+                                                            vnđ
+                                                        </span>
+                                                    @endif
+                                                </h4>
+                                            </h4>
+                                        </div>
+                                    </div>
+                                @endforeach
+                                <!-- /product widget -->
                             </div>
-                            <!-- product widget -->
-                        </div>
-
-                        <div>
-                            <!-- product widget -->
-                            <div class="product-widget">
-                                <div class="product-img">
-                                    <img src="{{ asset('asset/guest/img/product07.png') }}" alt="">
-                                </div>
-                                <div class="product-body">
-                                    <p class="product-category">Category</p>
-                                    <h3 class="product-name"><a href="#">product name goes here</a></h3>
-                                    <h4 class="product-price">$980.00 <del class="product-old-price">$990.00</del>
-                                    </h4>
-                                </div>
-                            </div>
-                            <!-- /product widget -->
-
-                            <!-- product widget -->
-                            <div class="product-widget">
-                                <div class="product-img">
-                                    <img src="{{ asset('asset/guest/img/product08.png') }}" alt="">
-                                </div>
-                                <div class="product-body">
-                                    <p class="product-category">Category</p>
-                                    <h3 class="product-name"><a href="#">product name goes here</a></h3>
-                                    <h4 class="product-price">$980.00 <del class="product-old-price">$990.00</del>
-                                    </h4>
-                                </div>
-                            </div>
-                            <!-- /product widget -->
-
-                            <!-- product widget -->
-                            <div class="product-widget">
-                                <div class="product-img">
-                                    <img src="{{ asset('asset/guest/img/product09.png') }}" alt="">
-                                </div>
-                                <div class="product-body">
-                                    <p class="product-category">Category</p>
-                                    <h3 class="product-name"><a href="#">product name goes here</a></h3>
-                                    <h4 class="product-price">$980.00 <del class="product-old-price">$990.00</del>
-                                    </h4>
-                                </div>
-                            </div>
-                            <!-- product widget -->
-                        </div>
+                        @endforeach
                     </div>
                 </div>
 
@@ -643,100 +531,79 @@
 
                 <div class="col-md-4 col-xs-6">
                     <div class="section-title">
-                        <h4 class="title">Top selling</h4>
+                        <h4 class="title">Sản phẩm được yêu thích</h4>
                         <div class="section-nav">
                             <div id="slick-nav-5" class="products-slick-nav"></div>
                         </div>
                     </div>
 
                     <div class="products-widget-slick" data-nav="#slick-nav-5">
-                        <div>
-                            <!-- product widget -->
-                            <div class="product-widget">
-                                <div class="product-img">
-                                    <img src="{{ asset('asset/guest/img/product01.png') }}" alt="">
-                                </div>
-                                <div class="product-body">
-                                    <p class="product-category">Category</p>
-                                    <h3 class="product-name"><a href="#">product name goes here</a></h3>
-                                    <h4 class="product-price">$980.00 <del class="product-old-price">$990.00</del>
-                                    </h4>
-                                </div>
-                            </div>
-                            <!-- /product widget -->
+                        @foreach ($mostFavorited as $mostFavoritedGroup)
+                            <div>
+                                @foreach ($mostFavoritedGroup as $ProductmostFavorited)
+                                    <!-- product widget -->
+                                    <div class="product-widget">
+                                        <div class="product-img">
+                                            @php
+                                                $imageProductmostFavorited =
+                                                    $ProductmostFavorited->productImages->where('type', 1)->first()->image ??
+                                                    '';
+                                                $imagePathProductmostFavorited = $imageProductmostFavorited
+                                                    ? asset('storage/' . $imageProductmostFavorited)
+                                                    : asset('asset/img/no-image.png');
+                                            @endphp
+                                            <span class="product-img" style="cursor: pointer"
+                                                onclick="window.location='{{ route('product.show', ['slug' => $ProductmostFavorited->slug]) }}'">
+                                                <img src="{{ $imagePathProductmostFavorited }}"
+                                                    alt="{{ $ProductmostFavorited->title }}"></span>
 
-                            <!-- product widget -->
-                            <div class="product-widget">
-                                <div class="product-img">
-                                    <img src="{{ asset('asset/guest/img/product02.png') }}" alt="">
-                                </div>
-                                <div class="product-body">
-                                    <p class="product-category">Category</p>
-                                    <h3 class="product-name"><a href="#">product name goes here</a></h3>
-                                    <h4 class="product-price">$980.00 <del class="product-old-price">$990.00</del>
-                                    </h4>
-                                </div>
-                            </div>
-                            <!-- /product widget -->
+                                        </div>
+                                        <div class="product-body">
+                                            @php
+                                                // Chọn item để hiển thị giá: nếu có variant thì dùng variant đầu tiên
+                                                $variantProductmostFavorited = $ProductmostFavorited->productVariants->first();
+                                                $displayProductmostFavorited = $variantProductmostFavorited ?? $ProductmostFavorited;
+                                                $variantProductmostFavorited =
+                                                    isset($ProductmostFavorited->productVariants) &&
+                                                    $ProductmostFavorited->productVariants != '[]'
+                                                        ? $ProductmostFavorited->productVariants
+                                                            ->where('product_id', $ProductmostFavorited->id)
+                                                            ->first()->id
+                                                        : null;
+                                                $isFavorited = $ProductmostFavorited->favoritedByUsers->contains(
+                                                    auth()->id(),
+                                                ); // luôn check từ $ProductmostFavorited
 
-                            <!-- product widget -->
-                            <div class="product-widget">
-                                <div class="product-img">
-                                    <img src="{{ asset('asset/guest/img/product03.png') }}" alt="">
-                                </div>
-                                <div class="product-body">
-                                    <p class="product-category">Category</p>
-                                    <h3 class="product-name"><a href="#">product name goes here</a></h3>
-                                    <h4 class="product-price">$980.00 <del class="product-old-price">$990.00</del>
-                                    </h4>
-                                </div>
+                                            @endphp
+                                            {{ $ProductmostFavorited->category ? $ProductmostFavorited->category->name : ($ProductmostFavorited->subCategory ? $ProductmostFavorited->subCategory->categories->pluck('name')->implode(', ') : 'Chưa có') }}
+                                            <h3 class="product-name"><a
+                                                    href="{{ route('product.show', ['slug' => $ProductmostFavorited->slug]) }}">{{ Str::limit($ProductmostFavorited->title, 20, '...') }}</a>
+                                            </h3>
+                                            <h4 class="product-price">
+                                                <h4 class="product-price">
+                                                    @if ($displayProductmostFavorited->getIsOnSaleAttribute())
+                                                        <span class="text-danger fw-bold">
+                                                            {{ number_format($displayProductmostFavorited->getDisplayPriceAttribute()) }}
+                                                            vnđ
+                                                        </span>
+                                                        <del class="text-muted">
+                                                            {{ number_format($displayProductmostFavorited->original_price) }}
+                                                            vnđ
+                                                        </del>
+                                                    @else
+                                                        <span>
+                                                            {{ number_format($displayProductmostFavorited->original_price) }}
+                                                            vnđ
+                                                        </span>
+                                                    @endif
+                                                </h4>
+                                            </h4>
+                                        </div>
+                                    </div>
+                                @endforeach
+                                <!-- /product widget -->
                             </div>
-                            <!-- product widget -->
-                        </div>
-
-                        <div>
-                            <!-- product widget -->
-                            <div class="product-widget">
-                                <div class="product-img">
-                                    <img src="{{ asset('asset/guest/img/product04.png') }}" alt="">
-                                </div>
-                                <div class="product-body">
-                                    <p class="product-category">Category</p>
-                                    <h3 class="product-name"><a href="#">product name goes here</a></h3>
-                                    <h4 class="product-price">$980.00 <del class="product-old-price">$990.00</del>
-                                    </h4>
-                                </div>
-                            </div>
-                            <!-- /product widget -->
-
-                            <!-- product widget -->
-                            <div class="product-widget">
-                                <div class="product-img">
-                                    <img src="{{ asset('asset/guest/img/product05.png') }}" alt="">
-                                </div>
-                                <div class="product-body">
-                                    <p class="product-category">Category</p>
-                                    <h3 class="product-name"><a href="#">product name goes here</a></h3>
-                                    <h4 class="product-price">$980.00 <del class="product-old-price">$990.00</del>
-                                    </h4>
-                                </div>
-                            </div>
-                            <!-- /product widget -->
-
-                            <!-- product widget -->
-                            <div class="product-widget">
-                                <div class="product-img">
-                                    <img src="{{ asset('asset/guest/img/product06.png') }}" alt="">
-                                </div>
-                                <div class="product-body">
-                                    <p class="product-category">Category</p>
-                                    <h3 class="product-name"><a href="#">product name goes here</a></h3>
-                                    <h4 class="product-price">$980.00 <del class="product-old-price">$990.00</del>
-                                    </h4>
-                                </div>
-                            </div>
-                            <!-- product widget -->
-                        </div>
+                        @endforeach
                     </div>
                 </div>
 
@@ -815,6 +682,20 @@
         display: flex;
         align-items: center;
         justify-content: center;
+    }
+
+    .product-img {
+        height: 220px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+    }
+
+    .product-img img {
+        max-height: 100%;
+        width: auto;
+        object-fit: contain;
     }
 </style>
 <script>

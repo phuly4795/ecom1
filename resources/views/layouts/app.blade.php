@@ -34,6 +34,57 @@
     <a class="scroll-to-top rounded" href="#page-top">
         <i class="fas fa-angle-up"></i>
     </a>
+
+
+
+    <script src="https://js.pusher.com/7.2/pusher.min.js"></script>
+    {{-- <script src="{{ asset('js/app.js') }}"></script> --}}
+
+    <script>
+        Pusher.logToConsole = true;
+
+        window.Echo = new Echo({
+            broadcaster: 'pusher',
+            key: "{{ env('PUSHER_APP_KEY') }}",
+            cluster: 'ap1',
+            forceTLS: true
+        });
+
+        window.Echo.channel('contact-messages')
+            .listen('NewContactMessage', (e) => {
+                console.log('Tin nhắn mới:', e.contact);
+                alert('Tin nhắn mới từ: ' + e.contact.name);
+            });
+    </script>
+    <script>
+        let messageCount = 0;
+
+        window.Echo.channel('contact-messages')
+            .listen('NewContactMessage', (e) => {
+                const contact = e.contact;
+
+                messageCount++;
+                document.getElementById('messages-count').innerText = messageCount;
+
+                const html = `
+                <a class="dropdown-item d-flex align-items-center" href="#">
+                    <div class="dropdown-list-image mr-3">
+                        <img class="rounded-circle" src="https://ui-avatars.com/api/?name=${contact.name}" alt="${contact.name}">
+                        <div class="status-indicator bg-success"></div>
+                    </div>
+                    <div>
+                        <div class="text-truncate">${contact.content.substring(0, 50)}...</div>
+                        <div class="small text-gray-500">${contact.name} · vừa gửi</div>
+                    </div>
+                </a>
+            `;
+
+                const list = document.getElementById('messages-list');
+                if (list.querySelector('p')) list.innerHTML = ''; // Xóa "Không có tin nhắn"
+                list.insertAdjacentHTML('afterbegin', html);
+            });
+    </script>
+
 </body>
 
 </html>

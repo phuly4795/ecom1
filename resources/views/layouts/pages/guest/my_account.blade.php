@@ -88,6 +88,7 @@
                                                     <td>
                                                         <span
                                                             class="badge {{ match ($order->status) {
+                                                                'waiting_pay' => 'bg-secondary',
                                                                 'pending' => 'bg-warning',
                                                                 'processing' => 'bg-info',
                                                                 'completed' => 'bg-success',
@@ -96,6 +97,7 @@
                                                                 default => 'bg-secondary',
                                                             } }}">
                                                             {{ match ($order->status) {
+                                                                'waiting_pay' => 'Chờ thanh toán',
                                                                 'pending' => 'Đang chờ',
                                                                 'processing' => 'Đang xử lý',
                                                                 'completed' => 'Hoàn thành',
@@ -512,7 +514,8 @@
                         existingCancelButton.remove();
                     }
 
-                    if (order.status === 'pending' || order.status === 'processing') {
+                    if (order.status === 'waiting_pay' || order.status === 'pending' || order.status ===
+                        'processing') {
                         const cancelButton = document.createElement('button');
                         cancelButton.type = 'button';
                         cancelButton.className = 'btn btn-danger cancel-order';

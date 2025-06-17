@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Guest\AccountController;
 use App\Http\Controllers\Guest\SubCategoryController;
 use App\Http\Controllers\Guest\CartController;
@@ -13,6 +14,9 @@ use App\Http\Controllers\Guest\ProductDetailController;
 use App\Http\Controllers\LocationController;
 use Illuminate\Support\Facades\Route;
 use App\Models\Role;
+
+require __DIR__ . '/auth.php';
+require __DIR__ . '/admin.php';
 
 /*
 |--------------------------------------------------------------------------
@@ -67,5 +71,8 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/districts/{provinceId}', [LocationController::class, 'getDistricts'])->name('getDistricts');
 Route::get('/wards/{districtId}', [LocationController::class, 'getWards'])->name('getWards');
 Route::get('/search-products', [ProductController::class, 'search']);
-require __DIR__ . '/auth.php';
-require __DIR__ . '/admin.php';
+Route::post('/lien-he', [HomeController::class, 'storeContact']);
+// ->middleware('throttle:3,1'); // Tối đa 3 lần/phút;
+
+// Public route
+Route::get('/{slug}', [PageController::class, 'show'])->name('pages.show');

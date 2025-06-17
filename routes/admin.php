@@ -5,7 +5,9 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\SubCategoryController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\LocationController;
@@ -13,7 +15,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Models\Role;
 
-Route::middleware('auth', 'verified', 'checkRole')->group(function () {
+Route::middleware('auth', 'verified', 'role:admin')->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -119,6 +121,20 @@ Route::middleware('auth', 'verified', 'checkRole')->group(function () {
 
             Route::delete('/mass-destroy', [UserController::class, 'massDestroy'])->name('massDestroy');
             Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
+        });
+
+        Route::prefix('pages')->name('pages.')->group(function () {
+            Route::get('/', [PageController::class, 'index'])->name('index');
+            Route::get('/create', [PageController::class, 'create'])->name('create');
+            Route::post('/', [PageController::class, 'store'])->name('store');
+            Route::get('/{page}/edit', [PageController::class, 'edit'])->name('edit');
+            Route::put('/{page}', [PageController::class, 'update'])->name('update');
+            Route::delete('/{page}', [PageController::class, 'destroy'])->name('destroy');
+        });
+
+        Route::prefix('settings')->name('settings.')->group(function () {
+            Route::get('settings', [SettingController::class, 'edit'])->name('edit');
+            Route::post('settings', [SettingController::class, 'update'])->name('update');
         });
 
         Route::get('/', function () {

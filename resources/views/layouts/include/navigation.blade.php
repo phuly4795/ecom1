@@ -3,84 +3,93 @@
     <!-- Sidebar - Brand -->
     <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('admin.dashboard') }}">
         <div class="sidebar-brand-icon rotate-n-15">
-            <i class="fas fa-laugh-wink"></i>
+            <i class="fas fa-store"></i>
         </div>
         <div class="sidebar-brand-text mx-3">SB Admin <sup>2</sup></div>
     </a>
 
-    <!-- Divider -->
     <hr class="sidebar-divider my-0">
 
-    <!-- Nav Item - Dashboard -->
+    <!-- Trang chủ -->
     <li class="nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('admin.dashboard') }}">
-            <i class="fas fa-fw fa-tachometer-alt"></i>
+            <i class="fas fa-home"></i>
             <span>Trang chủ</span></a>
     </li>
 
-    <!-- Divider -->
     <hr class="sidebar-divider">
 
-    <!-- Nav Items -->
+    <!-- Danh mục -->
     <li class="nav-item {{ request()->routeIs('admin.category.*') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('admin.category.index') }}">
-            <i class="fas fa-fw fa-list"></i>
+            <i class="fas fa-th-large"></i>
             <span>Danh mục sản phẩm</span></a>
     </li>
 
     <li class="nav-item {{ request()->routeIs('admin.sub_category.*') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('admin.sub_category.index') }}">
-            <i class="fas fa-fw fa-list-ol"></i>
+            <i class="fas fa-th-list"></i>
             <span>Danh mục phụ</span></a>
     </li>
 
     <li class="nav-item {{ request()->routeIs('admin.brand.*') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('admin.brand.index') }}">
-            <i class="fas fa-fw fa-tags"></i>
+            <i class="fas fa-bold"></i>
             <span>Thương hiệu</span></a>
     </li>
 
-    <!-- Divider -->
     <hr class="sidebar-divider">
 
     <li class="nav-item {{ request()->routeIs('admin.product.*') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('admin.product.index') }}">
-            <i class="fas fa-fw fa-tags"></i>
+            <i class="fas fa-box-open"></i>
             <span>Quản lý sản phẩm</span></a>
     </li>
 
-    <!-- Divider -->
     <hr class="sidebar-divider">
 
     <li class="nav-item {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('admin.orders.index') }}">
-            <i class="fas fa-fw fa-tags"></i>
+            <i class="fas fa-shopping-cart"></i>
             <span>Quản lý đơn hàng</span></a>
     </li>
 
     <li class="nav-item {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('admin.coupons.index') }}">
-            <i class="fas fa-fw fa-tags"></i>
+            <i class="fas fa-ticket-alt"></i>
             <span>Quản lý khuyến mãi</span></a>
     </li>
-    <!-- Divider -->
+
     <hr class="sidebar-divider">
 
     <li class="nav-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('admin.users.index') }}">
-            <i class="fas fa-fw fa-tags"></i>
+            <i class="fas fa-users"></i>
             <span>Quản lý người dùng</span></a>
     </li>
-    <!-- Divider -->
+
+    <li class="nav-item {{ request()->routeIs('admin.pages.*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('admin.pages.index') }}">
+            <i class="fas fa-file-alt"></i>
+            <span>Quản lý trang</span></a>
+    </li>
+
+    <li class="nav-item {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('admin.settings.edit') }}">
+            <i class="fas fa-cogs"></i>
+            <span>Quản lý cấu hình</span></a>
+    </li>
+
     <hr class="sidebar-divider">
 
     <li class="nav-item">
         <a class="nav-link" href="{{ route('home') }}">
-            <i class="fas fa-fw fa-tags"></i>
+            <i class="fas fa-arrow-left"></i>
             <span>Về trang người dùng</span></a>
     </li>
-    <!-- Sidebar Toggler (Sidebar) -->
-    {{-- <div class="text-center d-none d-md-inline">
-        <button class="rounded-circle border-0" id="sidebarToggle"></button>
-    </div> --}}
 </ul>
+
+<!-- Sidebar Toggler (Sidebar) -->
+{{-- <div class="text-center d-none d-md-inline">
+    <button class="rounded-circle border-0" id="sidebarToggle"></button>
+</div> --}}

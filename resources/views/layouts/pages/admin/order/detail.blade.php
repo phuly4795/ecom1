@@ -77,6 +77,7 @@
                             @else
                                 <span
                                     class="badge {{ match ($order->status) {
+                                        'waiting_pay' => 'bg-secondary',
                                         'pending' => 'bg-warning',
                                         'processing' => 'bg-info',
                                         'completed' => 'bg-success',
@@ -85,6 +86,7 @@
                                         default => 'bg-secondary',
                                     } }}">
                                     {{ match ($order->status) {
+                                        'waiting_pay' => 'Chờ thanh toán',
                                         'pending' => 'Đang chờ',
                                         'processing' => 'Đang xử lý',
                                         'completed' => 'Hoàn thành',
@@ -100,11 +102,15 @@
                         <p><strong>Phương thức thanh toán:</strong>
                             {{ match ($order->payment_method) {
                                 'cash' => 'Tiền mặt',
-                                'transfer' => 'Chuyển khoản'
+                                'transfer' => 'Chuyển khoản',
                                 default => ucfirst($order->payment_method),
                             } }}
                         <p><strong>Tổng tiền:</strong> {{ number_format($order->total_amount) }} đ</p>
                         <p><strong>Ngày tạo:</strong> {{ $order->created_at->format('d/m/Y H:i') }}</p>
+                        @if (isset($order->coupon_code))
+                            <p><strong>Mã giảm giá:</strong> {{ $order->coupon_code }} <b style="color: red">(-{{ number_format($order->discount_amount).' vnđ' }})</b></p>
+                        @endif
+
                     </div>
                 </div>
 
@@ -150,10 +156,13 @@
                         </thead>
                         <tbody>
                             @foreach ($order->orderDetails as $detail)
+                                @php
+                                    $image = $detail->product->productImages->where('type', 1)->first()->image ?? '';
+                                    $imagePath = $image ? asset('storage/' . $image) : asset('asset/img/no-image.png');
+                                @endphp
                                 <tr>
-                                    <td><img src="{{ asset('storage/' . $detail->product->productImages->where('type', 1)->first()->image) }}"
-                                            alt="ảnh đại diện" style="width: 60px; height: 60px; object-fit: cover;"
-                                            class="img-thumbnail">
+                                    <td><img src="{{ $imagePath }}" alt="ảnh đại diện"
+                                            style="width: 60px; height: 60px; object-fit: cover;" class="img-thumbnail">
                                     </td>
                                     <td>{{ $detail->product_name }}</td>
                                     <td>{{ $detail->productVariant ? $detail->productVariant->variant_name : '-' }}

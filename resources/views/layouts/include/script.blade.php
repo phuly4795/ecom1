@@ -7,6 +7,7 @@
 
 <!-- Custom scripts for all pages-->
 <script src="{{ asset('asset/js/sb-admin-2.min.js') }}"></script>
+{{-- <script src="{{ asset('asset/js/custom.js') }}"></script> --}}
 
 <!-- Page level plugins -->
 <script src="{{ asset('asset/vendor/chart.js/Chart.min.js') }}"></script>
@@ -23,7 +24,7 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.js"></script>
 <script src="https://cdn.ckeditor.com/ckeditor5/40.0.0/classic/ckeditor.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 <script>
     function showAlertModal(message, type = 'success') {
         Swal.fire({

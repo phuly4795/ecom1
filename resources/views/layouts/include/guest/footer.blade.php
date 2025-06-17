@@ -10,13 +10,14 @@
                  <div class="col-md-3 col-xs-6">
                      <div class="footer">
                          <h3 class="footer-title">Về chúng tôi</h3>
-                         <p>Đây là một sản phẩm học tập không nhằm mục đích thương mại. Được thực hiện bởi Lý Thành Phú
-                             -
-                             CK23V7K523.</p>
+                         <p>{{ \App\Models\Setting::get('info') }}</p>
                          <ul class="footer-links">
-                             <li><a href="#"><i class="fa fa-map-marker"></i>Cái Răng - Cần Thơ</a></li>
-                             <li><a href="#"><i class="fa fa-phone"></i>0794248804</a></li>
-                             <li><a href="#"><i class="fa fa-envelope-o"></i>phuck23v7k523@vlvh.ctu.edu.vn</a>
+                             <li><a href="#"><i
+                                         class="fa fa-map-marker"></i>{{ \App\Models\Setting::get('address') }}</a></li>
+                             <li><a href="#"><i
+                                         class="fa fa-phone"></i>+{{ \App\Models\Setting::get('phone') }}</a></li>
+                             <li><a href="#"><i
+                                         class="fa fa-envelope-o"></i>{{ \App\Models\Setting::get('contact_email') }}</a>
                              </li>
                          </ul>
                      </div>
@@ -24,13 +25,16 @@
 
                  <div class="col-md-3 col-xs-6">
                      <div class="footer">
-                         <h3 class="footer-title">Categories</h3>
+                         <h3 class="footer-title">Danh mục sản phẩm</h3>
                          <ul class="footer-links">
-                             <li><a href="#">Hot deals</a></li>
-                             <li><a href="#">Laptops</a></li>
-                             <li><a href="#">Smartphones</a></li>
-                             <li><a href="#">Cameras</a></li>
-                             <li><a href="#">Accessories</a></li>
+                             @foreach ($footerCategories ?? [] as $category)
+                                 <li>
+                                     <a href="{{ route('category.show', $category->slug) }}">
+                                         {{ $category->name }}
+                                     </a>
+
+                                 </li>
+                             @endforeach
                          </ul>
                      </div>
                  </div>
@@ -54,11 +58,10 @@
                      <div class="footer">
                          <h3 class="footer-title">Service</h3>
                          <ul class="footer-links">
-                             <li><a href="#">My Account</a></li>
-                             <li><a href="#">View Cart</a></li>
-                             <li><a href="#">Wishlist</a></li>
-                             <li><a href="#">Track My Order</a></li>
-                             <li><a href="#">Help</a></li>
+                             <li><a href="{{ route('my.account') }}">Hồ sơ cá nhân</a></li>
+                             <li><a href="{{ route('cart.show') }}">Giỏ hàng</a></li>
+                             <li><a href="{{ route('home') }}">Sản phẩm yêu thích</a></li>
+                             <li><a href="{{ route('home') }}">Danh sách đơn hàng</a></li>
                          </ul>
                      </div>
                  </div>

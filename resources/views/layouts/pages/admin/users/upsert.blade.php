@@ -1,5 +1,5 @@
 <x-app-layout>
-    <?php $title = isset($user->id) ? 'Cập nhật sản phẩm' : 'Thêm sản phẩm'; ?>
+    <?php $title = isset($user->id) ? 'Cập nhật người dùng' : 'Thêm người dùng'; ?>
     @section('title', $title)
     <div class="container-fluid">
         <div class="card p-4 bg-white shadow-sm rounded">
@@ -8,7 +8,15 @@
             @else
                 <h1 class="h3 mb-4 text-gray-800">Thêm người dùng</h1>
             @endif
-
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
             <form action="{{ isset($user->id) ? route('admin.users.update', $user->id) : route('admin.users.store') }}"
                 method="POST" enctype="multipart/form-data">
                 @csrf
@@ -29,28 +37,13 @@
                     <div class="col-md-6">
                         <label for="email" class="form-label">Địa chỉ email</label>
                         <input type="text" id="email" class="form-control" placeholder="Nhập địa chỉ email"
-                            value="{{ old('email', $user->email ?? '') }}">
+                            readonly value="{{ old('email', $user->email ?? '') }}">
                         @error('email')
                             <span class="text-danger">{{ $message }}</span>
                         @enderror
                     </div>
                 </div>
 
-                <div class="row mb-3">
-
-                    <div class="col-md-6">
-                        <label for="status" class="form-label">Trạng thái</label>
-                        <select name="status" id="status" class="form-control">
-                            <option value="1" {{ old('status', $user->status ?? '') == 1 ? 'selected' : '' }}>
-                                Hiển thị</option>
-                            <option value="0" {{ old('status', $user->status ?? '') == 0 ? 'selected' : '' }}>
-                                Ẩn</option>
-                        </select>
-                        @error('status')
-                            <span class="text-danger">{{ $message }}</span>
-                        @enderror
-                    </div>
-                </div>
                 <div class="row mb-3">
                     <!-- Status -->
                     <div class="col-md-6">
@@ -68,20 +61,22 @@
                         @enderror
                     </div>
                     @if (Auth::user()->hasRoles('admin'))
-                        <!-- Status -->
                         <div class="col-md-6">
-                            <label for="status" class="form-label">Quyền hạn</label>
-                            <select name="status" id="status" class="form-control"  @readonly( (!Auth::user()->hasRoles('admin')) ? true : false)>
-                                <option value="1" {{ old('status', $user->status ?? '') == 1 ? 'selected' : '' }}>
-                                    Hiển thị</option>
-                                <option value="0" {{ old('status', $user->status ?? '') == 0 ? 'selected' : '' }}>
-                                    Ẩn</option>
+                            <label for="role_id" class="form-label">Quyền hạn</label>
+                            <select name="role_id" id="role_id" class="form-control">
+                                @foreach ($roles as $role)
+                                    <option value="{{ $role->id }}"
+                                        {{ old('role_id', $user->roles->first()->id ?? '') == $role->id ? 'selected' : '' }}>
+                                        {{ $role->name }}
+                                    </option>
+                                @endforeach
                             </select>
-                            @error('status')
+                            @error('role_id')
                                 <span class="text-danger">{{ $message }}</span>
                             @enderror
                         </div>
                     @endif
+
                 </div>
 
                 <button type="submit" class="btn btn-primary">

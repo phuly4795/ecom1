@@ -126,7 +126,7 @@
                                 <?php
                                 $variant = $product->productVariants->first();
                                 $displayItem = $variant ?? $product;
-                                $isFavorited = $displayItem->favoritedByUsers->contains(auth()->id()); // luôn check từ $product
+                                $isFavorited = $product->favoritedByUsers->contains(auth()->id()); // luôn check từ $product
                                 ?>
                                 <button class="add-to-wishlist" data-id="{{ $product->id }}" data-variant-id>
                                     <i class="fa fa-heart{{ $isFavorited ? '' : '-o' }} wishlist-icon"></i>
@@ -431,32 +431,99 @@
                 <div class="clearfix visible-sm visible-xs"></div>
                 <!-- product -->
                 @foreach ($productLastest as $item)
+                    @php
+                        // Chọn item để hiển thị giá: nếu có variant thì dùng variant đầu tiên
+                        $variant = $item->productVariants->first();
+                        $displayItem = $variant ?? $item;
+                        $variant =
+                            isset($item->productVariants) && $item->productVariants != '[]'
+                                ? $item->productVariants->where('product_id', $item->id)->first()->id
+                                : null;
+                        $isFavorited = $item->favoritedByUsers->contains(auth()->id()); // luôn check từ $product
+
+                    @endphp
                     <div class="col-md-3 col-xs-6">
                         <div class="product">
                             <div class="product-img">
-                                <img src="{{ asset('asset/guest/img/product01.png') }}" alt="">
+                                @php
+                                    $image = $item->productImages->where('type', 1)->first()->image ?? '';
+                                    $imagePath = $image ? asset('storage/' . $image) : asset('asset/img/no-image.png');
+                                @endphp
+
+                                <img src="{{ $imagePath }}" alt="">
                                 <div class="product-label">
-                                    <span class="sale">-30%</span>
+                                    @if ($displayItem->getIsOnSaleAttribute() && $displayItem->discount_percentage > 0)
+                                        {!! isset($displayItem->discount_percentage)
+                                            ? '<span class="sale">-' . $displayItem->discount_percentage . '%</span>'
+                                            : '' !!}
+                                    @endif
+                                    <span class="new">Mới</span>
                                 </div>
                             </div>
                             <div class="product-body">
-                                <p class="product-category">Category</p>
-                                <h3 class="product-name"><a href="#">product name goes here</a></h3>
-                                <h4 class="product-price">$980.00 <del class="product-old-price">$990.00</del></h4>
+                                <p class="product-category">
+                                    {{ $item->category ? $item->category->name : ($item->subCategory ? $item->subCategory->categories->pluck('name')->implode(', ') : 'Chưa có') }}
+                                </p>
+                                <h3 class="product-name"><a
+                                        href="{{ route('product.show', ['slug' => $item->slug]) }}">{{ Str::limit($item->title, 20, '...') }}</a>
+                                </h3>
+                                <h4 class="product-price">
+                                    <h4 class="product-price">
+                                        @if ($displayItem->getIsOnSaleAttribute())
+                                            <span class="text-danger fw-bold">
+                                                {{ number_format($displayItem->getDisplayPriceAttribute()) }}
+                                                vnđ
+                                            </span>
+                                            <del class="text-muted">
+                                                {{ number_format($displayItem->original_price) }} vnđ
+                                            </del>
+                                        @else
+                                            <span>
+                                                {{ number_format($displayItem->original_price) }} vnđ
+                                            </span>
+                                        @endif
+                                    </h4>
+                                </h4>
                                 <div class="product-rating">
+                                    <?php
+                                    $averageRating = $item->reviews->avg('rating') ?? 0;
+                                    ?>
+                                    @for ($i = 1; $i <= 5; $i++)
+                                        <i class="fa fa-star{{ $i <= $averageRating ? '' : '-o' }}"
+                                            style="color: red"></i>
+                                    @endfor
                                 </div>
                                 <div class="product-btns">
-                                    <button class="add-to-wishlist"><i class="fa fa-heart-o"></i><span
-                                            class="tooltipp">add to wishlist</span></button>
-                                    <button class="add-to-compare"><i class="fa fa-exchange"></i><span
-                                            class="tooltipp">add to compare</span></button>
-                                    <button class="quick-view"><i class="fa fa-eye"></i><span class="tooltipp">quick
-                                            view</span></button>
+                                    @if (Auth::check())
+                                        <button class="add-to-wishlist" data-id="{{ $item->id }}"
+                                            data-variant-id="{{ $variant }}">
+                                            <i class="fa fa-heart{{ $isFavorited ? '' : '-o' }} wishlist-icon"></i>
+                                            <span
+                                                class="tooltipp">{{ $isFavorited ? 'Đã yêu thích' : 'Yêu thích' }}</span>
+                                        </button>
+                                    @else
+                                        <button onclick="window.location='{{ route('login') }}'"
+                                            class="add-to-wishlist">
+                                            <i class="fa fa-heart-o"></i>
+                                            <span class="tooltipp">Đăng nhập để yêu thích</span>
+                                        </button>
+                                    @endif
+
+                                    <button class="quick-view"
+                                        onclick="window.location='{{ route('product.show', ['slug' => $item->slug]) }}'"><i
+                                            class="fa fa-eye"></i><span class="tooltipp">Xem sản
+                                            phẩm</span></button>
                                 </div>
                             </div>
                             <div class="add-to-cart">
-                                <button class="add-to-cart-btn"><i class="fa fa-shopping-cart"></i> Thêm giỏ
-                                    hàng</button>
+                                <form action="{{ route('cart.add', $item->id) }}" method="POST">
+                                    @csrf
+                                    <input type="hidden" name="qty" value="1">
+                                    <input type="hidden" name="product_variant_id" value="{{ $variant }}">
+                                    <button type="submit" class="add-to-cart-btn">
+                                        <i class="fa fa-shopping-cart"></i> Thêm giỏ hàng
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -502,6 +569,20 @@
         margin: 0 auto;
         object-fit: contain;
     }
+
+    .product-img {
+        height: 220px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+    }
+
+    .product-img img {
+        max-height: 100%;
+        width: auto;
+        object-fit: contain;
+    }
 </style>
 <script>
     $('body').tooltip({
@@ -539,6 +620,10 @@
         const saleStartStr = selectedOption.getAttribute('data-sale-start');
         const saleEndStr = selectedOption.getAttribute('data-sale-end');
         const VariantId1 = selectedOption.getAttribute('data-variant-id');
+        const wishlistButton = document.querySelector('.add-to-wishlist');
+        if (wishlistButton) {
+            wishlistButton.setAttribute('data-variant-id', variantId);
+        }
         const now = new Date();
 
         let isOnSale = false;
@@ -574,7 +659,6 @@
         qtyInput.value = Math.min(qtyInput.value, qty);
         const productVariantId = document.getElementById('product_variant_id');
         productVariantId.value = variantId;
-        VariantId1.value = variantId;
         availabilityElement.textContent = qty > 0 ? 'Còn hàng' : 'Hết hàng';
     }
 
@@ -602,6 +686,50 @@
         qtyDown.addEventListener('click', function() {
             let value = parseInt(qtyInput.value);
             if (value > 1) qtyInput.value = value - 1;
+        });
+    });
+</script>
+<script>
+    document.querySelectorAll('.add-to-wishlist').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            const productId = this.dataset.id;
+            const variantId = this.dataset.variantId;
+
+            fetch('/favorites/' + productId, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
+                            .getAttribute('content'),
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        variant_id: variantId
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Phản hồi không hợp lệ');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'added') {
+                        this.querySelector('i').classList.remove('fa-heart-o');
+                        this.querySelector('i').classList.add('fa-heart');
+                        this.querySelector('.tooltipp').textContent = 'Đã yêu thích';
+                        showAlertModal('Đã thêm vào yêu thích', 'success');
+                    } else if (data.status === 'removed') {
+                        this.querySelector('i').classList.remove('fa-heart');
+                        this.querySelector('i').classList.add('fa-heart-o');
+                        this.querySelector('.tooltipp').textContent = 'Yêu thích';
+                        showAlertModal('Đã xóa yêu thích', 'success');
+                    }
+                })
+                .catch(err => {
+                    showAlertModal('Vui lòng đăng nhập để sử dụng tính năng này', 'warning');
+                });
         });
     });
 </script>

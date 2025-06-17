@@ -111,8 +111,7 @@
                                 $variant = $product->productVariants->first();
                                 $displayItem = $variant ?? $product;
                                 $variantId = $variant?->id; // Dùng null-safe nếu cần lấy ID
-                                $isFavorited = $displayItem->favoritedByUsers->contains(auth()->id()); // luôn check từ $product
-
+                                $isFavorited = $product->favoritedByUsers->contains(auth()->id()); // luôn check từ $product
                                 ?>
                                 <div class="col-md-4 col-xs-6">
                                     <div class="product">

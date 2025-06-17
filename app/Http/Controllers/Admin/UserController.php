@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\HtmlString;
@@ -53,31 +54,40 @@ class UserController extends Controller
 
     public function create()
     {
-        return view('layouts.pages.admin.users.upsert');
+        $roles = Role::all();
+        return view('layouts.pages.admin.users.upsert', compact('roles'));
     }
     public function edit(User $user)
-    {   
-        return view('layouts.pages.admin.users.upsert', compact('user'));
+    {
+        $roles = Role::all();
+        return view('layouts.pages.admin.users.upsert', compact('user', 'roles'));
     }
 
     public function storeOrUpdate(Request $request, $id = null)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:users,slug,' . $id,
-            'status' => 'required|in:0,1',
+            'email' => 'string|max:255|unique:users,email,' . $id,
+            'is_active' => 'required|in:0,1',
+            'role_id' => 'required|exists:roles,id', // validate role_id
         ], [
-            'slug.unique' => 'Slug này đã tồn tại, vui lòng chọn tên khác.'
+            'email.unique' => 'Email này đã tồn tại, vui lòng chọn tên khác.',
+            'role_id.required' => 'Vui lòng chọn quyền hạn.',
+            'role_id.exists' => 'Quyền hạn không hợp lệ.'
         ]);
-
-        User::updateOrCreate(
+        // Cập nhật hoặc tạo user
+        $user = User::updateOrCreate(
             ['id' => $id],
             $validated
         );
 
-        return redirect()->back()->with(['status' => 'success', 'message' => $id ? 'Cập nhật thành công' : 'Thêm mới thành công']);
-    }
+        $user->roles()->sync([$request->role_id]);
 
+        return redirect()->back()->with([
+            'status' => 'success',
+            'message' => $id ? 'Cập nhật thành công' : 'Thêm mới thành công'
+        ]);
+    }
 
     public function destroy(User $user)
     {

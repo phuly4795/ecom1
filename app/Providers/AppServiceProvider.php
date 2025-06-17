@@ -6,6 +6,7 @@ use App\Models\Cart;
 use Illuminate\Pagination\Paginator;
 use App\Models\Category;
 use App\Models\FavoriteProduct;
+use App\Models\Page;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\ServiceProvider;
@@ -61,13 +62,17 @@ class AppServiceProvider extends ServiceProvider
                 ->where('user_id', Auth::id())
                 ->count();
 
+            $categories = Category::orderBy('name')->where('status', 1)->get();
+
             $view->with([
                 'globalCategories' => $categories,
                 'countQtyCart' => $countQtyCart,
                 'cartItems' => $cartItems,
                 'totalPrice' => $totalPrice,
-                'countFavoriteProduct' => $countFavoriteProduct
+                'countFavoriteProduct' => $countFavoriteProduct,
+                'footerCategories' => $categories
             ]);
+            $view->with('globalPages', Page::where('is_active', true)->get());
         });
     }
 }

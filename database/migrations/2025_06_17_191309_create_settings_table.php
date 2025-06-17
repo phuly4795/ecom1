@@ -11,13 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('favorite_products', function (Blueprint $table) {
+        Schema::create('settings', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('product_id')->constrained()->onDelete('cascade');
+            $table->string('key')->unique(); // ví dụ: site_logo, contact_email
+            $table->text('value')->nullable();
             $table->timestamps();
-
-            $table->unique(['user_id', 'product_id']); // Không cho phép trùng
         });
     }
 
@@ -26,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('favorite_products');
+        Schema::dropIfExists('settings');
     }
 };

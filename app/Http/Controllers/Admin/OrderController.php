@@ -44,12 +44,14 @@ class OrderController extends Controller
                 })
                 ->addColumn('status', function ($order) {
                     $statuses = [
+                        'waiting_pay' => 'Chờ thanh toán',
                         'pending' => 'Đang chờ',
                         'processing' => 'Đang xử lý',
                         'completed' => 'Hoàn thành',
                         'cancelled' => 'Đã hủy'
                     ];
                     $statusClass = match ($order->status) {
+                        'waiting_pay' => 'badge bg-secondary',
                         'pending' => 'badge bg-warning',
                         'processing' => 'badge bg-info',
                         'completed' => 'badge bg-success',
@@ -98,7 +100,7 @@ class OrderController extends Controller
             'billingDistrict',
             'billingWard'
         ])->findOrFail($id);
-        $statuses = ['pending' => 'Đang chờ', 'processing' => 'Đang xử lý', 'completed' => 'Hoàn thành', 'cancelled' => 'Đã hủy'];
+        $statuses = ['waiting_pay' => 'Chờ thanh toán', 'pending' => 'Đang chờ', 'processing' => 'Đang xử lý', 'completed' => 'Hoàn thành', 'cancelled' => 'Đã hủy'];
         return view('layouts.pages.admin.order.detail', compact('order', 'statuses'), ['isEdit' => false]);
     }
 
@@ -116,7 +118,7 @@ class OrderController extends Controller
             'billingWard'
         ])->findOrFail($id);
 
-        $statuses = ['pending' => 'Đang chờ', 'processing' => 'Đang xử lý', 'completed' => 'Hoàn thành', 'cancelled' => 'Đã hủy'];
+        $statuses = ['waiting_pay' => 'Chờ thanh toán', 'pending' => 'Đang chờ', 'processing' => 'Đang xử lý', 'completed' => 'Hoàn thành', 'cancelled' => 'Đã hủy'];
         return view('layouts.pages.admin.order.detail', compact('order', 'statuses'), ['isEdit' => true]);
     }
 
@@ -125,7 +127,7 @@ class OrderController extends Controller
         $order = Order::findOrFail($id);
 
         $validated = $request->validate([
-            'status' => 'required|in:pending,processing,completed,cancelled',
+            'status' => 'required|in:waiting_pay,pending,processing,completed,cancelled',
             'note' => 'nullable|string|max:500',
         ]);
 

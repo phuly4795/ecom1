@@ -2,16 +2,19 @@
     <div class="container">
         <div id="responsive-nav">
             <ul class="main-nav nav navbar-nav">
+                <li class="{{ request()->routeIs('home') ? 'active' : '' }}">
+                    <a href="{{ route('home') }}">Trang chủ</a>
+                </li>
+
                 @foreach ($globalCategories as $category)
                     @php
-                        $hasSub = $category->subCategories->count() > 0;
+                        $hasSub = $category->subCategories->where('status', 1)->count() > 0;
                         $isActive =
                             request()->routeIs('subcategory.show') && request()->route('slug') == $category->slug;
                     @endphp
                     <li class="{{ $hasSub ? 'dropdown' : '' }} {{ $isActive ? 'active' : '' }}">
                         <a href="{{ route('category.show', $category->slug) }}"
-                            class="{{ $hasSub ? 'dropdown-toggle' : '' }}" {{ $hasSub ? 'data-toggle=dropdown' : '' }}
-                            onclick="if(event.target.tagName === 'SPAN') event.preventDefault();">
+                            class="{{ $hasSub ? 'dropdown-toggle' : '' }}" {{ $hasSub ? 'data-toggle=dropdown' : '' }}>
                             {{ $category->name }}
                             @if ($hasSub)
                                 <span class="caret"></span>
@@ -31,7 +34,15 @@
                         @endif
                     </li>
                 @endforeach
+
+                @foreach ($globalPages as $page)
+                    <li
+                        class="{{ request()->routeIs('pages.show') && request()->route('slug') === $page->slug ? 'active' : '' }}">
+                        <a href="{{ route('pages.show', $page->slug) }}">{{ $page->title }}</a>
+                    </li>
+                @endforeach
             </ul>
+
         </div>
     </div>
 </nav>

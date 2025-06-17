@@ -40,9 +40,9 @@ class FavoriteProductController extends Controller
             ->where('user_id', $user->id)
             ->where('product_id', $product->id);
 
-        if ($variantId) {
-            $productFavorite->where('product_variant_id', $variantId);
-        }
+        // if ($variantId) {
+        //     $productFavorite->where('product_variant_id', $variantId);
+        // }
 
         $productFavorite = $productFavorite->first();
 
@@ -57,7 +57,7 @@ class FavoriteProductController extends Controller
             FavoriteProduct::create([
                 'user_id'            => $user->id,
                 'product_id'         => $product->id,
-                'product_variant_id' => $variantId,
+                // 'product_variant_id' => $variantId,
             ]);
 
             if (request()->expectsJson()) {

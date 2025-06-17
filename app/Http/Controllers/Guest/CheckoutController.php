@@ -97,7 +97,7 @@ class CheckoutController extends Controller
                 'total_amount' => $total,
                 'coupon_code' => $cart->coupon_code,
                 'discount_amount' => $cart->discount_amount,
-                'status' => 'pending',
+                'status' => $request->payment_method == 'transfer' ? 'waiting_pay' :  'pending',
             ]);
 
             // Tạo chi tiết đơn hàng

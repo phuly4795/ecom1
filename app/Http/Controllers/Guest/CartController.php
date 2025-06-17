@@ -236,6 +236,15 @@ class CartController extends Controller
             $ShippingAddress = ShippingAddress::where('session_id', $sessionId)->get();
         }
 
+        $user = Auth::user();
+        $cart = $user
+            ? Cart::with('cartDetails.product')->where('user_id', $user->id)->first()
+            : Cart::with('cartDetails.product')->where('session_id', Session::getId())->first();
+
+        if (!$cart || $cart->cartDetails->isEmpty()) {
+            return redirect()->back()->with('error', 'Giỏ hàng của bạn đang trống.');
+        }
+
         $cartItems = collect();
 
         if ($cart && $cart->cartDetails) {

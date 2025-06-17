@@ -4,9 +4,11 @@
     <div id="top-header">
         <div class="container">
             <ul class="header-links pull-left">
-                <li><a href="#"><i class="fa fa-phone"></i> +021-95-51-84</a></li>
-                <li><a href="#"><i class="fa fa-envelope-o"></i> email@email.com</a></li>
-                <li><a href="#"><i class="fa fa-map-marker"></i> 1734 Stonecoal Road</a></li>
+                <li><a href="#"><i class="fa fa-phone"></i> +{{ \App\Models\Setting::get('phone') }}</a>
+                </li>
+                <li><a href="mailto:{{ \App\Models\Setting::get('contact_email') }}"><i class="fa fa-envelope-o"></i>
+                        {{ \App\Models\Setting::get('contact_email') }}</a></li>
+                <li><a href="#"><i class="fa fa-map-marker"></i>  {{ \App\Models\Setting::get('address') }}</a></li>
             </ul>
             <ul class="header-links pull-right"
                 style="list-style: none; display: flex; align-items: center; padding: 0; margin: 0;">
@@ -47,7 +49,7 @@
                     </li>
                     <li style="color: #aaa;">|</li>
                     <li style="display: flex; align-items: center;">
-                        <a href="{{route('register')}}">Đăng ký</a>
+                        <a href="{{ route('register') }}">Đăng ký</a>
                     </li>
                 @endif
             </ul>
@@ -83,7 +85,7 @@
                             </select>
                             <input class="input" id="search-input" placeholder="Nhập sản phẩm muốn tìm kiếm..."
                                 autocomplete="off">
-                            <button class="search-btn">Tìm kíếm</button>
+                            <button class="search-btn">Tìm kiếm</button>
                             <div id="search-results"
                                 style="position:absolute; background:#fff; width:100%; z-index:99;"></div>
                         </form>
