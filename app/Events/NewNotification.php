@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use App\Models\Notification;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
@@ -11,11 +12,11 @@ use Illuminate\Queue\SerializesModels;
 
 class NewNotification implements ShouldBroadcast
 {
-    use SerializesModels;
+    use SerializesModels, InteractsWithSockets;
 
     public $notification;
 
-    public function __construct($notification)
+    public function __construct(Notification $notification)
     {
         $this->notification = $notification;
     }
@@ -25,8 +26,16 @@ class NewNotification implements ShouldBroadcast
         return new Channel('admin-notifications');
     }
 
-    public function broadcastAs()
+    public function broadcastWith()
     {
-        return 'notification.created';
+        return [
+            'id' => $this->notification->id,
+            'type' => $this->notification->type,
+            'title' => $this->notification->title,
+            'message' => $this->notification->message,
+            'reference_id' => $this->notification->reference_id,
+            'is_read' => $this->notification->is_read,
+            'created_at' => $this->notification->created_at->toIso8601String(),
+        ];
     }
 }

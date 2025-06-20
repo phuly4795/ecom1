@@ -77,7 +77,7 @@
                             @else
                                 <span
                                     class="badge {{ match ($order->status) {
-                                        'waiting_pay' => 'bg-secondary',
+                                        'waiting_pay' => 'bg-danger',
                                         'pending' => 'bg-warning',
                                         'processing' => 'bg-info',
                                         'completed' => 'bg-success',

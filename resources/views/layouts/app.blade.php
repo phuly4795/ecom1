@@ -49,32 +49,31 @@
 
 
     <script>
+        let originalTitle = document.title;
+        let notificationCount = 0;
+
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Realtime JS loaded');
-            // window.Echo.channel("contact-messages").listen("NewContactMessage", (e) => {
-            //     alert("Tin nhắn mới từ: " + e.contact.name);
-            // });
             if (window.Echo) {
+                // thông báo liên hệ
                 window.Echo.channel('contact-messages')
                     .listen('NewContactMessage', (e) => {
                         console.log('📨 New message received:', e.contact);
 
                         const contact = e.contact;
-
                         const html = `
-    <a class="dropdown-item d-flex align-items-center" >
-        <div class="mr-3">
-            <div class="icon-circle bg-primary">
-                <i class="fas fa-envelope text-white"></i>
-            </div>
-        </div>
-        <div>
-            <div class="small text-gray-500">${dayjs().fromNow()}</div>
-            <span class="font-weight-bold">Liên hệ mới từ ${contact.name}</span>
-            <div>${contact.content.substring(0, 50)}...</div>
-        </div>
-    </a>
-`;
+                            <a class="dropdown-item d-flex align-items-center" href="/admin/contacts/${contact.id}">
+                                <div class="mr-3">
+                                    <div class="icon-circle bg-primary">
+                                        <i class="fas fa-envelope text-white"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="small text-gray-500">${dayjs().fromNow()}</div>
+                                    <span class="font-weight-bold">Liên hệ mới từ ${contact.name}</span>
+                                    <div>${contact.content.substring(0, 50)}...</div>
+                                </div>
+                            </a>
+                        `;
                         document.getElementById('messages-list').insertAdjacentHTML('afterbegin', html);
 
 
@@ -85,28 +84,102 @@
                         const badge = document.getElementById('messages-count');
                         const count = parseInt(badge.innerText || '0') + 1;
                         badge.innerText = count;
+                        notificationCount++;
+                        updateDocumentTitle();
                     });
+
+
+                // thông báo khác
+                window.Echo.channel('admin-notifications')
+                    .listen('NewNotification', (e) => {
+                        console.log('📨 New notifications:', e);
+
+                        const notification = e;
+                        switch (notification.type) {
+                            case 'new-order':
+                                iconHtml = `
+            <div class="icon-circle bg-primary">
+                <i class="fas fa-shopping-cart text-white"></i>
+            </div>`;
+                                break;
+                            case 'paymented':
+                                iconHtml = `
+            <div class="icon-circle bg-success">
+                <i class="fas fa-credit-card text-white"></i>
+            </div>`;
+                                break;
+                            case 'new-user':
+                                iconHtml = `
+            <div class="icon-circle bg-info">
+                <i class="fas fa-user-plus text-white"></i>
+            </div>`;
+                                break;
+                            case 'promotion-expire':
+                                iconHtml = `
+            <div class="icon-circle bg-warning">
+                <i class="fas fa-clock text-white"></i>
+            </div>`;
+                                break;
+                            default:
+                                iconHtml = `
+            <div class="icon-circle bg-secondary">
+                <i class="fas fa-bell text-white"></i>
+            </div>`;
+                        }
+
+                        let href = '/admin/dashboard';
+                        if (notification.type === 'new-order') href = `/admin/orders/${$notification.id}`;
+                        else if (notification.type === 'paymented') href = `/admin/orders?status=paid`;
+                        else if (notification.type === 'new-user') href = `/admin/users`;
+                        else if (notification.type === 'promotion-expire') href =
+                            `/admin/coupons?soon_expire=true`;
+
+
+                        const html = `
+                         <a class="dropdown-item d-flex align-items-center" href="${href}">
+                                <div class="mr-3">
+                                  ${iconHtml}
+                                </div>
+                                <div>
+                                    <div class="small text-gray-500">${dayjs().fromNow()}</div>
+                                    <span class="font-weight-bold">Liên hệ mới từ ${notification.title}</span>
+                                    <div>${notification.message.substring(0, 50)}...</div>
+                                </div>
+                            </a>
+                        `;
+                        document.getElementById('messages-list-alert').insertAdjacentHTML('afterbegin', html);
+
+
+                        const list = document.getElementById('messages-list-alert');
+                        if (list.querySelector('p')) list.innerHTML = '';
+                        list.insertAdjacentHTML('afterbegin', html);
+
+                        const badge = document.getElementById('messages-count-alert');
+                        const count = parseInt(badge.innerText || '0') + 1;
+                        badge.innerText = count;
+                        notificationCount++;
+                        updateDocumentTitle();
+                    });
+
+
+
             } else {
                 console.error('window.Echo not defined');
             }
         });
 
 
-
-        document.addEventListener('click', function(e) {
-            const item = e.target.closest('.message-item');
-            if (item) {
-                e.preventDefault(); // ngăn chặn chuyển trang nếu cần
-                item.remove(); // xóa khỏi giao diện
-
-                // Giảm số badge
-                const badge = document.getElementById('messages-count');
-                const current = parseInt(badge.innerText || '0');
-                if (current > 0) badge.innerText = current - 1;
-
-                // Chuyển trang đến liên hệ
-                window.location.href = item.getAttribute('href');
+        function updateDocumentTitle() {
+            if (notificationCount > 0) {
+                document.title = `(${notificationCount}) ${originalTitle}`;
+            } else {
+                document.title = originalTitle;
             }
+        }
+
+        document.getElementById('messagesDropdown')?.addEventListener('click', () => {
+            notificationCount = 0;
+            updateDocumentTitle();
         });
     </script>
 

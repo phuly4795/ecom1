@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Guest;
 
+use App\Events\NewNotification;
 use App\Http\Controllers\Controller;
 use App\Models\Cart;
 use App\Models\CartDetail;
 use App\Models\Coupon;
+use App\Models\Notification;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use Illuminate\Support\Facades\Session;
@@ -121,6 +123,15 @@ class CheckoutController extends Controller
             // Xóa giỏ hàng
             $cart->cartDetails()->delete();
             $cart->delete();
+
+            $notification = Notification::create([
+                'type' => 'new-order',
+                'title' => 'Đơn hàng mới',
+                'message' => 'Đơn hàng #' . $order->id . ' vừa được tạo ',
+                'reference_id' => $order->id
+            ]);
+
+            event(new NewNotification($notification));
 
             DB::commit();
 

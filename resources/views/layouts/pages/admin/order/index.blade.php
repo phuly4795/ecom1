@@ -7,6 +7,7 @@
                 <div class="btn-group mb-3">
                     <select id="statusFilter" class="form-control">
                         <option value="">Tất cả trạng thái</option>
+                        <option value="waiting_pay">Chờ thanh toán</option>
                         <option value="pending">Đang chờ</option>
                         <option value="processing">Đang xử lý</option>
                         <option value="completed">Hoàn thành</option>

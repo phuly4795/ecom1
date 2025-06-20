@@ -63,7 +63,7 @@
                     </div>
                 </template>
 
-                <button type="button" class="btn btn-secondary mb-3" @click="add()">+ Thêm cấu hình mới</button>
+                <button type="button" class="btn btn-secondary mb-3" @click="add()">+ Thêm cấu hình mới</button><Br/>
 
                 <button class="btn btn-primary">Lưu</button>
             </form>

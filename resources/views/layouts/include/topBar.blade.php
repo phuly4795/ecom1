@@ -51,48 +51,73 @@
                     data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     <i class="fas fa-bell fa-fw"></i>
                     <!-- Counter - Alerts -->
-                    <span class="badge badge-danger badge-counter">3+</span>
+                    <span class="badge badge-danger badge-counter" id="messages-count-alert">
+                        {{ $notifications->count() }}</span>
                 </a>
                 <!-- Dropdown - Alerts -->
                 <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
                     aria-labelledby="alertsDropdown">
                     <h6 class="dropdown-header">
-                        Alerts Center
+                        Thông báo
                     </h6>
-                    <a class="dropdown-item d-flex align-items-center" href="#">
-                        <div class="mr-3">
-                            <div class="icon-circle bg-primary">
-                                <i class="fas fa-file-alt text-white"></i>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="small text-gray-500">December 12, 2019</div>
-                            <span class="font-weight-bold">A new monthly report is ready to download!</span>
-                        </div>
-                    </a>
-                    <a class="dropdown-item d-flex align-items-center" href="#">
-                        <div class="mr-3">
-                            <div class="icon-circle bg-success">
-                                <i class="fas fa-donate text-white"></i>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="small text-gray-500">December 7, 2019</div>
-                            $290.29 has been deposited into your account!
-                        </div>
-                    </a>
-                    <a class="dropdown-item d-flex align-items-center" href="#">
-                        <div class="mr-3">
-                            <div class="icon-circle bg-warning">
-                                <i class="fas fa-exclamation-triangle text-white"></i>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="small text-gray-500">December 2, 2019</div>
-                            Spending Alert: We've noticed unusually high spending for your account.
-                        </div>
-                    </a>
-                    <a class="dropdown-item text-center small text-gray-500" href="#">Show All Alerts</a>
+                    <div id="messages-list-alert" style="max-height: 300px; overflow-y: auto;">
+                        @foreach ($notifications as $notification)
+                            <?php
+                            $href = '/admin/dashboard';
+                            if ($notification->type == 'new-order') {
+                                $href = '/admin/order/' . $notification->reference_id;
+                            } elseif ($notification->type == 'paymented') {
+                                $href = '/admin/order/' . $notification->reference_id;
+                            } elseif ($notification->type == 'new-user') {
+                                $href = '/admin/users';
+                            } elseif ($notification->type == 'promotion-expire') {
+                                $href = '/admin/coupons';
+                            }
+                            ?>
+                            <a class="dropdown-item d-flex align-items-center" href="{{ $href }}">
+                                <div class="mr-3">
+                                    @switch($notification->type)
+                                        @case('new-order')
+                                            <div class="icon-circle bg-primary">
+                                                <i class="fas fa-shopping-cart text-white"></i>
+                                            </div>
+                                        @break
+
+                                        @case('paymented')
+                                            <div class="icon-circle bg-success">
+                                                <i class="fas fa-credit-card text-white"></i>
+                                            </div>
+                                        @break
+
+                                        @case('new-user')
+                                            <div class="icon-circle bg-info">
+                                                <i class="fas fa-user-plus text-white"></i>
+                                            </div>
+                                        @break
+
+                                        @case('promotion-expire')
+                                            <div class="icon-circle bg-warning">
+                                                <i class="fas fa-clock text-white"></i>
+                                            </div>
+                                        @break
+
+                                        @default
+                                    @endswitch
+
+
+                                </div>
+                                <div>
+                                    <div class="small text-gray-500">
+                                        {{ $notification->created_at->diffForHumans() }}
+                                    </div>
+                                    <span class="font-weight-bold">{{ $notification->title }}</span>
+                                    <div>{{ Str::limit($notification->message, 50) }}</div>
+                                </div>
+                            </a>
+                        @endforeach
+                        <a class="dropdown-item text-center small text-gray-500" href="#">Xóa tất cả </a>
+                    </div>
+
                 </div>
             </li>
 
@@ -102,7 +127,9 @@
                     data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     <i class="fas fa-envelope fa-fw"></i>
                     <!-- Counter - Messages -->
-                    <span class="badge badge-danger badge-counter">{{ $notifications->count() }}</span>
+                    <span class="badge badge-danger badge-counter" id="messages-count">
+                        {{ $notificationContacts->count() }}
+                    </span>
                 </a>
                 <!-- Dropdown - Messages -->
                 <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
@@ -111,23 +138,30 @@
                         Tin nhắn người dùng
                     </h6>
                     <div id="messages-list" style="max-height: 300px; overflow-y: auto;">
-                        {{-- <p class="text-center text-muted mb-0">Không có tin nhắn</p> --}}
-                        @foreach ($notifications as $notification)
-                            <a class="dropdown-item d-flex align-items-center"
-                                href="{{ route('admin.notifications.read', $notification->id) }}">
-                                <div class="mr-3">
-                                    <div class="icon-circle bg-primary">
-                                        <i class="fas fa-envelope text-white"></i>
+                        @if ($notificationContacts->count() > 0)
+                            @foreach ($notificationContacts as $notification)
+                                <a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('admin.contacts.show', $notification->id) }}">
+                                    <div class="mr-3">
+                                        <div class="icon-circle bg-primary">
+                                            <i class="fas fa-envelope text-white"></i>
+                                        </div>
                                     </div>
-                                </div>
-                                <div>
-                                    <div class="small text-gray-500">{{ $notification->created_at->diffForHumans() }}
+                                    <div>
+                                        <div class="small text-gray-500">
+                                            {{ $notification->created_at->diffForHumans() }}
+                                        </div>
+                                        <span class="font-weight-bold">{{ $notification->name }}</span>
+                                        <div>{{ Str::limit($notification->content, 50) }}</div>
                                     </div>
-                                    <span class="font-weight-bold">{{ $notification->title }}</span>
-                                    <div>{{ Str::limit($notification->message, 50) }}</div>
-                                </div>
-                            </a>
-                        @endforeach
+                                </a>
+                            @endforeach
+                            <a class="dropdown-item text-center small text-gray-500"
+                                href="{{ route('admin.contacts.index') }}">Xem tất cả</a>
+                        @else
+                            <p class="text-center text-muted mb-0">Không có tin nhắn</p>
+                        @endif
+
                     </div>
                 </div>
 

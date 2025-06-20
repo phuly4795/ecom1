@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ContactController;
 use App\Http\Controllers\Admin\CouponController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\OrderController;
@@ -140,14 +141,18 @@ Route::middleware('auth', 'verified', 'role:admin')->group(function () {
         });
 
         Route::prefix('contacts')->name('contacts.')->group(function () {
-            Route::get('/contacts/{id}', [ContactController::class, 'show'])->name('show');
-            Route::post('/contacts/{id}/mark-as-read', [ContactController::class, 'markAsRead'])->name('markAsRead');
+            Route::get('/', [ContactController::class, 'index'])->name('index');
+            Route::get('/data', [ContactController::class, 'data'])->name('data');
+            Route::get('/{id}', [ContactController::class, 'show'])->name('show');
+            Route::post('/{id}/mark-as-read', [ContactController::class, 'markAsRead'])->name('markAsRead');
         });
+
         Route::get('/notifications/{id}', [NotificationController::class, 'read'])->name('notifications.read');
 
-        Route::get('/', function () {
-            return view('layouts.pages.admin.dashboard');
-        })->middleware(['auth', 'verified'])->name('dashboard');
+        Route::prefix('dashboard')->name('dashboard.')->group(function () {
+            Route::get('/', [DashboardController::class, 'index'])->name('index');
+            Route::get('/data', [DashboardController::class, 'data'])->name('data');
+        });
     });
 });
 Route::fallback(function () {

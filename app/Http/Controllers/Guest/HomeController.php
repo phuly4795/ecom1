@@ -49,18 +49,20 @@ class HomeController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email',
-            'content' => 'required|string'
+            'content' => 'required|string|max:255'
+        ], [
+            'content.max' => "Nội dung tối đa chỉ 255 ký tự"
         ]);
 
         $contact = Contact::create($request->all());
       
         event(new NewContactMessage($contact));
         // Tạo notification mới
-        Notification::create([
-            'title' => 'Liên hệ mới từ ' . $contact->name,
-            'message' => $contact->content,
-            'is_read' => 0,
-        ]);
+        // Notification::create([
+        //     'title' => 'Liên hệ mới từ ' . $contact->name,
+        //     'message' => $contact->content,
+        //     'is_read' => 0,
+        // ]);
 
         return back()->with(['status' => 'success', 'message' => 'Đánh giá của bạn đã được gửi thành công!']);
     }

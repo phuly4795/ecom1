@@ -21,7 +21,7 @@
                         <ul class="dropdown-menu">
                             @if (Auth::user()->hasRoles('admin'))
                                 <li>
-                                    <a href="{{ route('admin.dashboard') }}">
+                                    <a href="{{ route('admin.dashboard.index') }}">
                                         <i class="fa fa-user"></i> Quản trị
                                     </a>
                                 </li>
@@ -293,9 +293,6 @@
                                 </div>
                             `;
                         });
-
-
-
                     });
             } else {
                 document.getElementById('search-results').innerHTML = '';

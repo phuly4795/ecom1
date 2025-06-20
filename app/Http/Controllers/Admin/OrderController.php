@@ -51,7 +51,7 @@ class OrderController extends Controller
                         'cancelled' => 'Đã hủy'
                     ];
                     $statusClass = match ($order->status) {
-                        'waiting_pay' => 'badge bg-secondary',
+                        'waiting_pay' => 'badge bg-danger',
                         'pending' => 'badge bg-warning',
                         'processing' => 'badge bg-info',
                         'completed' => 'badge bg-success',

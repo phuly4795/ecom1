@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Cart;
 use Illuminate\Pagination\Paginator;
 use App\Models\Category;
+use App\Models\Contact;
 use App\Models\FavoriteProduct;
 use App\Models\Notification;
 use App\Models\Page;
@@ -76,12 +77,21 @@ class AppServiceProvider extends ServiceProvider
             $view->with('globalPages', Page::where('is_active', true)->get());
 
 
-            $notifications = Notification::where('is_read', 0)
+            $notificationContacts = Contact::where('is_read', 0)
                 ->orderBy('created_at', 'desc')
                 ->take(5)
                 ->get();
 
-            $view->with('notifications', $notifications);
+            $notifications = Notification::where('is_read', 0)
+                ->whereNotNull('type')
+                ->orderBy('created_at', 'desc')
+                ->take(5)
+                ->get();
+
+            $view->with([
+                'notifications' => $notifications,
+                'notificationContacts' => $notificationContacts
+            ]);
         });
     }
 }

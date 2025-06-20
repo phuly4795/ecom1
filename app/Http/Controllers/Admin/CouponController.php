@@ -144,10 +144,10 @@ class CouponController extends Controller
     {
         $request->validate([
             'ids' => 'required|array',
-            'ids.*' => 'exists:categories,id'
+            'ids.*' => 'exists:coupons,id'
         ]);
 
-        Category::whereIn('id', $request->ids)->delete();
+        Coupon::whereIn('id', $request->ids)->delete();
 
         return response()->json([
             'success' => 'success',

@@ -1,7 +1,7 @@
 <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
     <!-- Sidebar - Brand -->
-    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('admin.dashboard') }}">
+    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('admin.dashboard.index') }}">
         <div class="sidebar-brand-icon rotate-n-15">
             <i class="fas fa-store"></i>
         </div>
@@ -11,8 +11,8 @@
     <hr class="sidebar-divider my-0">
 
     <!-- Trang chủ -->
-    <li class="nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-        <a class="nav-link" href="{{ route('admin.dashboard') }}">
+    <li class="nav-item {{ request()->routeIs('admin.dashboard.index') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('admin.dashboard.index') }}">
             <i class="fas fa-home"></i>
             <span>Trang chủ</span></a>
     </li>
@@ -68,6 +68,14 @@
             <span>Quản lý người dùng</span></a>
     </li>
 
+    <li class="nav-item {{ request()->routeIs('admin.contacts.*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('admin.contacts.index') }}">
+            <i class="fas fa-users"></i>
+            <span>Quản lý liên hệ</span></a>
+    </li>
+    
+    <hr class="sidebar-divider">
+
     <li class="nav-item {{ request()->routeIs('admin.pages.*') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('admin.pages.index') }}">
             <i class="fas fa-file-alt"></i>
@@ -81,6 +89,12 @@
     </li>
 
     <hr class="sidebar-divider">
+
+    <li class="nav-item">
+        <a class="nav-link" href="/laravel-websockets">
+            <i class="fas fa-arrow-left"></i>
+            <span>Kiểm tra websockets</span></a>
+    </li>
 
     <li class="nav-item">
         <a class="nav-link" href="{{ route('home') }}">
