@@ -102,21 +102,36 @@
                     data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     <i class="fas fa-envelope fa-fw"></i>
                     <!-- Counter - Messages -->
-                    <span class="badge badge-danger badge-counter" id="messages-count">0</span>
+                    <span class="badge badge-danger badge-counter">{{ $notifications->count() }}</span>
                 </a>
                 <!-- Dropdown - Messages -->
                 <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
                     aria-labelledby="messagesDropdown">
                     <h6 class="dropdown-header">
-                        Tin nhắn mới
+                        Tin nhắn người dùng
                     </h6>
-                    <div id="messages-list">
-                        <p class="dropdown-item text-center small text-gray-500">Không có tin nhắn</p>
+                    <div id="messages-list" style="max-height: 300px; overflow-y: auto;">
+                        {{-- <p class="text-center text-muted mb-0">Không có tin nhắn</p> --}}
+                        @foreach ($notifications as $notification)
+                            <a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('admin.notifications.read', $notification->id) }}">
+                                <div class="mr-3">
+                                    <div class="icon-circle bg-primary">
+                                        <i class="fas fa-envelope text-white"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="small text-gray-500">{{ $notification->created_at->diffForHumans() }}
+                                    </div>
+                                    <span class="font-weight-bold">{{ $notification->title }}</span>
+                                    <div>{{ Str::limit($notification->message, 50) }}</div>
+                                </div>
+                            </a>
+                        @endforeach
                     </div>
-                    {{-- <a class="dropdown-item text-center small text-gray-500" href="{{ route('admin.contacts.index') }}">
-                        Xem tất cả
-                    </a> --}}
                 </div>
+
+
             </li>
 
             <div class="topbar-divider d-none d-sm-block"></div>
@@ -127,7 +142,8 @@
                     Xin chào, {{ Illuminate\Support\Str::limit(Auth::user()->name, 20, '...') }}
                 </a>
 
-                <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
+                <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                    aria-labelledby="userDropdown">
 
                     <a class="dropdown-item" href="{{ route('admin.profile.edit') }}">
                         <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>

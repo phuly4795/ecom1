@@ -28,9 +28,11 @@ class NewContactMessage implements ShouldBroadcast
     {
         return [
             'contact' => [
+                'id' => $this->contact->id,
                 'name' => $this->contact->name,
                 'email' => $this->contact->email,
                 'content' => $this->contact->content,
+                'created_at' => $this->contact->created_at->toIso8601String(),
             ]
         ];
     }

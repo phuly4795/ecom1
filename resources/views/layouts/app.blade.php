@@ -35,54 +35,79 @@
         <i class="fas fa-angle-up"></i>
     </a>
 
-
-
     <script src="https://js.pusher.com/7.2/pusher.min.js"></script>
-    {{-- <script src="{{ asset('js/app.js') }}"></script> --}}
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/relativeTime.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/vi.js"></script>
+    <script>
+        dayjs.extend(dayjs_plugin_relativeTime);
+        dayjs.locale('vi');
+        console.log(dayjs().fromNow()); // "vài giây trước"
+    </script>
+
+
+
 
     <script>
-        Pusher.logToConsole = true;
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Realtime JS loaded');
+            // window.Echo.channel("contact-messages").listen("NewContactMessage", (e) => {
+            //     alert("Tin nhắn mới từ: " + e.contact.name);
+            // });
+            if (window.Echo) {
+                window.Echo.channel('contact-messages')
+                    .listen('NewContactMessage', (e) => {
+                        console.log('📨 New message received:', e.contact);
 
-        window.Echo = new Echo({
-            broadcaster: 'pusher',
-            key: "{{ env('PUSHER_APP_KEY') }}",
-            cluster: 'ap1',
-            forceTLS: true
+                        const contact = e.contact;
+
+                        const html = `
+    <a class="dropdown-item d-flex align-items-center" >
+        <div class="mr-3">
+            <div class="icon-circle bg-primary">
+                <i class="fas fa-envelope text-white"></i>
+            </div>
+        </div>
+        <div>
+            <div class="small text-gray-500">${dayjs().fromNow()}</div>
+            <span class="font-weight-bold">Liên hệ mới từ ${contact.name}</span>
+            <div>${contact.content.substring(0, 50)}...</div>
+        </div>
+    </a>
+`;
+                        document.getElementById('messages-list').insertAdjacentHTML('afterbegin', html);
+
+
+                        const list = document.getElementById('messages-list');
+                        if (list.querySelector('p')) list.innerHTML = '';
+                        list.insertAdjacentHTML('afterbegin', html);
+
+                        const badge = document.getElementById('messages-count');
+                        const count = parseInt(badge.innerText || '0') + 1;
+                        badge.innerText = count;
+                    });
+            } else {
+                console.error('window.Echo not defined');
+            }
         });
 
-        window.Echo.channel('contact-messages')
-            .listen('NewContactMessage', (e) => {
-                console.log('Tin nhắn mới:', e.contact);
-                alert('Tin nhắn mới từ: ' + e.contact.name);
-            });
-    </script>
-    <script>
-        let messageCount = 0;
 
-        window.Echo.channel('contact-messages')
-            .listen('NewContactMessage', (e) => {
-                const contact = e.contact;
 
-                messageCount++;
-                document.getElementById('messages-count').innerText = messageCount;
+        document.addEventListener('click', function(e) {
+            const item = e.target.closest('.message-item');
+            if (item) {
+                e.preventDefault(); // ngăn chặn chuyển trang nếu cần
+                item.remove(); // xóa khỏi giao diện
 
-                const html = `
-                <a class="dropdown-item d-flex align-items-center" href="#">
-                    <div class="dropdown-list-image mr-3">
-                        <img class="rounded-circle" src="https://ui-avatars.com/api/?name=${contact.name}" alt="${contact.name}">
-                        <div class="status-indicator bg-success"></div>
-                    </div>
-                    <div>
-                        <div class="text-truncate">${contact.content.substring(0, 50)}...</div>
-                        <div class="small text-gray-500">${contact.name} · vừa gửi</div>
-                    </div>
-                </a>
-            `;
+                // Giảm số badge
+                const badge = document.getElementById('messages-count');
+                const current = parseInt(badge.innerText || '0');
+                if (current > 0) badge.innerText = current - 1;
 
-                const list = document.getElementById('messages-list');
-                if (list.querySelector('p')) list.innerHTML = ''; // Xóa "Không có tin nhắn"
-                list.insertAdjacentHTML('afterbegin', html);
-            });
+                // Chuyển trang đến liên hệ
+                window.location.href = item.getAttribute('href');
+            }
+        });
     </script>
 
 </body>

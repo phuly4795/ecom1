@@ -5,8 +5,7 @@
     integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" /> --}}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 <!-- Scripts -->
-@vite(['resources/js/app.js'])
-<script src="{{ mix('js/app.js') }}"></script>
+@vite(['resources/css/app.css', 'resources/js/app.js'])
 <!-- Custom fonts for this template-->
 {{-- <link href="{{ asset('asset/vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet" type="text/css"> --}}
 <link

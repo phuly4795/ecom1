@@ -2,8 +2,10 @@
 
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\ContactController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\HomeController;
+use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\ProductController;
@@ -136,6 +138,12 @@ Route::middleware('auth', 'verified', 'role:admin')->group(function () {
             Route::get('settings', [SettingController::class, 'edit'])->name('edit');
             Route::post('settings', [SettingController::class, 'update'])->name('update');
         });
+
+        Route::prefix('contacts')->name('contacts.')->group(function () {
+            Route::get('/contacts/{id}', [ContactController::class, 'show'])->name('show');
+            Route::post('/contacts/{id}/mark-as-read', [ContactController::class, 'markAsRead'])->name('markAsRead');
+        });
+        Route::get('/notifications/{id}', [NotificationController::class, 'read'])->name('notifications.read');
 
         Route::get('/', function () {
             return view('layouts.pages.admin.dashboard');

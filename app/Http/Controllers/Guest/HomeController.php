@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Guest;
 
+use App\Events\NewContactMessage;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Contact;
+use App\Models\Notification;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class HomeController extends Controller
 {
@@ -50,8 +53,15 @@ class HomeController extends Controller
         ]);
 
         $contact = Contact::create($request->all());
+      
+        event(new NewContactMessage($contact));
+        // Tạo notification mới
+        Notification::create([
+            'title' => 'Liên hệ mới từ ' . $contact->name,
+            'message' => $contact->content,
+            'is_read' => 0,
+        ]);
 
-        event(new \App\Events\NewContactMessage($contact));
-        return redirect()->back()->with(['status' => 'success', 'message' => 'Đánh giá của bạn đã được gửi thành công!']);
+        return back()->with(['status' => 'success', 'message' => 'Đánh giá của bạn đã được gửi thành công!']);
     }
 }

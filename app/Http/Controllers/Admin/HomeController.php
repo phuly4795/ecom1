@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Role;
@@ -10,7 +11,9 @@ use Illuminate\Support\Facades\Hash;
 
 class HomeController extends Controller
 {
-    public function index() {
+    public function index()
+    {
+
         return view('layouts.pages.admin.dashboard');
     }
 
