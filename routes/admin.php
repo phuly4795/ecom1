@@ -147,7 +147,10 @@ Route::middleware('auth', 'verified', 'role:admin')->group(function () {
             Route::post('/{id}/mark-as-read', [ContactController::class, 'markAsRead'])->name('markAsRead');
         });
 
-        Route::get('/notifications/{id}', [NotificationController::class, 'read'])->name('notifications.read');
+        Route::prefix('notifications')->name('notifications.')->group(function () {
+            Route::get('/{id}/mark-read', [NotificationController::class, 'read'])->name('read');
+        });
+
 
         Route::prefix('dashboard')->name('dashboard.')->group(function () {
             Route::get('/', [DashboardController::class, 'index'])->name('index');

@@ -9,14 +9,13 @@ use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
-    public function read($id)
-    {
-        $noti = Notification::findOrFail($id);
-        $noti->update(['is_read' => 1]);
 
-        // Điều hướng đến nơi bạn muốn — ví dụ:
-        return redirect()->route('admin.contacts.index')
-            ->with('status', 'success')
-            ->with('message', 'Đã xem thông báo');
+    public function markAsRead($id)
+    {
+        $notification = Notification::findOrFail($id);
+        $notification->is_read = 1;
+        $notification->save();
+
+        return response()->json(['success' => true]);
     }
 }

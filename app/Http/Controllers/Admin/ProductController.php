@@ -369,7 +369,7 @@ class ProductController extends Controller
                 foreach (array_filter($newNames) as $index => $name) {
                     $product->productVariants()->create([
                         'variant_name' => $name,
-                        'price' => $newOriginalPrices[$index] ?? 0,
+                        'original_price' => $newOriginalPrices[$index] ?? 0,
                         'discount_percentage' => $newDiscountedPrices[$index] ?? null,
                         'discount_start_date' => $newDiscountStartDates[$index] ?? null,
                         'discount_end_date' => $newDiscountEndDates[$index] ?? null,
@@ -407,7 +407,7 @@ class ProductController extends Controller
                 foreach (array_filter($newNames) as $index => $name) {
                     $product->productVariants()->create([
                         'variant_name' => $name,
-                        'price' => $newOriginalPrices[$index] ?? 0,
+                        'original_price' => $newOriginalPrices[$index] ?? 0,
                         'discount_percentage' => $newDiscountedPrices[$index] ?? null,
                         'discount_start_date' => $newDiscountStartDates[$index] ?? null,
                         'discount_end_date' => $newDiscountEndDates[$index] ?? null,

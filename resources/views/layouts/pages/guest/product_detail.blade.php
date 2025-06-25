@@ -144,21 +144,10 @@
                         <ul class="product-links">
                             <li>Danh mục:</li>
                             <li>
-                                @if ($product->category)
-                                    <a href="{{ route('category.show', $product->category->slug) }}"
-                                        class="text-blue-600 font-semibold">
-                                        {{ $product->category->name }}
-                                    </a>
-                                @elseif ($product->subCategory && $product->subCategory->categories->count())
-                                    @foreach ($product->subCategory->categories as $cat)
-                                        <a href="{{ route('category.show', $cat->slug) }}">
-                                            <span
-                                                class="inline-block bg-gray-200 px-2 py-1 rounded text-sm">{{ $cat->name }}</span>
-                                        </a>{{ !$loop->last ? ',' : '' }}
-                                    @endforeach
-                                @else
-                                    <span class="text-gray-500">Chưa có</span>
-                                @endif
+                                <a href="{{ route('category.show', $product->category->slug) }}">
+                                    <span
+                                        class="inline-block bg-gray-200 px-2 py-1 rounded text-sm">{{ $product->category ? $product->category->name : ($product->subCategory ? $product->subCategory->categories->pluck('name')->implode(', ') : 'Chưa có') }}</span>
+                                </a>
                             </li>
                         </ul>
 
@@ -166,7 +155,7 @@
                             <ul class="product-links">
                                 <li>Thương hiệu:</li>
                                 <li>
-                                    <a href="{{ route('home', $product->brand->slug) }}"
+                                    <a href="{{ route('category.show', ['slug' => $product->category->slug, 'brand_id' => $product->brand->id]) }}"
                                         class="text-blue-600 font-semibold">
                                         {{ $product->brand->name }}
                                     </a>
@@ -570,7 +559,7 @@
         object-fit: contain;
     }
 
-    .product-img {
+    /* .product-img {
         height: 220px;
         display: flex;
         justify-content: center;
@@ -582,7 +571,7 @@
         max-height: 100%;
         width: auto;
         object-fit: contain;
-    }
+    } */
 </style>
 <script>
     $('body').tooltip({

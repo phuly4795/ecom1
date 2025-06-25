@@ -52,10 +52,13 @@ class CategoryController extends Controller
 
         // Tổng hợp danh sách sản phẩm sau khi lọc theo giá
         $filteredProductIds = array_unique(array_merge($variantProductIds, $nonVariantProductIds));
-
+        // dd($request->brand_id);
         $query = Product::whereIn('id', $filteredProductIds)
             ->when($request->filled('brand_id'), function ($q) use ($request) {
-                $q->whereIn('brand_id', $request->brand_id);
+                $brandIds = is_array($request->brand_id)
+                    ? $request->brand_id
+                    : [$request->brand_id]; // ép thành mảng nếu là chuỗi
+                $q->whereIn('brand_id', $brandIds);
             })
             ->latest();
 

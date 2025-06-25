@@ -228,106 +228,158 @@
                     <div class="card p-4 mb-3 shadow-sm rounded bg-white product_variations"
                         style="{{ (!isset($product->id) && old('product_type') != 'variant') || (isset($product->id) && $product->product_type != 'variant') ? 'display: none;' : '' }}">
                         <div class="mb-3">
-                            <label class="form-label h5 mb-3" style="font-weight: 700">Biến thể sản phẩm</label>
+                            <label class="form-label h5 mb-3" style="font-weight: 700">Danh sách biến thể</label>
                             <div class="row">
                                 <div class="col-md-12">
                                     <div id="variant-container">
                                         @if (isset($product->id) && $product->product_type == 'variant' && $product->productVariants->isNotEmpty())
-                                            @foreach ($product->productVariants as $variant)
+                                            @foreach ($product->productVariants as $key => $variant)
                                                 <div class="variant-row row mb-3">
-                                                    <div class="col-md-2">
-                                                        <input type="text"
-                                                            name="variants[existing][name][{{ $variant->id }}]"
+                                                    <h4 class="mb-3" style="margin-left: 2%">Biến thế
+                                                        {{ $key + 1 }}</h4>
+                                                    <div class="col-md-12">
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <label for="">Tên biến thế</label>
+                                                                <input type="text"
+                                                                    name="variants[existing][name][{{ $variant->id }}]"
+                                                                    class="form-control"
+                                                                    placeholder="Tên biến thể (VD: Size S)"
+                                                                    value="{{ $variant->variant_name }}">
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <label for="">Giá gốc biến thế</label>
+                                                                <input type="number"
+                                                                    name="variants[existing][original_price][{{ $variant->id }}]"
+                                                                    class="form-control" placeholder="Giá gốc"
+                                                                    value="{{ $variant->original_price }}">
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <label for="">Giá giảm biến thế</label>
+                                                                <input type="number"
+                                                                    name="variants[existing][discount_percentage][{{ $variant->id }}]"
+                                                                    class="form-control" placeholder="% giảm"
+                                                                    value="{{ $variant->discount_percentage ?? '' }}"
+                                                                    min="0" max="100">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-12">
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <label for="">Ngày bắt đầu giảm giá</label>
+                                                                <input type="date"
+                                                                    name="variants[existing][discount_start_date][{{ $variant->id }}]"
+                                                                    class="form-control"
+                                                                    placeholder="Ngày bắt đầu giảm giá"
+                                                                    value="{{ optional($variant->discount_start_date)->format('Y-m-d') ?? '' }}">
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <label for="">Ngày kết thúc giảm giá</label>
+                                                                <input type="date"
+                                                                    name="variants[existing][discount_end_date][{{ $variant->id }}]"
+                                                                    class="form-control"
+                                                                    placeholder="Ngày kết thúc giảm giá"
+                                                                    value="{{ optional($variant->discount_end_date)->format('Y-m-d') ?? '' }}">
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <label for="">SKU biến thể</label>
+                                                                <input type="text"
+                                                                    name="variants[existing][sku][{{ $variant->id }}]"
+                                                                    class="form-control" placeholder="SKU"
+                                                                    value="{{ $variant->sku }}" readonly>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-12">
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <label for="">Số lượng sản phẩm</label>
+                                                                <input type="number"
+                                                                    name="variants[existing][qty][{{ $variant->id }}]"
+                                                                    class="form-control" placeholder="Số lượng"
+                                                                    value="{{ $variant->qty }}">
+                                                            </div>
+                                                            <div class="col-md-4" style="margin-top: 4%">
+                                                                <label for=""></label>
+                                                                <button type="button"
+                                                                    class="btn btn-danger remove-variant">Xóa</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <hr>
+                                            @endforeach
+                                        @endif
+                                        <div class="col-md-12 text-right variant-action" style="margin-top: 4%">
+                                            <label for=""></label>
+                                            <button type="button" class="btn btn-success add-variant">Thêm biến
+                                                thể</button>
+                                        </div>
+                                    </div>
+                                    <template id="variant-template">
+                                        <div class="variant-row row mb-3">
+                                            <h4 class="variant-title mb-3" style="margin-left: 2%">Biến thể</h4>
+                                            <div class="col-md-12">
+                                                <div class="row">
+                                                    <div class="col-md-4">
+                                                        <label for="">Tên biến thể</label>
+                                                        <input type="text" name="variants[new][name][]"
                                                             class="form-control"
-                                                            placeholder="Tên biến thể (VD: Size S)"
-                                                            value="{{ $variant->variant_name }}">
+                                                            placeholder="Tên biến thể (VD: Size S)">
                                                     </div>
-                                                    <div class="col-md-2">
+                                                    <div class="col-md-4">
+                                                        <label for="">Giá gốc biến thể</label>
+                                                        <input type="number" name="variants[new][original_price][]"
+                                                            class="form-control" placeholder="Giá gốc">
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label for="">Giá giảm biến thể</label>
                                                         <input type="number"
-                                                            name="variants[existing][original_price][{{ $variant->id }}]"
-                                                            class="form-control" placeholder="Giá gốc"
-                                                            value="{{ $variant->original_price }}">
+                                                            name="variants[new][discount_percentage][]"
+                                                            class="form-control" placeholder="% giảm" min="0"
+                                                            max="100">
                                                     </div>
-                                                    <div class="col-md-2">
-                                                        <input type="number"
-                                                            name="variants[existing][discount_percentage][{{ $variant->id }}]"
-                                                            class="form-control" placeholder="% giảm"
-                                                            value="{{ $variant->discount_percentage ?? '' }}"
-                                                            min="0" max="100">
-                                                    </div>
-                                                    <div class="col-md-2">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-12">
+                                                <div class="row">
+                                                    <div class="col-md-4">
+                                                        <label for="">Ngày bắt đầu giảm giá</label>
                                                         <input type="date"
-                                                            name="variants[existing][discount_start_date][{{ $variant->id }}]"
-                                                            class="form-control" placeholder="Ngày bắt đầu giảm giá"
-                                                            value="{{ optional($variant->discount_start_date)->format('Y-m-d') ?? '' }}">
+                                                            name="variants[new][discount_start_date][]"
+                                                            class="form-control">
                                                     </div>
-                                                    <div class="col-md-2">
+                                                    <div class="col-md-4">
+                                                        <label for="">Ngày kết thúc giảm giá</label>
                                                         <input type="date"
-                                                            name="variants[existing][discount_end_date][{{ $variant->id }}]"
-                                                            class="form-control" placeholder="Ngày kết thúc giảm giá"
-                                                            value="{{ optional($variant->discount_end_date)->format('Y-m-d') ?? '' }}">
+                                                            name="variants[new][discount_end_date][]"
+                                                            class="form-control">
                                                     </div>
-                                                    <div class="col-md-2">
-                                                        <input type="text"
-                                                            name="variants[existing][sku][{{ $variant->id }}]"
-                                                            class="form-control" placeholder="SKU"
-                                                            value="{{ $variant->sku }}">
+                                                    <div class="col-md-4">
+                                                        <label for="">SKU biến thể</label>
+                                                        <input type="text" name="variants[new][sku][]"
+                                                            class="variant-sku form-control" readonly>
                                                     </div>
-                                                    <div class="col-md-2">
-                                                        <input type="number"
-                                                            name="variants[existing][qty][{{ $variant->id }}]"
-                                                            class="form-control" placeholder="Số lượng"
-                                                            value="{{ $variant->qty }}">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-12">
+                                                <div class="row">
+                                                    <div class="col-md-4">
+                                                        <label for="">Số lượng sản phẩm</label>
+                                                        <input type="number" name="variants[new][qty][]"
+                                                            class="form-control" placeholder="Số lượng">
                                                     </div>
-                                                    <div class="col-md-2">
+                                                    <div class="col-md-4" style="margin-top: 4%">
+                                                        <label for=""></label>
                                                         <button type="button"
                                                             class="btn btn-danger remove-variant">Xóa</button>
                                                     </div>
                                                 </div>
-                                            @endforeach
-                                        @endif
-                                        <div class="variant-row row mb-3">
-                                            <div class="col-md-2">
-                                                <input type="text" name="variants[new][name][]"
-                                                    class="form-control" placeholder="Tên biến thể (VD: Size S)"
-                                                    value="{{ old('variants.new.name.0') }}">
-                                            </div>
-                                            <div class="col-md-2">
-                                                <input type="number" name="variants[new][original_price][]"
-                                                    class="form-control" placeholder="Giá gốc"
-                                                    value="{{ old('variants.new.original_price.0') }}">
-                                            </div>
-                                            <div class="col-md-2">
-                                                <input type="number" name="variants[new][discount_percentage][]"
-                                                    class="form-control" placeholder="Giá giảm"
-                                                    value="{{ old('variants.new.discount_percentage.0') }}">
-                                            </div>
-                                            <div class="col-md-2">
-                                                <input type="date" name="variants[new][discount_start_date][]"
-                                                    class="form-control" placeholder="Ngày bắt đầu giảm giá"
-                                                    value="{{ old('variants.new.discount_start_date.0') }}">
-                                            </div>
-                                            <div class="col-md-2">
-                                                <input type="date" name="variants[new][discount_end_date][]"
-                                                    class="form-control" placeholder="Ngày kết thúc giảm giá"
-                                                    value="{{ old('variants.new.discount_end_date.0') }}">
-                                            </div>
-                                            <div class="col-md-2">
-                                                <input type="text" name="variants[new][sku][]"
-                                                    class="form-control" placeholder="SKU"
-                                                    value="{{ old('variants.new.sku.0') }}">
-                                            </div>
-                                            <div class="col-md-2">
-                                                <input type="number" name="variants[new][qty][]"
-                                                    class="form-control" placeholder="Số lượng"
-                                                    value="{{ old('variants.new.qty.0') }}">
-                                            </div>
-                                            <div class="col-md-2">
-                                                <button type="button"
-                                                    class="btn btn-success add-variant">Thêm</button>
                                             </div>
                                         </div>
-                                    </div>
+                                        <hr>
+                                    </template>
                                 </div>
                             </div>
                         </div>
@@ -700,84 +752,95 @@
         document.addEventListener('DOMContentLoaded', function() {
             const variantContainer = document.getElementById('variant-container');
             const addVariantBtn = document.querySelector('.add-variant');
+            const addVariantWrapper = document.querySelector('.variant-action');
+            const variantTemplate = document.getElementById('variant-template');
+            const productNameInput = document.getElementById('name');
 
-            if (addVariantBtn) {
+            // Hàm tạo slug
+            function toSlug(str) {
+                return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                    .replace(/đ/g, 'd').replace(/Đ/g, 'D')
+                    .toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '');
+            }
+
+            // Cập nhật SKU khi tên sản phẩm hoặc tên biến thể thay đổi
+            function bindAutoSKU(nameInput, skuInput) {
+                const updateSKU = () => {
+                    const productTitle = productNameInput?.value || '';
+                    const variantTitle = nameInput?.value || '';
+                    const slugProduct = toSlug(productTitle);
+                    const slugVariant = toSlug(variantTitle);
+                    skuInput.value = `${slugProduct}-${slugVariant}`.replace(/^-/, '');
+                };
+
+                nameInput.addEventListener('input', updateSKU);
+                productNameInput?.addEventListener('input', updateSKU);
+            }
+
+            if (addVariantBtn && variantTemplate) {
                 addVariantBtn.addEventListener('click', function() {
-                    const newRow = document.createElement('div');
-                    newRow.classList.add('variant-row', 'row', 'mb-3');
-                    newRow.innerHTML = `
-                        <div class="col-md-2"><input type="text" name="variants[new][name][]" class="form-control" placeholder="Tên biến thể (VD: Size S)"></div>
-                        <div class="col-md-2"><input type="number" name="variants[new][original_price][]" class="form-control" placeholder="Giá gốc"></div>
-                        <div class="col-md-2"><input type="number" name="variants[new][discount_percentage][]" class="form-control" placeholder="Giá giảm"></div>
-                        <div class="col-md-2"><input type="date" name="variants[new][discount_start_date][]" class="form-control" placeholder="Ngày bắt đầu giảm giá"></div>
-                        <div class="col-md-2"><input type="date" name="variants[new][discount_end_date][]" class="form-control" placeholder="Ngày kết thúc giảm giá"></div>
-                        <div class="col-md-2"><input type="text" name="variants[new][sku][]" class="form-control" placeholder="SKU"></div>
-                        <div class="col-md-2"><input type="number" name="variants[new][qty][]" class="form-control" placeholder="Số lượng"></div>
-                        <div class="col-md-2"><button type="button" class="btn btn-danger remove-variant">Xóa</button></div>
-                    `;
-                    variantContainer.insertBefore(newRow, addVariantBtn.parentElement.parentElement);
+                    const clone = variantTemplate.content.cloneNode(true);
+                    const tempWrapper = document.createElement('div');
+                    tempWrapper.appendChild(clone);
+                    const newRow = tempWrapper.querySelector('.variant-row');
+
+                    // Set tiêu đề biến thể
+                    const currentCount = variantContainer.querySelectorAll('.variant-row').length + 1;
+                    const title = newRow.querySelector('.variant-title');
+                    if (title) {
+                        title.innerText = `Biến thể ${currentCount}`;
+                    }
+
+                    // Gán sự kiện cập nhật SKU động
+                    const nameInput = newRow.querySelector('input[name="variants[new][name][]"]');
+                    const skuInput = newRow.querySelector('input[name="variants[new][sku][]"]');
+
+                    if (nameInput && skuInput) {
+                        bindAutoSKU(nameInput, skuInput);
+                    }
+
+                    variantContainer.insertBefore(newRow, addVariantWrapper);
                 });
             }
 
+            // Xóa biến thể
             variantContainer.addEventListener('click', function(e) {
                 if (e.target.classList.contains('remove-variant')) {
-                    e.target.parentElement.parentElement.remove();
+                    e.target.closest('.variant-row').remove();
                 }
             });
 
-            // Product type toggle
+            // Toggle loại sản phẩm
             const productType = document.getElementById('product_type');
             const singleSection = document.querySelector('.product_single');
             const variantSection = document.querySelector('.product_variations');
-
             const isUpdateMode = {!! json_encode(isset($product->id)) !!};
             const productTypeValue = "{{ $product->product_type ?? '' }}";
 
-            if (productType) {
-                function updateSections() {
-                    const type = productType.value;
-                    if (type === 'single') {
-                        singleSection.style.display = 'block';
-                        variantSection.style.display = 'none';
-                        singleSection.querySelectorAll('input, select, textarea').forEach(input => {
-                            input.disabled = false;
-                        });
-                        variantSection.querySelectorAll('input, select, textarea').forEach(input => {
-                            input.disabled = true;
-                        });
-                    } else if (type === 'variant') {
-                        singleSection.style.display = 'none';
-                        variantSection.style.display = 'block';
-                        singleSection.querySelectorAll('input, select, textarea').forEach(input => {
-                            input.disabled = true;
-                        });
-                        variantSection.querySelectorAll('input, select, textarea').forEach(input => {
-                            input.disabled = false;
-                        });
-                    }
+            function updateSections() {
+                const type = productType?.value || productTypeValue;
+                if (type === 'single') {
+                    singleSection.style.display = 'block';
+                    variantSection.style.display = 'none';
+                    singleSection.querySelectorAll('input, select, textarea').forEach(input => input.disabled =
+                        false);
+                    variantSection.querySelectorAll('input, select, textarea').forEach(input => input.disabled =
+                        true);
+                } else if (type === 'variant') {
+                    singleSection.style.display = 'none';
+                    variantSection.style.display = 'block';
+                    singleSection.querySelectorAll('input, select, textarea').forEach(input => input.disabled =
+                        true);
+                    variantSection.querySelectorAll('input, select, textarea').forEach(input => input.disabled =
+                        false);
                 }
+            }
+
+            if (productType) {
                 updateSections();
                 productType.addEventListener('change', updateSections);
             } else if (isUpdateMode) {
-                if (productTypeValue === 'single') {
-                    singleSection.style.display = 'block';
-                    variantSection.style.display = 'none';
-                    singleSection.querySelectorAll('input, select, textarea').forEach(input => {
-                        input.disabled = false;
-                    });
-                    variantSection.querySelectorAll('input, select, textarea').forEach(input => {
-                        input.disabled = true;
-                    });
-                } else if (productTypeValue === 'variant') {
-                    singleSection.style.display = 'none';
-                    variantSection.style.display = 'block';
-                    singleSection.querySelectorAll('input, select, textarea').forEach(input => {
-                        input.disabled = true;
-                    });
-                    variantSection.querySelectorAll('input, select, textarea').forEach(input => {
-                        input.disabled = false;
-                    });
-                }
+                updateSections();
             }
         });
     </script>

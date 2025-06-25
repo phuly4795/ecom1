@@ -74,7 +74,8 @@
                                 $href = '/admin/coupons';
                             }
                             ?>
-                            <a class="dropdown-item d-flex align-items-center" href="{{ $href }}">
+                            <a class="dropdown-item d-flex align-items-center notification-link" href="{{ $href }}"
+                                data-id="{{ $notification->id }}">
                                 <div class="mr-3">
                                     @switch($notification->type)
                                         @case('new-order')

@@ -1,4 +1,6 @@
 <x-app-layout>
+    <?php $title = isset($coupon->id) ? 'Cập nhật thương hiệu' : 'Thêm thương hiệu'; ?>
+    @section('title', $title)
     <div class="container-fluid">
         <div class="card p-4 bg-white shadow-sm rounded">
             @if (isset($brand->id))
@@ -7,18 +9,8 @@
                 <h1 class="h3 mb-4 text-gray-800">Thêm thương hiệu</h1>
             @endif
 
-            {{-- @if ($errors->any())
-                <div class="alert alert-danger">
-                    <ul class="mb-0">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif --}}
 
-            <form
-                action="{{ isset($brand->id) ? route('admin.brand.update', $brand->id) : route('admin.brand.store') }}"
+            <form action="{{ isset($brand->id) ? route('admin.brand.update', $brand->id) : route('admin.brand.store') }}"
                 method="POST" enctype="multipart/form-data">
                 @csrf
                 @if (isset($brand->id))
@@ -28,7 +20,8 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="name" class="form-label">Tên thương hiệu</label>
-                        <input type="text" name="name" id="name" class="form-control @error('slug') is-invalid @enderror" required
+                        <input type="text" name="name" id="name"
+                            class="form-control @error('slug') is-invalid @enderror" required
                             placeholder="Nhập tên thương hiệu" value="{{ old('name', $brand->name ?? '') }}">
                         @error('slug')
                             <span class="text-danger">{{ $message }}</span>
@@ -47,11 +40,9 @@
                     <div class="col-md-6">
                         <label for="status" class="form-label">Trạng thái</label>
                         <select name="status" id="status" class="form-control">
-                            <option value="1"
-                                {{ old('status', $brand->status ?? '') == 1 ? 'selected' : '' }}>
+                            <option value="1" {{ old('status', $brand->status ?? '') == 1 ? 'selected' : '' }}>
                                 Hiển thị</option>
-                            <option value="0"
-                                {{ old('status', $brand->status ?? '') == 0 ? 'selected' : '' }}>
+                            <option value="0" {{ old('status', $brand->status ?? '') == 0 ? 'selected' : '' }}>
                                 Ẩn</option>
                         </select>
                         @error('status')

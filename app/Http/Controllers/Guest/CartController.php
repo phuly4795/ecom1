@@ -51,7 +51,7 @@ class CartController extends Controller
         }
 
         $shippingFee = 20000;
-        $discount = auth()->user()->cart->discount_amount; // nếu có mã thì tính sau
+        $discount = auth()->user()->cart->discount_amount ?? 0; // nếu có mã thì tính sau
         $total = max($subtotal + $shippingFee - $discount, 0);
 
         $cartItems = $cart ? $cart->cartDetails : collect();

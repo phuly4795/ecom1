@@ -64,7 +64,7 @@ class AppServiceProvider extends ServiceProvider
                 ->where('user_id', Auth::id())
                 ->count();
 
-            $categories = Category::orderBy('name')->where('status', 1)->get();
+            $categories = Category::orderBy('sort')->where('status', 1)->get();
 
             $view->with([
                 'globalCategories' => $categories,

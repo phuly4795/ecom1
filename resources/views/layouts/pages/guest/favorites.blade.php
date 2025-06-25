@@ -5,21 +5,26 @@
         <h1 class="text-center mb-4" style="padding: 4%">Sản phẩm yêu thích của bạn</h1>
 
         @if ($favorites->count() > 0)
-            @foreach ($favorites as $product)
-                <?php
-                $variant = $product->products->productVariants->first();
-                $displayItem = $variant ?? $product->products;
-                $variantId = $variant?->id; // Dùng null-safe nếu cần lấy ID
-                $isFavorited = $displayItem->favoritedByUsers->contains(auth()->id()); // luôn check từ $product
-                ?>
+            @foreach ($favorites as $favorite)
+                @php
+                    // Chọn item để hiển thị giá: nếu có variant thì dùng variant đầu tiên
+                    $variant = $favorite->products->productVariants->first();
+                    $displayItem = $variant ?? $favorite->products;
+                    $variant =
+                        isset($favorite->products->productVariants) && $favorite->products->productVariants != '[]'
+                            ? $favorite->products->productVariants
+                                ->where('product_id', $favorite->products->id)
+                                ->first()->id
+                            : null;
+                    $isFavorited = $favorite->products->favoritedByUsers->contains(auth()->id()); // luôn check từ $favorite->product
+                @endphp
                 <div class="col-md-4 col-xs-6">
                     <div class="product">
                         <div class="product-img">
                             @php
-                                $image = $product->products->productImages->where('type', 1)->first()->image ?? '';
+                                $image = $favorite->products->productImages->where('type', 1)->first()->image ?? '';
                                 $imagePath = $image ? asset('storage/' . $image) : asset('asset/img/no-image.png');
                             @endphp
-
                             <div class="product-img-wrapper">
                                 <img src="{{ $imagePath }}" alt="" class="product-img">
                             </div>
@@ -35,10 +40,10 @@
                         </div>
                         <div class="product-body">
                             <p class="product-category">
-                                {{ $product->product->category->name ?? 'Không rõ' }}
+                                {{ $favorite->products->category->name ?? 'Không rõ' }}
                             </p>
                             <h3 class="product-name"><a
-                                    href="{{ route('product.show', ['slug' => $product->products->slug]) }}">{{ Str::limit($product->products->title, 20, '...') }}</a>
+                                    href="{{ route('product.show', ['slug' => $favorite->products->slug]) }}">{{ Str::limit($favorite->products->title, 20, '...') }}</a>
                             </h3>
                             <h4 class="product-price">
                                 @if ($displayItem->is_on_sale)
@@ -56,7 +61,7 @@
                                 @endif
                             </h4>
                             <?php
-                            $averageRating = $product->products->reviews->avg('rating') ?? 0;
+                            $averageRating = $favorite->products->reviews->avg('rating') ?? 0;
                             ?>
                             <div class="product-rating">
                                 @for ($i = 1; $i <= 5; $i++)
@@ -65,8 +70,8 @@
                             </div>
                             <div class="product-btns">
                                 @auth
-                                    <button class="add-to-wishlist" data-id="{{ $product->products->id }}"
-                                        data-variant-id="{{ $variantId }}">
+                                    <button class="add-to-wishlist" data-id="{{ $favorite->products->id }}"
+                                        data-variant-id="{{ $variant }}">
                                         <i class="fa fa-heart{{ $isFavorited ? '' : '-o' }} wishlist-icon"></i>
                                         <span class="tooltipp">{{ $isFavorited ? 'Đã yêu thích' : 'Yêu thích' }}</span>
                                     </button>
@@ -78,17 +83,17 @@
                                     </button>
                                 @endguest
                                 <button class="quick-view"
-                                    onclick="window.location='{{ route('product.show', ['slug' => $product->products->slug]) }}'"><i
+                                    onclick="window.location='{{ route('product.show', ['slug' => $favorite->products->slug]) }}'"><i
                                         class="fa fa-eye"></i><span class="tooltipp">Xem sản
                                         phẩm</span></button>
                             </div>
                         </div>
                         <div class="add-to-cart">
-                            <form action="{{ route('cart.add', $product->products->id) }}" method="POST">
+                            <form action="{{ route('cart.add', $favorite->products->id) }}" method="POST">
                                 @csrf
                                 <input type="hidden" name="qty" value="1">
                                 <input type="hidden" name="product_variant_id"
-                                    value="{{ $product->products->productVariants->first()->id ?? '' }}">
+                                    value="{{ $favorite->products->productVariants->first()->id ?? '' }}">
                                 <button type="submit" class="add-to-cart-btn">
                                     <i class="fa fa-shopping-cart"></i> Thêm giỏ hàng
                                 </button>
@@ -98,7 +103,7 @@
                 </div>
             @endforeach
         @else
-            <div class="not-found">
+            <div class="not-found text-center">
                 <p>Không có sản phẩm nào trong danh mục này.</p>
             </div>
         @endif

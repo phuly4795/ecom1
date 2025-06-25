@@ -15,7 +15,6 @@
 </head>
 
 <body id="page-top">
-
     <div id="wrapper">
         @include('layouts.include.navigation')
         <div id="content-wrapper" class="d-flex flex-column">
@@ -44,10 +43,6 @@
         dayjs.locale('vi');
         console.log(dayjs().fromNow()); // "vài giây trước"
     </script>
-
-
-
-
     <script>
         let originalTitle = document.title;
         let notificationCount = 0;
@@ -182,7 +177,33 @@
             updateDocumentTitle();
         });
     </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
 
+            
+            links.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault(); // chặn chuyển trang ngay lập tức
+
+                    const notificationId = this.dataset.id;
+                    const href = this.getAttribute('href');
+
+                    fetch(`/admin/notifications/${notificationId}/mark-read`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({})
+                    }).then(() => {
+                        window.location.href = href; // chuyển trang sau khi mark read
+                    }).catch(() => {
+                        window.location.href = href; // fallback nếu lỗi vẫn chuyển
+                    });
+                });
+            });
+        });
+    </script>
 </body>
 
 </html>

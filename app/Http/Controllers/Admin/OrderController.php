@@ -17,7 +17,7 @@ class OrderController extends Controller
     public function getData(Request $request)
     {
         if ($request->ajax()) {
-            $query = Order::with(['user', 'orderDetails'])->select('orders.*');
+            $query = Order::with(['user', 'orderDetails'])->latest()->select('orders.*');
 
             if ($statusFilter = request('status')) {
                 $query->where('orders.status', $statusFilter);

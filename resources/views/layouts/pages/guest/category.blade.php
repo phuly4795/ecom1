@@ -38,10 +38,11 @@
                                 @foreach ($brands as $key => $brand)
                                     @php
                                         $count = $productCountsByBrand[$brand->id] ?? 0;
+                                        $checked = request('brand_id') == $brand->id ? 'checked' : '';
                                     @endphp
                                     <div class="input-checkbox">
                                         <input type="checkbox" id="brand-{{ $key + 1 }}" name="brand_id"
-                                            value="{{ $brand->id }}">
+                                            value="{{ $brand->id }}" {{ $checked }}>
                                         <label for="brand-{{ $key + 1 }}" class="uppercase">
                                             <span></span>
                                             {{ $brand->name }}
@@ -52,50 +53,52 @@
                             </div>
                         </div>
                     @endif
+
                     <!-- /aside Widget -->
 
                     <!-- aside Widget -->
-                    <div class="aside">
-                        <h3 class="aside-title">Sản phẩm bán chạy</h3>
-                        @foreach ($bestSellingProducts as $productSelling)
-                            @php
-                                $variantBestSelling = $productSelling->productVariants->first();
-                                $displayItemBestSelling = $variantBestSelling ?? $productSelling;
-                                $image = $productSelling->productImages->where('type', 1)->first()->image ?? '';
-                                $imagePath = $image ? asset('storage/' . $image) : asset('asset/img/no-image.png');
-                            @endphp
-                            <div class="product-widget">
-                                <div class="product-img">
-                                    <img src="{{ $imagePath }}" alt="{{ $productSelling->title }}">
+                    @if (isset($bestSellingProducts) && $bestSellingProducts != '[]')
+                        <div class="aside">
+                            <h3 class="aside-title">Sản phẩm bán chạy</h3>
+                            @foreach ($bestSellingProducts as $productSelling)
+                                @php
+                                    $variantBestSelling = $productSelling->productVariants->first();
+                                    $displayItemBestSelling = $variantBestSelling ?? $productSelling;
+                                    $image = $productSelling->productImages->where('type', 1)->first()->image ?? '';
+                                    $imagePath = $image ? asset('storage/' . $image) : asset('asset/img/no-image.png');
+                                @endphp
+                                <div class="product-widget">
+                                    <div class="product-img">
+                                        <img src="{{ $imagePath }}" alt="{{ $productSelling->title }}">
+                                    </div>
+                                    <div class="product-body">
+                                        <p class="product-category">
+                                            {{ $productSelling->category ? $productSelling->category->name : ($productSelling->subCategory ? $productSelling->subCategory->categories->pluck('name')->implode(', ') : 'Chưa có') }}
+                                        </p>
+                                        <h3 class="product-name">
+                                            <a
+                                                href="{{ route('product.show', $productSelling->slug) }}">{{ Str::limit($productSelling->title, 15, '...') }}</a>
+                                        </h3>
+                                        <h4 class="product-price">
+                                            @if ($displayItemBestSelling->is_on_sale)
+                                                <span class="text-danger fw-bold">
+                                                    {{ number_format($displayItemBestSelling->display_price) }}
+                                                    vnđ
+                                                </span>
+                                                <del class="text-muted">
+                                                    {{ number_format($displayItemBestSelling->original_price) }} vnđ
+                                                </del>
+                                            @else
+                                                <span class="text-danger fw-bold">
+                                                    {{ number_format($displayItemBestSelling->original_price) }} vnđ
+                                                </span>
+                                            @endif
+                                        </h4>
+                                    </div>
                                 </div>
-                                <div class="product-body">
-                                    <p class="product-category">
-                                        {{ $productSelling->category ? $productSelling->category->name : ($productSelling->subCategory ? $productSelling->subCategory->categories->pluck('name')->implode(', ') : 'Chưa có') }}
-                                    </p>
-                                    <h3 class="product-name">
-                                        <a
-                                            href="{{ route('product.show', $productSelling->slug) }}">{{ Str::limit($productSelling->title, 15, '...') }}</a>
-                                    </h3>
-                                    <h4 class="product-price">
-                                        @if ($displayItemBestSelling->is_on_sale)
-                                            <span class="text-danger fw-bold">
-                                                {{ number_format($displayItemBestSelling->display_price) }}
-                                                vnđ
-                                            </span>
-                                            <del class="text-muted">
-                                                {{ number_format($displayItemBestSelling->original_price) }} vnđ
-                                            </del>
-                                        @else
-                                            <span class="text-danger fw-bold">
-                                                {{ number_format($displayItemBestSelling->original_price) }} vnđ
-                                            </span>
-                                        @endif
-                                    </h4>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-
+                            @endforeach
+                        </div>
+                    @endif
                     <!-- /aside Widget -->
                 </div>
                 <!-- /ASIDE -->

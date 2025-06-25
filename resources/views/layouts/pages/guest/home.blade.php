@@ -683,20 +683,6 @@
         align-items: center;
         justify-content: center;
     }
-
-    .product-img {
-        height: 220px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        overflow: hidden;
-    }
-
-    .product-img img {
-        max-height: 100%;
-        width: auto;
-        object-fit: contain;
-    }
 </style>
 <script>
     document.querySelectorAll('.add-to-wishlist').forEach(button => {

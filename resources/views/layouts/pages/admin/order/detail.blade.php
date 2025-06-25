@@ -108,7 +108,8 @@
                         <p><strong>Tổng tiền:</strong> {{ number_format($order->total_amount) }} đ</p>
                         <p><strong>Ngày tạo:</strong> {{ $order->created_at->format('d/m/Y H:i') }}</p>
                         @if (isset($order->coupon_code))
-                            <p><strong>Mã giảm giá:</strong> {{ $order->coupon_code }} <b style="color: red">(-{{ number_format($order->discount_amount).' vnđ' }})</b></p>
+                            <p><strong>Mã giảm giá:</strong> {{ $order->coupon_code }} <b
+                                    style="color: red">(-{{ number_format($order->discount_amount) . ' vnđ' }})</b></p>
                         @endif
 
                     </div>

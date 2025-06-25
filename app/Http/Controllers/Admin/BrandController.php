@@ -67,7 +67,7 @@ class BrandController extends Controller
             'slug' => 'required|string|max:255|unique:brands,slug,' . $id,
             'status' => 'required|in:0,1',
         ], [
-            'slug.unique' => 'Slug này đã tồn tại, vui lòng chọn tên khác.'
+            'slug.unique' => 'Thương hiệu đã tồn tại, vui lòng chọn tên khác.'
         ]);
 
         Brand::updateOrCreate(
