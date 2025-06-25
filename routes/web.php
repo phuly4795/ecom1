@@ -31,7 +31,6 @@ require __DIR__ . '/admin.php';
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-
 Route::get('/category/{slug}', [CategoryController::class, 'index'])->name('category.show');
 Route::get('/subcategory/{slug}', [SubCategoryController::class, 'show'])->name('subcategory.show');
 

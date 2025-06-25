@@ -103,19 +103,6 @@
                             data: 'brand',
                             name: 'brand'
                         },
-                        // {
-                        //     data: 'price_info',
-                        //     name: 'price',
-                        //     orderable: false
-                        // },
-                        // {
-                        //     data: 'original_price',
-                        //     name: 'original_price'
-                        // },
-                        // {
-                        //     data: 'discount_percentage',
-                        //     name: 'discount_percentage'
-                        // },
                         {
                             data: 'qty',
                             name: 'qty'

@@ -37,10 +37,6 @@ class ProductController extends Controller
             $query->where('product.status', $status);
         }
 
-        // if (!is_null(request('is_featured'))) {
-        //     $query->where('is_featured', request('is_featured'));
-        // }
-
         return DataTables::of($query)
             ->addIndexColumn()
             ->addColumn('image', function ($product) {
@@ -51,42 +47,6 @@ class ProductController extends Controller
             })
             ->addColumn('brand', function ($product) {
                 return $product->brand ? '<span class="badge badge-primary">' . $product->brand->name . '</span>' : '<span class="badge badge-secondary">N/A</span>';
-            })
-            ->addColumn('price_info', function ($product) {
-                $html = '<div>';
-
-                if ($product->product_type == 'single') {
-                    $html .= '<span class="text-primary font-weight-bold">' . number_format($product->original_price) . ' VNĐ</span>';
-                    if ($product->original_price && $product->original_price > $product->original_price) {
-                        $html .= '<br><del class="text-muted">' . number_format($product->original_price) . ' VNĐ</del>';
-                        $discount = $product->discount_percentage ? $product->discount_percentage . '%' : 'N/A';
-                        $html .= '<span class="badge badge-danger ml-1">' . $discount . '</span>';
-                    }
-                } elseif ($product->product_type == 'variant') {
-                    $variants = $product->productVariants;
-                    if ($variants->isNotEmpty()) {
-                        foreach ($variants as $variant) {
-                            $price = $variant->price ?? 0;
-                            $originalPrice = $variant->original_price ?? $price; // Giá gốc, nếu không có thì dùng giá hiện tại
-                            $discountedPrice = $variant->discount_percentage ?? $price; // Giá sau giảm, nếu không có thì dùng giá hiện tại
-                            $discountPercentage = $variant->discount_percentage ?? 0;
-
-                            $html .= '<div class="mb-1">';
-                            $html .= '<span class="text-primary font-weight-bold">' . number_format($discountedPrice) . ' VNĐ</span>';
-                            if ($originalPrice > $discountedPrice) {
-                                $html .= '<br><del class="text-muted">' . number_format($originalPrice) . ' VNĐ</del>';
-                                $html .= '<span class="badge badge-danger ml-1">' . ($discountPercentage > 0 ? $discountPercentage . '%' : 'N/A') . '</span>';
-                            }
-                            $html .= '<br><small class="text-info">' . ($variant->variant_name ?? 'Không có tên') . '</small>';
-                            $html .= '</div>';
-                        }
-                    } else {
-                        $html .= '<span class="text-muted">Chưa có biến thể</span>';
-                    }
-                }
-
-                $html .= '</div>';
-                return new HtmlString($html);
             })
             ->addColumn('actions', function ($product) {
                 $editUrl = route('admin.product.edit', $product);
@@ -113,7 +73,8 @@ class ProductController extends Controller
                 return $product->created_at->format('d/m/Y');
             })
             ->editColumn('title', function ($product) {
-                return '<span data-toggle="tooltip" title="' . $product->title . '">' . Str::limit($product->title, 30, '...') . '</span>';
+                $editUrl = route('admin.product.edit', $product);
+                return '<a href="' . $editUrl . '" style="color: #000;font-weight: 700;"><span data-toggle="tooltip" title="' . $product->title . '">' . Str::limit($product->title, 30, '...') . '</span></a>';
             })
             ->editColumn('qty', function ($product) {
                 $html = '<div>';
@@ -147,6 +108,11 @@ class ProductController extends Controller
                 if ($product->is_featured === 'yes') {
                     $html .= '<span class="badge badge-warning ml-1">Nổi bật</span>';
                 }
+
+                if ($product->is_on_sale) {
+                    $html .= '<span class="badge badge-danger ml-1">Khuyến mãi</span>';
+                }
+
 
                 $html .= '</div>';
 

@@ -18,6 +18,7 @@ class HomeController extends Controller
         $collectionCategory = Category::orderBy('sort', 'asc')->take(3)->get();
         $categories = Category::orderBy('name', 'asc')->get();
         $productLatest = Product::with('productImages', 'favoritedByUsers')
+            ->where('is_featured', 'yes')
             ->latest()
             ->take(5)
             ->get();
@@ -55,15 +56,8 @@ class HomeController extends Controller
         ]);
 
         $contact = Contact::create($request->all());
-      
-        event(new NewContactMessage($contact));
-        // Tạo notification mới
-        // Notification::create([
-        //     'title' => 'Liên hệ mới từ ' . $contact->name,
-        //     'message' => $contact->content,
-        //     'is_read' => 0,
-        // ]);
 
+        event(new NewContactMessage($contact));
         return back()->with(['status' => 'success', 'message' => 'Đánh giá của bạn đã được gửi thành công!']);
     }
 }

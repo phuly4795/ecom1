@@ -50,10 +50,134 @@
 @endif
 {{ $slot }}
 <!-- /CONTENT -->
-<!-- Modal thông báo -->
+<!-- box chat -->
+<div id="chat-icon" onclick="toggleChatbox()"
+    style="position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background-color: #ffc107; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 9999; animation: bounce 2s infinite;">
+    <img src="{{ asset('asset/img/icon_chat_bot.png') }}" alt="Chat AI" style="width: 36px;">
+</div>
 
+<!-- Box Chat (ẩn ban đầu) -->
+<div id="chatbox"
+    style="display:none; position: fixed; bottom: 20px; right: 20px; width: 550px; height: 550px; background: white; border: 1px solid #ccc; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.2); z-index: 10000; flex-direction: column;">
+    <div
+        style="background: #ffc107; color: #000; padding: 10px; font-weight: bold; border-top-left-radius:10px; border-top-right-radius:10px; display: flex; justify-content: space-between;">
+        <span>Trợ lý AI - Giới thiệu sản phẩm</span>
+        <button onclick="clearChat()"
+            style="background:none; border:none; font-size:14px; color:#fff; margin-left:auto;">
+            🗑 Xóa hội thoại
+        </button>
+        <button onclick="toggleChatbox()" style="background: none; border: none; font-size: 16px;">X</button>
+    </div>
+    <div id="chat-content" style="height:330px; overflow-y:auto; padding:10px; flex-grow:1;"></div>
+    <div
+        style="display: flex
+;
+    padding: 10px;
+    border-top: 1px solid #ddd;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-content: center;
+    justify-content: space-around;
+    align-items: center;
+}">
+        <input type="text" id="chat-input" placeholder="Bạn cần gì?" style="width:80%;" class="form-control">
+        <button class="btn btn-danger" onclick="sendMessage()">Gửi</button>
+    </div>
+</div>
 
+<style>
+    @keyframes bounce {
 
+        0%,
+        20%,
+        50%,
+        80%,
+        100% {
+            transform: translateY(0);
+        }
+
+        40% {
+            transform: translateY(-8px);
+        }
+
+        60% {
+            transform: translateY(-4px);
+        }
+    }
+
+    #chatbox {
+        background: #fff;
+        border: 2px solid #e91e63;
+        /* đỏ theo màu chủ đạo */
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    #chatbox>div:first-child {
+        background: #e91e63;
+        /* header đỏ */
+        color: #fff;
+    }
+
+    .chat-message {
+        max-width: 80%;
+        padding: 10px;
+        border-radius: 10px;
+        margin: 8px 0;
+        display: inline-block;
+        clear: both;
+    }
+
+    .chat-user {
+        background-color: #f1f1f1;
+        float: right;
+        text-align: right;
+    }
+
+    .chat-ai {
+        background-color: #f1f1f1;
+        /* color: #fff; */
+        float: left;
+    }
+
+    .typing-indicator {
+        display: inline-block;
+        padding: 8px 12px;
+        background: #f1f1f1;
+        border-radius: 15px 15px 15px 0;
+        margin: 8px 0;
+        font-style: italic;
+        color: #666;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    .typing-indicator span {
+        animation: blink 1.4s infinite;
+        font-size: 20px;
+        margin: 0 1px;
+    }
+
+    .typing-indicator span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .typing-indicator span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+
+    @keyframes blink {
+        0% {
+            opacity: 0.2;
+        }
+
+        20% {
+            opacity: 1;
+        }
+
+        100% {
+            opacity: 0.2;
+        }
+    }
+</style>
 <!-- FOOTER -->
 @include('layouts.include.guest.footer')
 <!-- /FOOTER -->
@@ -65,6 +189,151 @@
 <script src="{{ asset('asset/guest/js/jquery.zoom.min.js') }}"></script>
 <script src="{{ asset('asset/guest/js/main.js') }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    let hasInitialized = false;
+
+    function toggleChatbox() {
+        const chatbox = document.getElementById("chatbox");
+        const icon = document.getElementById("chat-icon");
+
+        if (chatbox.style.display === "none") {
+            chatbox.style.display = "flex";
+            icon.style.display = "none";
+
+            if (!hasInitialized) {
+                fetch('/api/chat/history')
+                    .then(res => res.json())
+                    .then(history => {
+                        const content = document.getElementById("chat-content");
+                        history.forEach(msg => {
+                            const senderClass = msg.sender === 'user' ? 'chat-message chat-user' :
+                                'chat-message chat-ai';
+                            const sender = msg.sender === 'user' ? 'Bạn' :
+                                'Trợ lý AI';
+                            content.innerHTML +=
+                                `<div class="${senderClass}"><strong>${sender}:</strong> ${msg.message}</div>`;
+                        });
+
+                        if (history.length === 0) {
+                            const welcome = "Xin chào! Mình là trợ lý bán hàng. Bạn đang cần tìm gì hôm nay?";
+                            content.innerHTML +=
+                                `<div class='chat-message chat-ai'><strong>Trợ lý AI:</strong> ${welcome}</div>`;
+                            fetch('/api/chat-ai', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                },
+                                body: JSON.stringify({
+                                    message: welcome,
+                                    is_system: true
+                                })
+                            });
+                        }
+
+                        content.scrollTop = content.scrollHeight;
+                        hasInitialized = true;
+                    });
+            }
+        } else {
+            chatbox.style.display = "none";
+            icon.style.display = "flex";
+        }
+    }
+
+    function clearChat() {
+        const content = document.getElementById("chat-content");
+        const typingId = 'typing-clear-' + Date.now();
+
+        // Hiệu ứng đang xử lý
+        content.innerHTML += `<div id="${typingId}" class="chat-message chat-ai typing-indicator"><span>.</span><span>.</span><span>.</span> </div>`;
+        content.scrollTop = content.scrollHeight;
+
+        fetch('/api/chat/clear-chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                },
+            })
+            .then(res => res.json())
+            .then(data => {
+                // Xóa tất cả nội dung khung chat
+                content.innerHTML = '';
+
+                // Tin nhắn chào lại
+                const welcome = "Xin chào! Mình là trợ lý bán hàng. Bạn đang cần tìm gì hôm nay?";
+                content.innerHTML +=
+                    `<div class='chat-message chat-ai'><strong>Trợ lý AI:</strong> ${welcome}</div>`;
+                content.scrollTop = content.scrollHeight;
+
+                // Gửi tin nhắn chào để tạo ngữ cảnh AI
+                fetch('/api/chat-ai', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    },
+                    body: JSON.stringify({
+                        message: welcome
+                    })
+                });
+            })
+            .catch(() => {
+                const typingEl = document.getElementById(typingId);
+                if (typingEl) typingEl.remove();
+
+                content.innerHTML += `<div style="color:red;">Lỗi kết nối. Vui lòng thử lại.</div>`;
+            });
+    }
+
+    // Xử lý gửi tin nhắn
+    function sendMessage() {
+        const input = document.getElementById("chat-input");
+        const content = document.getElementById("chat-content");
+        const message = input.value.trim();
+
+        if (message === "") return;
+
+        // Hiển thị tin nhắn người dùng
+        content.innerHTML += `<div class="chat-message chat-user"><strong>Bạn:</strong> ${message}</div>`;
+        input.value = "";
+        content.scrollTop = content.scrollHeight;
+
+        // Thêm dấu chấm đang gõ
+        const typingId = 'typing-' + Date.now();
+        content.innerHTML += `<div id="${typingId}" class="chat-message chat-ai typing-indicator"> <span>.</span><span>.</span><span>.</span> </div>`;
+        content.scrollTop = content.scrollHeight;
+
+        fetch('/api/chat-ai', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                },
+                body: JSON.stringify({
+                    message
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                const typingEl = document.getElementById(typingId);
+                if (typingEl) typingEl.remove();
+
+                // Hiển thị phản hồi AI
+                content.innerHTML +=
+                    `<div class="chat-message chat-ai"><strong>Trợ lý AI:</strong> ${data.reply}</div>`;
+                content.scrollTop = content.scrollHeight;
+            })
+            .catch(() => {
+                const typingEl = document.getElementById(typingId);
+                if (typingEl) typingEl.remove();
+
+                content.innerHTML += `<div style="color:red;">Lỗi kết nối. Vui lòng thử lại.</div>`;
+            });
+    }
+</script>
+
 <script>
     /**
      * Hiển thị alert modal cho người dùng
@@ -144,5 +413,6 @@
         });
     @endif
 </script>
+
 
 </html>

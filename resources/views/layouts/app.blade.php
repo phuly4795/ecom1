@@ -155,14 +155,10 @@
                         notificationCount++;
                         updateDocumentTitle();
                     });
-
-
-
             } else {
                 console.error('window.Echo not defined');
             }
         });
-
 
         function updateDocumentTitle() {
             if (notificationCount > 0) {
@@ -179,8 +175,6 @@
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-
-            
             links.forEach(link => {
                 link.addEventListener('click', function(e) {
                     e.preventDefault(); // chặn chuyển trang ngay lập tức

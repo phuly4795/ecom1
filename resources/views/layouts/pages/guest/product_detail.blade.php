@@ -248,7 +248,8 @@
                                             @if ($specs && is_array($specs) && !empty($specs))
                                                 @foreach ($specs as $group => $items)
                                                     <div class="card mb-3">
-                                                        <div class="card-header bg-light font-weight-bold">
+                                                        <div class="card-header bg-light font-weight-bold"
+                                                            style="font-weight: 700; font-size: 20px; margin-bottom: 1%;">
                                                             {{ htmlspecialchars($group, ENT_QUOTES, 'UTF-8') }}
                                                         </div>
                                                         <div class="table-responsive">
@@ -558,20 +559,6 @@
         margin: 0 auto;
         object-fit: contain;
     }
-
-    /* .product-img {
-        height: 220px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        overflow: hidden;
-    }
-
-    .product-img img {
-        max-height: 100%;
-        width: auto;
-        object-fit: contain;
-    } */
 </style>
 <script>
     $('body').tooltip({
