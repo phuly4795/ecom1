@@ -60,8 +60,8 @@ class ProfileController extends Controller
             'district_id' => ['nullable', 'string'],
             'ward_id' => ['nullable', 'string'],
             'address' => ['nullable', 'string', 'max:255'],
-            'is_active' => ['nullable', 'boolean'],
-            'user_roles' => ['nullable', 'exists:roles,id']
+            // 'is_active' => ['nullable', 'boolean'],
+            // 'user_roles' => ['nullable', 'exists:roles,id']
         ]);
 
         if ($request->hasFile('avatar')) {

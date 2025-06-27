@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Session;
 use App\Models\Product;
 use App\Models\Province;
 use App\Models\ShippingAddress;
+use App\Models\ShippingFee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
@@ -49,8 +50,9 @@ class CartController extends Controller
         } else {
             $subtotal = 0;
         }
+        $address = auth()->user()->defaultShippingAddress; // hoặc shippingAddress tùy quan hệ
 
-        $shippingFee = 20000;
+        $shippingFee = $this->getShippingFee();
         $discount = auth()->user()->cart->discount_amount ?? 0; // nếu có mã thì tính sau
         $total = max($subtotal + $shippingFee - $discount, 0);
 
@@ -256,7 +258,7 @@ class CartController extends Controller
             return $carry + ($item->final_price * $item->qty);
         }, 0);
 
-        $shippingFee = 20000;
+        $shippingFee = $this->getShippingFee();
         $discount = auth()->user()->cart->discount_amount; // nếu có mã thì tính sau
 
         $total = max($subtotal + $shippingFee - $discount, 0);
@@ -315,7 +317,7 @@ class CartController extends Controller
         // Tính lại tổng
         $cartItems = auth()->user()->cart->cartDetails; // Hoặc session-based tùy bạn
         $subtotal = $cartItems->sum(fn($item) => ($item->final_price) * $item->qty);
-        $shippingFee = 20000;
+        $shippingFee = $this->getShippingFee();
         $discount = auth()->user()->cart->discount_amount; // nếu có mã thì tính sau
         $total = $subtotal + $shippingFee - $discount;
 
@@ -335,5 +337,28 @@ class CartController extends Controller
         $cart->save();
 
         return redirect()->back()->with('success', 'Đã xóa mã giảm giá.');
+    }
+
+    public function getShippingFee()
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return config('settings.default_shipping_fee', 50000); // mặc định nếu chưa đăng nhập
+        }
+
+        $shippingAddress = $user->shippingAddresses->count() === 1
+            ? $user->shippingAddresses->first()
+            : $user->shippingAddresses->firstWhere('is_default', true);
+
+        if (!$shippingAddress) {
+            return config('settings.default_shipping_fee', 50000); // không có địa chỉ => dùng mặc định
+        }
+
+        $fee = ShippingFee::where('province_id', $shippingAddress->province_id)
+            ->where('district_id', $shippingAddress->district_id)
+            ->value('fee');
+
+        return $fee ?? config('settings.default_shipping_fee', 50000);
     }
 }

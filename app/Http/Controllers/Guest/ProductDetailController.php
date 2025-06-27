@@ -14,8 +14,12 @@ class ProductDetailController extends Controller
     public function show($slug, $variant = null)
     {
         $productDetail = Product::with(['productImages', 'brand', 'reviews', 'productVariants'])->where('slug', $slug)->firstOrFail();
-        // $productLastest = Product::with('productImages')->latest()->get()->take(4);
 
+        $selectedVariant = null;
+        if ($variant) {
+            $selectedVariant = $productDetail->productVariants
+                ->firstWhere('variant_name', $variant);
+        }
         $productLastest = Product::where('status', 1)
             ->orderByDesc('created_at')
             ->whereNotIn('slug', [$slug])
@@ -74,7 +78,8 @@ class ProductDetailController extends Controller
             'ratings' => $ratings,
             'selectedVariant' => $selectedVariant,
             'isDiscountActive' => $isDiscountActive,
-            'reviews' => $reviews
+            'reviews' => $reviews,
+            'selectedVariant' => $selectedVariant
         ]);
     }
 }

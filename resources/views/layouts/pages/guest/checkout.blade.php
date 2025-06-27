@@ -89,10 +89,13 @@
                             @if (auth()->check() && isset($ShippingAddress))
                                 <div class="form-group">
                                     <label>Chọn địa chỉ giao hàng đã lưu:</label>
-                                    <select name="shipping_address_id" class="form-control">
+                                    <select name="shipping_address_id" class="form-control shipping-address-select"
+                                        id="shipping-address-select">
                                         <option value="">-- Chọn địa chỉ --</option>
                                         @foreach ($ShippingAddress as $address)
                                             <option value="{{ $address->id }}"
+                                                data-province="{{ $address->province_id }}"
+                                                data-district="{{ $address->district_id }}"
                                                 {{ old('shipping_address_id', $address->is_default == 1 ? $address->id : null) == $address->id ? 'selected' : '' }}>
                                                 {{ $address->full_name }} - {{ $address->address }},
                                                 {{ $address->ward->name }}, {{ $address->district->name }},
@@ -184,8 +187,10 @@
                             </div>
                             <div class="order-col">
                                 <div>Vận chuyển</div>
-                                <div><strong>{{ number_format($shippingFee) . ' vnđ' }}</strong></div>
+                                <div><strong><span id="shippingFeeDisplay">{{ number_format($shippingFee) }}
+                                            vnđ</span></strong></div>
                             </div>
+
 
                             @if (isset($cart->coupon_code))
                                 <div class="order-col">
@@ -209,10 +214,11 @@
                             @endif
                             <div class="order-col">
                                 <div><strong>Tổng tiền</strong></div>
-                                <div><strong
-                                        class="order-total">{{ number_format($total) . ' vnđ' }}</strong>
+                                <div><strong class="order-total">{{ number_format($total) . ' vnđ' }}</strong>
                                 </div>
                             </div>
+                            <input type="hidden" id="subtotalValue" value="{{ $subtotal }}">
+                            <input type="hidden" id="discountValue" value="{{ $discount ?? 0 }}">
                         </div>
                         <div class="payment-method">
                             <div class="input-radio">
@@ -232,7 +238,8 @@
                                     Thanh toán chuyển khoản
                                 </label>
                                 <div class="caption">
-                                    <p>Thanh toán số tiền <b>{{ number_format($total) . ' vnđ' }}</b> đến tài khoản ngân hàng</p>
+                                    <p>Thanh toán số tiền <b>{{ number_format($total) . ' vnđ' }}</b> đến tài khoản
+                                        ngân hàng</p>
                                     <p>TP Bank: <b>0000 1860 446</b></p>
                                     <p>Chủ tài khoản: <b>LÝ THÀNH PHÚ</b></p>
                                     <p><b>Khi thanh toán vui lòng điền mã đơn hàng vào nội dung chuyển khoản.</b></p>
@@ -388,6 +395,72 @@
                         wardSelect.appendChild(option);
                     });
                 });
+        }
+    });
+</script>
+
+<script>
+    function updateShippingFee(provinceId, districtId) {
+        fetch(`/api/shipping-fee?province_id=${provinceId}&district_id=${districtId}`)
+            .then(res => res.json())
+            .then(data => {
+                const shippingFee = data.fee ?? 50000;
+
+                document.getElementById('shippingFeeDisplay').innerText = shippingFee.toLocaleString('vi-VN') +
+                    ' vnđ';
+
+                const subtotal = parseInt(document.getElementById('subtotalValue').value);
+                const discount = parseInt(document.getElementById('discountValue').value || 0);
+                const total = Math.max(subtotal + shippingFee - discount, 0);
+
+                document.querySelector('.order-total').innerText = total.toLocaleString('vi-VN') + ' vnđ';
+
+                const captionText = document.querySelector('#payment-2 ~ .caption p b');
+                if (captionText) captionText.innerText = total.toLocaleString('vi-VN') + ' vnđ';
+            });
+    }
+
+    document.getElementById('shipping-address-select')?.addEventListener('change', function() {
+        const selected = this.options[this.selectedIndex];
+        const provinceId = selected.getAttribute('data-province');
+        const districtId = selected.getAttribute('data-district');
+        if (provinceId && districtId) {
+            updateShippingFee(provinceId, districtId);
+        }
+    });
+
+    // Theo dõi khi người dùng chọn địa chỉ mới
+    document.getElementById('shipping_province')?.addEventListener('change', function() {
+        document.getElementById('shipping_district').disabled = false;
+        // load district bằng AJAX nếu bạn cần (đã có rồi)
+    });
+
+    document.getElementById('shipping_district')?.addEventListener('change', function() {
+        const provinceId = document.getElementById('shipping_province')?.value;
+        const districtId = this.value;
+        if (provinceId && districtId) {
+            updateShippingFee(provinceId, districtId);
+        }
+    });
+
+    // Toggle form địa chỉ mới
+    document.querySelector('input[name="use_new_shipping_address"]')?.addEventListener('change', function() {
+        const form = document.querySelector('.new-shipping-form');
+        const addressSelect = document.getElementById('shipping-address-select');
+        if (this.checked) {
+            form.style.display = 'block';
+            addressSelect.disabled = true;
+        } else {
+            form.style.display = 'none';
+            addressSelect.disabled = false;
+
+            // Nếu có chọn lại địa chỉ lưu => cập nhật lại phí
+            const selected = addressSelect.options[addressSelect.selectedIndex];
+            const provinceId = selected.getAttribute('data-province');
+            const districtId = selected.getAttribute('data-district');
+            if (provinceId && districtId) {
+                updateShippingFee(provinceId, districtId);
+            }
         }
     });
 </script>

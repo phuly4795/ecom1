@@ -21,7 +21,6 @@ class ProductVariant extends Model
         'discount_percentage',
         'discount_start_date',
         'discount_end_date',
-        'price',
         'original_price',
         'sku',
         'qty'

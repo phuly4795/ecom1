@@ -105,6 +105,7 @@
                                 'transfer' => 'Chuyển khoản',
                                 default => ucfirst($order->payment_method),
                             } }}
+                        <p><strong>Phí vận chuyển:</strong> {{ number_format($order->shipping_fee) }} đ</p>
                         <p><strong>Tổng tiền:</strong> {{ number_format($order->total_amount) }} đ</p>
                         <p><strong>Ngày tạo:</strong> {{ $order->created_at->format('d/m/Y H:i') }}</p>
                         @if (isset($order->coupon_code))

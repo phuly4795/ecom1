@@ -76,14 +76,23 @@ class ProductController extends Controller
                 $editUrl = route('admin.product.edit', $product);
                 return '<a href="' . $editUrl . '" style="color: #000;font-weight: 700;"><span data-toggle="tooltip" title="' . $product->title . '">' . Str::limit($product->title, 30, '...') . '</span></a>';
             })
+
+
+
             ->editColumn('qty', function ($product) {
                 $html = '<div>';
                 if ($product->product_type == "single") {
                     $html .= '<span class="badge badge-' . ($product->qty > 0 ? 'success' : 'danger') . '">Còn: ' . $product->qty . '</span>';
+                    if ($product->is_on_sale) {
+                        $html .= '<span class="badge badge-danger ml-1">Khuyến mãi: ' . $product->discount_percentage . '%</span>';
+                    }
                 }
                 if ($product->product_type == "variant") {
                     foreach ($product->productVariants as $variant) {
-                        $html .= '<span class="badge badge-' . ($variant->qty > 0 ? 'success' : 'danger') . ' mb-1">' . $variant->variant_name . ': ' . $variant->qty . '</span><br>';
+                        $html .= '<span class="badge badge-' . ($variant->qty > 0 ? 'success' : 'danger') . ' mb-1">' . $variant->variant_name . ': ' . $variant->qty . '</span>';
+                        if ($variant->is_on_sale) {
+                            $html .= '<span class="badge badge-danger ml-1">Khuyến mãi: ' . $variant->discount_percentage . '%</span><br/>';
+                        }
                     }
                 }
                 $html .= '</div>';
@@ -108,11 +117,6 @@ class ProductController extends Controller
                 if ($product->is_featured === 'yes') {
                     $html .= '<span class="badge badge-warning ml-1">Nổi bật</span>';
                 }
-
-                if ($product->is_on_sale) {
-                    $html .= '<span class="badge badge-danger ml-1">Khuyến mãi</span>';
-                }
-
 
                 $html .= '</div>';
 

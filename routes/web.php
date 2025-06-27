@@ -12,6 +12,8 @@ use App\Http\Controllers\Guest\HomeController;
 use App\Http\Controllers\Guest\ProductController;
 use App\Http\Controllers\Guest\ProductDetailController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\NewsletterController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Models\Role;
 
@@ -71,7 +73,11 @@ Route::get('/districts/{provinceId}', [LocationController::class, 'getDistricts'
 Route::get('/wards/{districtId}', [LocationController::class, 'getWards'])->name('getWards');
 Route::get('/search-products', [ProductController::class, 'search']);
 Route::post('/lien-he', [HomeController::class, 'storeContact']);
-// ->middleware('throttle:3,1'); // Tối đa 3 lần/phút;
+Route::put('/update-info', [ProfileController::class, 'updateInfo'])->name('admin.profile.updateInfo');
+
+Route::post('/subscribe-newsletter', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe')->middleware('throttle:3,1'); // Tối đa 3 lần/phút;;
+
+// 
 
 // Public route
 Route::get('/{slug}', [PageController::class, 'show'])->name('pages.show');

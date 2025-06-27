@@ -177,6 +177,20 @@
             opacity: 0.2;
         }
     }
+
+    .ai-product-suggestion {
+        margin-top: 15px;
+        font-family: Arial, sans-serif;
+    }
+
+    .ai-product-suggestion a {
+        color: #007bff;
+        text-decoration: none;
+    }
+
+    .ai-product-suggestion a:hover {
+        text-decoration: underline;
+    }
 </style>
 <!-- FOOTER -->
 @include('layouts.include.guest.footer')
@@ -246,7 +260,8 @@
         const typingId = 'typing-clear-' + Date.now();
 
         // Hiệu ứng đang xử lý
-        content.innerHTML += `<div id="${typingId}" class="chat-message chat-ai typing-indicator"><span>.</span><span>.</span><span>.</span> </div>`;
+        content.innerHTML +=
+            `<div id="${typingId}" class="chat-message chat-ai typing-indicator"><span>.</span><span>.</span><span>.</span> </div>`;
         content.scrollTop = content.scrollHeight;
 
         fetch('/api/chat/clear-chat', {
@@ -275,7 +290,8 @@
                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
                     },
                     body: JSON.stringify({
-                        message: welcome
+                        message: welcome,
+                        is_system: true
                     })
                 });
             })
@@ -302,7 +318,8 @@
 
         // Thêm dấu chấm đang gõ
         const typingId = 'typing-' + Date.now();
-        content.innerHTML += `<div id="${typingId}" class="chat-message chat-ai typing-indicator"> <span>.</span><span>.</span><span>.</span> </div>`;
+        content.innerHTML +=
+            `<div id="${typingId}" class="chat-message chat-ai typing-indicator"> <span>.</span><span>.</span><span>.</span> </div>`;
         content.scrollTop = content.scrollHeight;
 
         fetch('/api/chat-ai', {

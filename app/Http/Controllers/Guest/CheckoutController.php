@@ -11,8 +11,10 @@ use App\Models\Notification;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use Illuminate\Support\Facades\Session;
-use App\Models\Product;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
 use App\Models\ShippingAddress;
+use App\Models\ShippingFee;
+use App\Notifications\OrderPlacedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -53,7 +55,9 @@ class CheckoutController extends Controller
         try {
             // Tính tổng
             $subtotal = $cart->cartDetails->sum(fn($item) => $item->final_price * $item->qty);
-            $shippingFee = 20000;
+
+            $shippingAddress = ShippingAddress::find($request->shipping_address_id);
+            $shippingFee = $this->getShippingFee($shippingAddress->province_id, $shippingAddress->district_id);
             $discount = auth()->user()->cart->discount_amount ?? 0; // nếu có mã thì tính sau
             $total = max($subtotal + $shippingFee - $discount, 0);
 
@@ -96,6 +100,7 @@ class CheckoutController extends Controller
                 'billing_ward_id' => $request->billing_ward_id,
                 'payment_method' => $request->payment_method,
                 'note' => $request->note,
+                'shipping_fee' => $shippingFee,
                 'total_amount' => $total,
                 'coupon_code' => $cart->coupon_code,
                 'discount_amount' => $cart->discount_amount,
@@ -132,7 +137,11 @@ class CheckoutController extends Controller
             ]);
 
             event(new NewNotification($notification));
-
+            // Gửi email xác nhận đơn hàng
+            if ($order->billing_email) {
+                NotificationFacade::route('mail', $order->billing_email)
+                    ->notify(new OrderPlacedNotification($order));
+            }
             DB::commit();
 
             return redirect()->route('checkout.thankyou')->with('success', 'Đặt hàng thành công!');
@@ -145,5 +154,15 @@ class CheckoutController extends Controller
     public function thankYou()
     {
         return view('layouts.pages.guest.thank_you');
+    }
+
+
+    public function getShippingFee($province_id, $district_id)
+    {
+
+        $fee = ShippingFee::where('province_id', $province_id)
+            ->where('district_id', $district_id)
+            ->value('fee');
+        return $fee ?? config('settings.default_shipping_fee', 50000);
     }
 }

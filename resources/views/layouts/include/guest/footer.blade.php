@@ -45,11 +45,9 @@
                      <div class="footer">
                          <h3 class="footer-title">Các trang khác</h3>
                          <ul class="footer-links">
-                             <li><a href="#">Về chúng tôi</a></li>
-                             <li><a href="#">Liên hệ</a></li>
-                             <li><a href="#">Thông tin bảo mật</a></li>
-                             <li><a href="#">Orders and Returns</a></li>
-                             <li><a href="#">Terms & Conditions</a></li>
+                             <li><a href="/lien-he">Liên hệ</a></li>
+                             <li><a href="/chinh-sach-bao-hanh">Chính sách bảo hành</a></li>
+                             <li><a href="{{ route('category.show', ['slug' => 'khuyen-mai']) }}">Khuyến mãi</a></li>
                          </ul>
                      </div>
                  </div>
@@ -60,8 +58,8 @@
                          <ul class="footer-links">
                              <li><a href="{{ route('my.account') }}">Hồ sơ cá nhân</a></li>
                              <li><a href="{{ route('cart.show') }}">Giỏ hàng</a></li>
-                             <li><a href="{{ route('home') }}">Sản phẩm yêu thích</a></li>
-                             <li><a href="{{ route('home') }}">Danh sách đơn hàng</a></li>
+                             <li><a href="{{ route('favorites.index') }}">Sản phẩm yêu thích</a></li>
+                             <li><a href="{{ route('my.account', ['tab' => 'orders']) }}">Danh sách đơn hàng</a></li>
                          </ul>
                      </div>
                  </div>

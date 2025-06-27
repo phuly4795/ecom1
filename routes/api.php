@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ShippingFeeController;
 use App\Http\Controllers\Guest\ChatAIController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -24,3 +25,4 @@ Route::middleware(['web'])->group(function () {
     Route::get('/chat/history', [ChatAIController::class, 'history']);
     Route::post('/chat/clear-chat', [ChatAIController::class, 'destroy']);
 });
+Route::get('/shipping-fee', [ShippingFeeController::class, 'getFee'])->name('shipping_fees.get_fee');

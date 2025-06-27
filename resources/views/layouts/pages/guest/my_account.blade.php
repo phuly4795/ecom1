@@ -131,33 +131,34 @@
                                 <div class="row">
                                     <div class="col-md-3">
                                         <!-- Phần hiển thị avatar -->
-                                        <div class="d-flex flex-column align-items-center text-center p-3 py-5">
-                                            <img id="preview-avatar" class="rounded-circle mt-5" width="150px"
+                                        <div class="d-flex flex-column align-items-center text-center p-3 py-5"
+                                            style="margin-top: 5%;">
+                                            <img id="preview-avatar" class="rounded-circle" width="150px"
                                                 src="{{ $user->avatar ? asset('storage/' . $user->avatar) : 'https://st3.depositphotos.com/15648834/17930/v/600/depositphotos_179308454-stock-illustration-unknown-person-silhouette-glasses-profile.jpg' }}">
                                             <input type="file" name="avatar" id="avatar"
-                                                class="form-control mt-3" accept="image/*">
-                                            <span class="text-muted small">Chỉ chấp nhận ảnh PNG, JPG, JPEG (tối đa
-                                                2MB)</span>
+                                                class="form-control mt-3" accept="image/*" style="margin-top: 5%">
                                         </div>
 
                                     </div>
                                     <div class="col-md-9">
                                         @method('PUT')
+                                        @csrf
                                         <div class="p-3 py-5">
                                             <div class="row mt-2">
                                                 <div class="col-md-12"><label class="labels">Họ và tên</label><input
                                                         type="text" class="form-control" placeholder="Nhập họ và tên"
                                                         name="name" value="{{ $user->name ?? '' }}"></div>
-                                                <div class="col-md-12"><label class="labels">Email</label><input
+                                                <div class="col-md-12 mt-3"><label class="labels">Email</label><input
                                                         type="text" class="form-control" placeholder="Nhập email"
                                                         name="email" value="{{ $user->email ?? '' }}" readonly></div>
-                                                <div class="col-md-12"><label class="labels">Số điện thoại</label><input
-                                                        type="text" class="form-control"
+                                                <div class="col-md-12 mt-3"><label class="labels">Số điện
+                                                        thoại</label><input type="text" class="form-control"
                                                         placeholder="Nhập số điện thoại" name="phone"
                                                         value="{{ $user->phone ?? '' }}">
                                                 </div>
-                                                <div class="col-md-12"><label class="labels">Ngày sinh</label><input
-                                                        type="date" class="form-control" name="birthday"
+                                                <div class="col-md-12 mt-3"><label class="labels">Ngày
+                                                        sinh</label><input type="date" class="form-control"
+                                                        name="birthday"
                                                         value="{{ $user->birthday ? \Carbon\Carbon::parse($user->birthday)->format('Y-m-d') : '' }}">
                                                 </div>
                                             </div>
@@ -194,8 +195,8 @@
                                                         value="{{ $user->address ?? '' }}">
                                                 </div>
                                             </div>
-                                            <div class="mt-5 text-center"><button
-                                                    class="btn btn-primary profile-button" type="button">Lưu hồ
+                                            <div class="mt-5 text-left"><button class="btn btn-primary profile-button"
+                                                    type="button">Lưu hồ
                                                     sơ</button></div>
                                         </div>
                                     </div>
@@ -204,7 +205,54 @@
                         @elseif ($tab == 'change-password')
                             <!-- Change Password (Placeholder) -->
                             <h2 class="account-welcome">Thay đổi mật khẩu</h2>
-                            <p class="account-description">Thay đổi mật khẩu của bạn tại đây.</p>
+                            @if ($errors->any())
+                                <div class="alert alert-danger">
+                                    <ul>
+                                        @foreach ($errors->all() as $error)
+                                            <li>{{ $error }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
+                            <form method="POST" action="{{ route('password.change') }}">
+                                @csrf
+                                <!-- Password -->
+                                <div class="mb-3 mt-3" style="margin-bottom: 3%">
+                                    <x-input-label for="password" :value="__('Nhập mật khẩu cũ')" />
+                                    <x-text-input id="current_password"
+                                        class="block form-control mt-1 w-full  {{ $errors->has('current_password') ? 'has-error' : '' }}"
+                                        type="current_password" name="current_password" required
+                                        autocomplete="current_password" />
+                                    <x-input-error :messages="$errors->get('current_password')" class="mt-2" />
+                                </div>
+                                <!-- Password -->
+                                <div class="mb-3 mt-3" style="margin-bottom: 3%">
+                                    <x-input-label for="password" :value="__('Mật khẩu mới')" />
+                                    <x-text-input id="password"
+                                        class="block form-control mt-1 w-full  {{ $errors->has('password') ? 'has-error' : '' }}"
+                                        type="password" name="password" required autocomplete="new-password" />
+                                    <x-input-error :messages="$errors->get('password')" class="mt-2" />
+                                </div>
+
+                                <!-- Confirm Password -->
+                                <div class="mt-4" style="margin-bottom: 3%">
+                                    <x-input-label for="password_confirmation" :value="__('Nhập lại mật khẩu')" />
+
+                                    <x-text-input id="password_confirmation"
+                                        class="block form-control mt-1 w-full {{ $errors->has('password_confirmation') ? 'has-error' : '' }}"
+                                        type="password" name="password_confirmation" required
+                                        autocomplete="new-password" />
+
+                                    <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
+                                </div>
+
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-primary reset-password-btn">
+                                        <i class="fa fa-sign-in"></i> Xác nhận
+                                    </button>
+                                </div>
+
+                            </form>
                         @else
                             <!-- Default Welcome Message -->
                             <h2 class="account-welcome">Welcome to Your Account</h2>
@@ -514,7 +562,8 @@
                         existingCancelButton.remove();
                     }
 
-                    if (order.status === 'waiting_pay' || order.status === 'pending' || order.status ===
+                    if (order.status === 'waiting_pay' || order.status === 'pending' || order
+                        .status ===
                         'processing') {
                         const cancelButton = document.createElement('button');
                         cancelButton.type = 'button';
@@ -670,6 +719,7 @@
         formData.append('user_roles', $('#role').val());
         formData.append('_token', '{{ csrf_token() }}');
         formData.append('_method', 'PUT');
+        formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
         const avatarFile = $('#avatar')[0].files[0];
         if (avatarFile) {
             formData.append('avatar', avatarFile);
@@ -711,3 +761,66 @@
         }
     });
 </script>
+<style>
+    .mt-5 {
+        margin-top: 5%;
+    }
+
+    .mt-3 {
+        margin-top: 3%;
+    }
+</style>
+<style>
+    .reset-password-container {
+        max-width: 400px;
+        margin: 100px auto;
+        padding: 20px;
+        background: #fff;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .reset-password-logo {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .reset-password-logo i {
+        font-size: 60px;
+        color: #337ab7;
+    }
+
+    .reset-password-title {
+        text-align: center;
+        margin-bottom: 30px;
+        color: #555;
+    }
+
+    .form-group {
+        margin-bottom: 25px;
+    }
+
+    .reset-password-btn {
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+    }
+
+    .reset-password-footer {
+        margin-top: 20px;
+        text-align: center;
+        color: #777;
+    }
+
+    .reset-password-footer a {
+        color: #337ab7;
+    }
+
+    .has-error .form-control {
+        border-color: #a94442;
+    }
+
+    .help-block {
+        color: #a94442;
+    }
+</style>

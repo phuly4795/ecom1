@@ -54,6 +54,12 @@
             <span>Quản lý đơn hàng</span></a>
     </li>
 
+    <li class="nav-item {{ request()->routeIs('admin.shipping_fees.*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('admin.shipping_fees.index') }}">
+            <i class="fas fa-shopping-cart"></i>
+            <span>Quản lý phí vận chuyển</span></a>
+    </li>
+
     <li class="nav-item {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('admin.coupons.index') }}">
             <i class="fas fa-ticket-alt"></i>
@@ -73,7 +79,12 @@
             <i class="fas fa-users"></i>
             <span>Quản lý liên hệ</span></a>
     </li>
-    
+    <li class="nav-item {{ request()->routeIs('admin.newsletters..*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('admin.newsletters.index') }}">
+            <i class="fas fa-users"></i>
+            <span>Đăng ký nhận tin</span></a>
+    </li>
+
     <hr class="sidebar-divider">
 
     <li class="nav-item {{ request()->routeIs('admin.pages.*') ? 'active' : '' }}">

@@ -11,9 +11,11 @@ use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\ShippingFeeController;
 use App\Http\Controllers\Admin\SubCategoryController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Models\Role;
@@ -22,7 +24,6 @@ Route::middleware('auth', 'verified', 'role:admin')->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-        Route::put('/update-info', [ProfileController::class, 'updateInfo'])->name('profile.updateInfo');
         Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
         Route::get('/dashboard', [HomeController::class, 'index'])->name('dashboard');
         Route::get('/createUserRole', [HomeController::class, 'createCustomer'])->name('createCustomer');
@@ -147,8 +148,25 @@ Route::middleware('auth', 'verified', 'role:admin')->group(function () {
             Route::post('/{id}/mark-as-read', [ContactController::class, 'markAsRead'])->name('markAsRead');
         });
 
+
+        Route::prefix('shipping_fees')->name('shipping_fees.')->group(function () {
+            Route::get('/', [ShippingFeeController::class, 'index'])->name('index');               // Danh sách
+            Route::get('/create', [ShippingFeeController::class, 'create'])->name('create');       // Form thêm mới
+            Route::post('/', [ShippingFeeController::class, 'store'])->name('store');              // Xử lý thêm mới
+            Route::get('/{shippingFee}/edit', [ShippingFeeController::class, 'edit'])->name('edit'); // Form cập nhật
+            Route::put('/{shippingFee}', [ShippingFeeController::class, 'update'])->name('update'); // Xử lý cập nhật
+            Route::delete('/{shippingFee}', [ShippingFeeController::class, 'destroy'])->name('destroy'); // Xóa
+
+            // Import Excel
+            Route::post('/import', [ShippingFeeController::class, 'import'])->name('import');
+        });
+
         Route::prefix('notifications')->name('notifications.')->group(function () {
             Route::get('/{id}/mark-read', [NotificationController::class, 'read'])->name('read');
+        });
+
+        Route::prefix('newsletters')->name('newsletters.')->group(function () {
+            Route::get('/subscribe-newsletter', [NewsletterController::class, 'index'])->name('index');
         });
 
 

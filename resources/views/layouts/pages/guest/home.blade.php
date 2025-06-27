@@ -182,35 +182,33 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="hot-deal">
-                        <ul class="hot-deal-countdown">
+                        <ul class="hot-deal-countdown" id="deal-countdown" data-end="{{ $dealCountdown['end'] }}">
                             <li>
                                 <div>
-                                    <h3>02</h3>
-                                    <span>Days</span>
+                                    <h3 id="deal-days">00</h3><span>Ngày</span>
                                 </div>
                             </li>
                             <li>
                                 <div>
-                                    <h3>10</h3>
-                                    <span>Hours</span>
+                                    <h3 id="deal-hours">00</h3><span>Giờ</span>
                                 </div>
                             </li>
                             <li>
                                 <div>
-                                    <h3>34</h3>
-                                    <span>Mins</span>
+                                    <h3 id="deal-mins">00</h3><span>Phút</span>
                                 </div>
                             </li>
                             <li>
                                 <div>
-                                    <h3>60</h3>
-                                    <span>Secs</span>
+                                    <h3 id="deal-secs">00</h3><span>Giây</span>
                                 </div>
                             </li>
                         </ul>
-                        <h2 class="text-uppercase">hot deal this week</h2>
-                        <p>New Collection Up to 50% OFF</p>
-                        <a class="primary-btn cta-btn" href="#">Shop now</a>
+                        <h2 class="text-uppercase">GIẢM GIÁ CỰC SÂU</h2>
+                        <p>CÁC SẢN PHẨM CÓ THỂ GIẢM GIÁ ĐẾN {{ $dealCountdown['maxDiscount'] }}%</p>
+                        <a class="primary-btn cta-btn"
+                            href="{{ route('category.show', ['slug' => 'khuyen-mai']) }}">MUA
+                            NGAY</a>
                     </div>
                 </div>
             </div>
@@ -546,8 +544,8 @@
                                         <div class="product-img">
                                             @php
                                                 $imageProductmostFavorited =
-                                                    $ProductmostFavorited->productImages->where('type', 1)->first()->image ??
-                                                    '';
+                                                    $ProductmostFavorited->productImages->where('type', 1)->first()
+                                                        ->image ?? '';
                                                 $imagePathProductmostFavorited = $imageProductmostFavorited
                                                     ? asset('storage/' . $imageProductmostFavorited)
                                                     : asset('asset/img/no-image.png');
@@ -562,7 +560,8 @@
                                             @php
                                                 // Chọn item để hiển thị giá: nếu có variant thì dùng variant đầu tiên
                                                 $variantProductmostFavorited = $ProductmostFavorited->productVariants->first();
-                                                $displayProductmostFavorited = $variantProductmostFavorited ?? $ProductmostFavorited;
+                                                $displayProductmostFavorited =
+                                                    $variantProductmostFavorited ?? $ProductmostFavorited;
                                                 $variantProductmostFavorited =
                                                     isset($ProductmostFavorited->productVariants) &&
                                                     $ProductmostFavorited->productVariants != '[]'
@@ -621,10 +620,20 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="newsletter">
-                        <p>Sign Up for the <strong>NEWSLETTER</strong></p>
-                        <form>
-                            <input class="input" type="email" placeholder="Enter Your Email">
-                            <button class="newsletter-btn"><i class="fa fa-envelope"></i> Subscribe</button>
+                        <p>Đăng ký để nhận <strong>TIN MỚI NGAY</strong></p>
+                        @if (session('success'))
+                            <div class="alert alert-success text-center">{{ session('success') }}</div>
+                        @endif
+                        @error('email')
+                            <div class="alert alert-danger text-center">{{ $message }}</div>
+                        @enderror
+                        <form action="{{ route('newsletter.subscribe') }}" method="POST" class="newsletter-form">
+                            @csrf
+                            <input class="input @error('email') is-invalid @enderror" name="email" type="email"
+                                placeholder="Nhập địa chỉ email của bạn" value="{{ old('email') }}">
+
+                            <button class="newsletter-btn" type="submit"><i class="fa fa-envelope"></i> Đăng
+                                ký</button>
                         </form>
                         <ul class="newsletter-follow">
                             <li>
@@ -728,3 +737,54 @@
         });
     });
 </script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const countdownEl = document.getElementById("deal-countdown");
+        if (!countdownEl) return;
+
+        const endTime = new Date(countdownEl.dataset.end).getTime();
+
+        const daysEl = document.getElementById("deal-days");
+        const hoursEl = document.getElementById("deal-hours");
+        const minsEl = document.getElementById("deal-mins");
+        const secsEl = document.getElementById("deal-secs");
+
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const distance = endTime - now;
+
+            if (distance < 0) {
+                daysEl.textContent = "00";
+                hoursEl.textContent = "00";
+                minsEl.textContent = "00";
+                secsEl.textContent = "00";
+                return;
+            }
+
+            const d = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const h = Math.floor((distance / (1000 * 60 * 60)) % 24);
+            const m = Math.floor((distance / 1000 / 60) % 60);
+            const s = Math.floor((distance / 1000) % 60);
+
+            daysEl.textContent = String(d).padStart(2, '0');
+            hoursEl.textContent = String(h).padStart(2, '0');
+            minsEl.textContent = String(m).padStart(2, '0');
+            secsEl.textContent = String(s).padStart(2, '0');
+        }
+
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+    });
+</script>
+@if (session('success') || session('error') || $errors->any())
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const target = document.getElementById("newsletter");
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth'
+                });
+            }
+        });
+    </script>
+@endif

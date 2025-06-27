@@ -9,6 +9,7 @@ use App\Models\Contact;
 use App\Models\FavoriteProduct;
 use App\Models\Notification;
 use App\Models\Page;
+use App\Models\ShippingFee;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\ServiceProvider;
@@ -56,7 +57,7 @@ class AppServiceProvider extends ServiceProvider
                 }
             }
             $discount = auth()->user()->cart->discount_amount ?? 0; // nếu có mã thì tính sau
-            $shippingFee = $countQtyCart > 0 ? 20000 : 0;
+            $shippingFee = $countQtyCart > 0 ? $this->getShippingFee() : 0;
             $totalPrice = max($totalPrice + $shippingFee - $discount, 0);
 
 
@@ -93,5 +94,28 @@ class AppServiceProvider extends ServiceProvider
                 'notificationContacts' => $notificationContacts
             ]);
         });
+    }
+
+    private function getShippingFee()
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return config('settings.default_shipping_fee', 50000); // mặc định nếu chưa đăng nhập
+        }
+
+        $shippingAddress = $user->shippingAddresses->count() === 1
+            ? $user->shippingAddresses->first()
+            : $user->shippingAddresses->firstWhere('is_default', true);
+
+        if (!$shippingAddress) {
+            return config('settings.default_shipping_fee', 50000); // không có địa chỉ => dùng mặc định
+        }
+
+        $fee = ShippingFee::where('province_id', $shippingAddress->province_id)
+            ->where('district_id', $shippingAddress->district_id)
+            ->value('fee');
+
+        return $fee ?? config('settings.default_shipping_fee', 50000);
     }
 }

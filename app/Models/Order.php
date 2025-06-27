@@ -26,6 +26,7 @@ class Order extends Model
         'billing_telephone',
         'payment_method',
         'note',
+        'shipping_fee',
         'total_amount',
         'coupon_code',
         'discount_amount',
@@ -48,7 +49,7 @@ class Order extends Model
     {
         return $this->hasMany(OrderDetail::class);
     }
-    
+
     // Thêm relationship cho địa chỉ thanh toán
     public function billingProvince()
     {

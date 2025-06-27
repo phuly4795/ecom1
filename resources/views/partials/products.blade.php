@@ -1,11 +1,13 @@
 @if (count($products) > 0)
+    @php
+        $isKhuyenMaiPage = $isKhuyenMaiPage ?? false;
+    @endphp
     @foreach ($products as $product)
         <?php
-        $variant = $product->productVariants->first();
+        $variant = $isKhuyenMaiPage ? $product->productVariants->filter(fn($v) => $v->is_on_sale)->first() : $product->productVariants->first();
         $displayItem = $variant ?? $product;
         $variantId = $variant?->id; // Dùng null-safe nếu cần lấy ID
-        $isFavorited = $displayItem->favoritedByUsers->contains(auth()->id()); // luôn check từ $product
-        
+        $isFavorited = $product->favoritedByUsers->contains(auth()->id()); // luôn check từ $product
         ?>
         <div class="col-md-4 col-xs-6">
             <div class="product">
@@ -32,8 +34,10 @@
                     <p class="product-category">
                         {{ $product->category->name ?? 'Không rõ' }}
                     </p>
-                    <h3 class="product-name"><a
-                            href="{{ route('product.show', ['slug' => $product->slug]) }}">{{ Str::limit($product->title, 20, '...') }}</a>
+                    <h3 class="product-name"> <a
+                            href="{{ route('product.show', [$product->slug, $variant?->variant_name]) }}">
+                            {{ Str::limit($product->title, 20, '...') }}
+                        </a>
                     </h3>
                     <h4 class="product-price">
                         @if ($displayItem->is_on_sale)
@@ -73,7 +77,7 @@
                             </button>
                         @endguest
                         <button class="quick-view"
-                            onclick="window.location='{{ route('product.show', ['slug' => $product->slug]) }}'"><i
+                            onclick="window.location='{{ route('product.show', ['slug' => $product->slug, $variant?->variant_name]) }}'"><i
                                 class="fa fa-eye"></i><span class="tooltipp">Xem sản
                                 phẩm</span></button>
                     </div>

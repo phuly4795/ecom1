@@ -13,9 +13,10 @@ class Product extends Model
     use HasFactory, SoftDeletes;
     protected $dates = ['deleted_at'];
     protected $casts = [
-        'specifications' => 'array'
+        'specifications' => 'array',
+        'discount_start_date' => 'datetime',
+        'discount_end_date' => 'datetime',
     ];
-
     protected $fillable = [
         'title',
         'slug',
