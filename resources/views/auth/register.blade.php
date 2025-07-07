@@ -1,6 +1,7 @@
 <x-guest-layout>
+    @section('title', 'Đăng ký')
     <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+    {{-- <x-auth-session-status class="mb-4" :status="session('status')" /> --}}
 
     <div class="container">
         <div class="register-container">

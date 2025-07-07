@@ -50,7 +50,7 @@ class CartController extends Controller
         } else {
             $subtotal = 0;
         }
-        $address = auth()->user()->defaultShippingAddress; // hoặc shippingAddress tùy quan hệ
+        // $address = auth()->user()->defaultShippingAddress; // hoặc shippingAddress tùy quan hệ
 
         $shippingFee = $this->getShippingFee();
         $discount = auth()->user()->cart->discount_amount ?? 0; // nếu có mã thì tính sau
@@ -169,6 +169,10 @@ class CartController extends Controller
 
     public function addToCart(Request $request, $productId)
     {
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('error', 'Bạn cần đăng nhập để mua sản phẩm!');
+        }
+
         $product = Product::with('productVariants')->findOrFail($productId);
         $qty = max(1, (int) $request->input('qty', 1));
         $userId = auth()->check() ? auth()->id() : null;
@@ -267,67 +271,71 @@ class CartController extends Controller
         return view('layouts.pages.guest.checkout', compact('cartItems', 'subtotal', 'shippingFee', 'discount', 'total', 'provinces', 'userInfo', 'cart', 'ShippingAddress'));
     }
 
-    public function updateQty(Request $request, $productId)
-    {
-        $product = Product::findOrFail($productId);
-        $qty = max(1, (int) $request->input('qty', 1)); // Đảm bảo >= 1
-        $userId = auth()->check() ? auth()->id() : null;
-        $sessionId = session()->getId();
-        $productVariantId = $request->input('product_variant_id', null);
-        // 1. Tìm hoặc tạo giỏ hàng của người dùng / khách
-        $cart = Cart::firstOrCreate(
-            ['user_id' => $userId, 'session_id' => $userId ? null : $sessionId]
-        );
-
-        // 2. Kiểm tra sản phẩm đã có trong giỏ chưa
-        $cartDetail = CartDetail::where('cart_id', $cart->id)
-            ->where('product_id', $productId)
-            ->where('product_variant_id', $productVariantId)
-            ->first();
-
-        if ($cartDetail) {
-            // Nếu đã có → tăng số lượng
-            $cartDetail->qty = $cartDetail->qty + $qty;
-            $cartDetail->save();
-        } else {
-            // Nếu chưa có → thêm mới
-            CartDetail::create([
-                'cart_id'    => $cart->id,
-                'product_id' => $productId,
-                'qty'        => $qty,
-                'price'      => $product->price,
-                'product_variant_id' => $productVariantId
-            ]);
-        }
-    }
-
 
     public function updateQuantity(Request $request)
     {
-        $itemId = $request->input('id');
-        $qty = (int) $request->input('qty');
+        try {
+            $itemId = $request->input('id');
+            $qty = (int) $request->input('qty');
+            $productVariantId = $request->input('variant', null);
 
-        // Cập nhật giỏ hàng (nếu bạn dùng một Cart package, ví dụ Gloudemans)
-        $cartItem = CartDetail::find($itemId);
-        if ($cartItem) {
+            $product = Product::with('productVariants')->findOrFail($itemId);
+
+            $variant = $productVariantId
+                ? $product->productVariants->where('id', $productVariantId)->first()
+                : null;
+
+            $availableQty = $variant ? $variant->qty : $product->qty;
+            if ($qty > $availableQty) {
+                return response()->json([
+                    'error' => true,
+                    'message' => "Số lượng sản phẩm vượt quá tồn kho!",
+                    'max_qty' => $availableQty,
+                ]);
+            }
+
+            $user = auth()->user();
+            $cart = $user->cart;
+            $cartItem = $cart->cartDetails()
+                ->where('product_id', $itemId)
+                ->when($productVariantId, fn($q) => $q->where('product_variant_id', $productVariantId))
+                ->first();
+
+            if (!$cartItem) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Không tìm thấy sản phẩm trong giỏ hàng!',
+                ], 404);
+            }
+
             $cartItem->qty = $qty;
             $cartItem->save();
+
+            $cartItems = $cart->cartDetails;
+            $subtotal = $cartItems->sum(fn($item) => $item->final_price * $item->qty);
+            $shippingFee = $this->getShippingFee();
+            $discount = $cart->discount_amount ?? 0;
+            $total = $subtotal + $shippingFee - $discount;
+
+            return response()->json([
+                'success' => true,
+                'item_total' => number_format($cartItem->final_price * $qty),
+                'subtotal' => number_format($subtotal),
+                'total' => number_format($total),
+            ]);
+        } catch (\Throwable $th) {
+            dd($th);
+            // \Log::error('Lỗi khi cập nhật giỏ hàng: ' . $th->getMessage(), [
+            //     'trace' => $th->getTraceAsString()
+            // ]);
+
+            return response()->json([
+                'error' => true,
+                'message' => 'Đã xảy ra lỗi khi cập nhật giỏ hàng. Vui lòng thử lại sau.'
+            ], 500);
         }
-
-        // Tính lại tổng
-        $cartItems = auth()->user()->cart->cartDetails; // Hoặc session-based tùy bạn
-        $subtotal = $cartItems->sum(fn($item) => ($item->final_price) * $item->qty);
-        $shippingFee = $this->getShippingFee();
-        $discount = auth()->user()->cart->discount_amount; // nếu có mã thì tính sau
-        $total = $subtotal + $shippingFee - $discount;
-
-        return response()->json([
-            'success' => true,
-            'item_total' => number_format(($cartItem->final_price) * $qty),
-            'subtotal' => number_format($subtotal),
-            'total' => number_format($total),
-        ]);
     }
+
 
     public function removeCoupon(Request $request)
     {

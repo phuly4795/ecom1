@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\OrdersExport;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
+use Maatwebsite\Excel\Facades\Excel;
 
 class OrderController extends Controller
 {
@@ -159,5 +161,12 @@ class OrderController extends Controller
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Lỗi khi xóa đơn hàng']);
         }
+    }
+
+    public function export(Request $request)
+    {
+        $status = $request->get('status', null);
+
+        return Excel::download(new OrdersExport($status), 'danh_sach_don_hang.xlsx');
     }
 }

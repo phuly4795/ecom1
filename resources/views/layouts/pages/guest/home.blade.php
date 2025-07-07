@@ -54,15 +54,15 @@
                                     data-slidesToScroll="1">
                                     <!-- product -->
                                     @foreach ($productLatest as $item)
+                                        @if (!$item->is_on_track)
+                                            @continue
+                                        @endif
                                         @php
                                             // Chọn item để hiển thị giá: nếu có variant thì dùng variant đầu tiên
-                                            $variant = $item->productVariants->first();
+                                            $variant = $item->productVariants->first(fn($v) => $v->qty > 0);
                                             $displayItem = $variant ?? $item;
-                                            $variant =
-                                                isset($item->productVariants) && $item->productVariants != '[]'
-                                                    ? $item->productVariants->where('product_id', $item->id)->first()
-                                                        ->id
-                                                    : null;
+                                            $variantId = $variant?->id;
+                                            $variantName = $variant?->variant_name;
                                             $isFavorited = $item->favoritedByUsers->contains(auth()->id()); // luôn check từ $product
                                         @endphp
                                         <div class="product">
@@ -93,7 +93,7 @@
                                                     {{ $item->category ? $item->category->name : ($item->subCategory ? $item->subCategory->categories->pluck('name')->implode(', ') : 'Chưa có') }}
                                                 </p>
                                                 <h3 class="product-name"><a
-                                                        href="{{ route('product.show', ['slug' => $item->slug]) }}">{{ Str::limit($item->title, 20, '...') }}</a>
+                                                        href="{{ route('product.show', ['slug' => $item->slug, 'variant' => $variantName]) }}">{{ Str::limit($item->title, 20, '...') }}</a>
                                                 </h3>
                                                 <h4 class="product-price">
                                                     <h4 class="product-price">
@@ -125,7 +125,7 @@
                                                 <div class="product-btns">
                                                     @if (Auth::check())
                                                         <button class="add-to-wishlist" data-id="{{ $item->id }}"
-                                                            data-variant-id="{{ $variant }}">
+                                                            data-variant-id="{{ $variantId }}">
                                                             <i
                                                                 class="fa fa-heart{{ $isFavorited ? '' : '-o' }} wishlist-icon"></i>
                                                             <span
@@ -140,9 +140,10 @@
                                                     @endif
 
                                                     <button class="quick-view"
-                                                        onclick="window.location='{{ route('product.show', ['slug' => $item->slug]) }}'"><i
-                                                            class="fa fa-eye"></i><span class="tooltipp">Xem sản
-                                                            phẩm</span></button>
+                                                        onclick="window.location='{{ route('product.show', ['slug' => $item->slug, 'variant' => $variantName]) }}'">
+                                                        <i class="fa fa-eye"></i>
+                                                        <span class="tooltipp">Xem sản phẩm</span>
+                                                    </button>
                                                 </div>
                                             </div>
                                             <div class="add-to-cart">
@@ -150,10 +151,16 @@
                                                     @csrf
                                                     <input type="hidden" name="qty" value="1">
                                                     <input type="hidden" name="product_variant_id"
-                                                        value="{{ $variant }}">
-                                                    <button type="submit" class="add-to-cart-btn">
-                                                        <i class="fa fa-shopping-cart"></i> Thêm giỏ hàng
-                                                    </button>
+                                                        value="{{ $variantId }}">
+                                                    @if ($displayItem->qty > 0)
+                                                        <button type="submit" class="add-to-cart-btn">
+                                                            <i class="fa fa-shopping-cart"></i> Thêm giỏ hàng
+                                                        </button>
+                                                    @else
+                                                        <button class="add-to-cart-btn " disabled>
+                                                            <i class="fa fa-shopping-cart"></i> Hết hàng
+                                                        </button>
+                                                    @endif
                                                 </form>
                                             </div>
                                         </div>
@@ -242,16 +249,16 @@
                                 <div class="products-slick" data-nav="#slick-nav-2">
                                     <!-- product -->
                                     @foreach ($topSellingProducts as $topSellingProduct)
+                                        @if (!$topSellingProduct->is_on_track)
+                                            @continue
+                                        @endif
                                         @php
-                                            $variant = $topSellingProduct->productVariants->first();
-                                            $displayItem = $variant ?? $topSellingProduct;
-                                            $variant =
-                                                isset($topSellingProduct->productVariants) &&
-                                                $topSellingProduct->productVariants != '[]'
-                                                    ? $topSellingProduct->productVariants
-                                                        ->where('product_id', $topSellingProduct->id)
-                                                        ->first()->id
-                                                    : null;
+                                            $variant = $topSellingProduct->productVariants->first(
+                                                fn($v) => $v->qty > 0,
+                                            );
+                                            $displayItem = $variant ?? $topSellingProduct; // fallback nếu bạn muốn
+                                            $variantId = $variant?->id;
+                                            $variantName = $variant?->variant_name;
                                             $isFavorited = $topSellingProduct->favoritedByUsers->contains(auth()->id()); // luôn check từ $product
                                         @endphp
                                         <div class="product">
@@ -280,7 +287,7 @@
                                                     {{ $topSellingProduct->category ? $topSellingProduct->category->name : ($topSellingProduct->subCategory ? $topSellingProduct->subCategory->categories->pluck('name')->implode(', ') : 'Chưa có') }}
                                                 </p>
                                                 <h3 class="product-name"><a
-                                                        href="{{ route('product.show', ['slug' => $topSellingProduct->slug]) }}">{{ Str::limit($topSellingProduct->title, 20, '...') }}</a>
+                                                        href="{{ route('product.show', ['slug' => $topSellingProduct->slug, 'variant' => $variantName]) }}">{{ Str::limit($topSellingProduct->title, 20, '...') }}</a>
                                                 </h3>
                                                 </h3>
                                                 <h4 class="product-price">
@@ -291,11 +298,13 @@
                                                                 vnđ
                                                             </span>
                                                             <del class="text-muted">
-                                                                {{ number_format($displayItem->original_price) }} vnđ
+                                                                {{ number_format($displayItem->original_price) }}
+                                                                vnđ
                                                             </del>
                                                         @else
                                                             <span>
-                                                                {{ number_format($displayItem->original_price) }} vnđ
+                                                                {{ number_format($displayItem->original_price) }}
+                                                                vnđ
                                                             </span>
                                                         @endif
                                                     </h4>
@@ -313,7 +322,7 @@
                                                     @if (Auth::check())
                                                         <button class="add-to-wishlist"
                                                             data-id="{{ $topSellingProduct->id }}"
-                                                            data-variant-id="{{ $variant }}">
+                                                            data-variant-id="{{ $variantId }}">
                                                             <i
                                                                 class="fa fa-heart{{ $isFavorited ? '' : '-o' }} wishlist-icon"></i>
                                                             <span
@@ -328,9 +337,10 @@
                                                     @endif
 
                                                     <button class="quick-view"
-                                                        onclick="window.location='{{ route('product.show', ['slug' => $topSellingProduct->slug]) }}'"><i
-                                                            class="fa fa-eye"></i><span class="tooltipp">Xem sản
-                                                            phẩm</span></button>
+                                                        onclick="window.location='{{ route('product.show', ['slug' => $topSellingProduct->slug, 'variant' => $variantName]) }}'">
+                                                        <i class="fa fa-eye"></i>
+                                                        <span class="tooltipp">Xem sản phẩm</span>
+                                                    </button>
                                                 </div>
                                             </div>
                                             <div class="add-to-cart">
@@ -339,10 +349,16 @@
                                                     @csrf
                                                     <input type="hidden" name="qty" value="1">
                                                     <input type="hidden" name="product_variant_id"
-                                                        value="{{ $variant }}">
-                                                    <button type="submit" class="add-to-cart-btn">
-                                                        <i class="fa fa-shopping-cart"></i> Thêm giỏ hàng
-                                                    </button>
+                                                        value="{{ $variantId }}">
+                                                    @if ($displayItem->qty > 0)
+                                                        <button type="submit" class="add-to-cart-btn">
+                                                            <i class="fa fa-shopping-cart"></i> Thêm giỏ hàng
+                                                        </button>
+                                                    @else
+                                                        <button class="add-to-cart-btn" disabled>
+                                                            <i class="fa fa-shopping-cart"></i> Hết hàng
+                                                        </button>
+                                                    @endif
                                                 </form>
                                             </div>
                                         </div>
@@ -729,6 +745,15 @@
                         this.querySelector('i').classList.add('fa-heart-o');
                         this.querySelector('.tooltipp').textContent = 'Yêu thích';
                         showAlertModal('Đã xóa yêu thích', 'success');
+                    }
+                    const favoriteCountEl = document.getElementById('favorite-count');
+                    if (favoriteCountEl) {
+                        let count = parseInt(favoriteCountEl.textContent) || 0;
+                        if (data.status === 'added') {
+                            favoriteCountEl.textContent = count + 1;
+                        } else if (data.status === 'removed' && count > 0) {
+                            favoriteCountEl.textContent = count - 1;
+                        }
                     }
                 })
                 .catch(err => {

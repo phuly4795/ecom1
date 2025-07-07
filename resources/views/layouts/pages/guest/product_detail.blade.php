@@ -65,6 +65,11 @@
                 <!-- /Product thumb imgs -->
 
                 <!-- Product details -->
+                <?php
+                $variant = $selectedVariant ?? $product->productVariants->first(); // ✅ Ưu tiên biến thể được chọn
+                $displayItem = $variant ?? $product;
+                $isFavorited = $product->favoritedByUsers->contains(auth()->id()); // luôn check từ $product
+                ?>
                 <div class="col-md-5">
                     <div class="product-details">
                         <h2 class="product-name">{{ $product->title }}</h2>
@@ -113,21 +118,21 @@
                                         <span class="qty-up">+</span>
                                         <span class="qty-down">-</span>
                                     </div>
+                                    <small class="text-danger d-none error-msg" data-id="{{ $product->id }}"></small>
                                 </div>
                                 <input type="hidden" id="product_variant_id" name="product_variant_id">
-                                <button type="submit" class="add-to-cart-btn">
+                                <button type="submit" id="add-to-cart-btn" class="add-to-cart-btn">
                                     <i class="fa fa-shopping-cart"></i> Thêm giỏ hàng
+                                </button>
+                                <button id="add-to-cart-disabled" class="add-to-cart-btn" disabled
+                                    style="display: none;">
+                                    <i class="fa fa-shopping-cart"></i> Hết hàng
                                 </button>
                             </div>
                         </form>
 
                         <ul class="product-btns">
                             @if (Auth::check())
-                                <?php
-                                $variant = $product->productVariants->first();
-                                $displayItem = $variant ?? $product;
-                                $isFavorited = $product->favoritedByUsers->contains(auth()->id()); // luôn check từ $product
-                                ?>
                                 <button class="add-to-wishlist" data-id="{{ $product->id }}" data-variant-id>
                                     <i class="fa fa-heart{{ $isFavorited ? '' : '-o' }} wishlist-icon"></i>
                                     <span class="tooltipp">{{ $isFavorited ? 'Đã yêu thích' : 'Yêu thích' }}</span>
@@ -510,9 +515,15 @@
                                     @csrf
                                     <input type="hidden" name="qty" value="1">
                                     <input type="hidden" name="product_variant_id" value="{{ $variant }}">
-                                    <button type="submit" class="add-to-cart-btn">
-                                        <i class="fa fa-shopping-cart"></i> Thêm giỏ hàng
-                                    </button>
+                                    @if ($displayItem->qty > 0)
+                                        <button type="submit" class="add-to-cart-btn">
+                                            <i class="fa fa-shopping-cart"></i> Thêm giỏ hàng
+                                        </button>
+                                    @else
+                                        <button class="add-to-cart-btn" disabled>
+                                            <i class="fa fa-shopping-cart"></i> Hết hàng
+                                        </button>
+                                    @endif
                                 </form>
                             </div>
                         </div>
@@ -564,26 +575,22 @@
     $('body').tooltip({
         selector: '[data-toggle="tooltip"]'
     });
+
     $(document).ready(function() {
         $('.review-link').click(function(e) {
             e.preventDefault();
-
-            var tabId = $(this).attr('href');
-            var $tabLink = $('a[href="' + tabId + '"]');
-
-            // Kích hoạt tab (nếu đang ẩn)
+            const tabId = $(this).attr('href');
+            const $tabLink = $('a[href="' + tabId + '"]');
             $tabLink.tab('show');
 
-            // Cuộn mượt đến tab
             setTimeout(function() {
                 $('html, body').animate({
-                    scrollTop: $(tabId).offset().top - 100 // trừ header nếu có
+                    scrollTop: $(tabId).offset().top - 100
                 }, 600);
-            }, 200); // Delay một chút để tab hiển thị xong
+            }, 200);
         });
     });
-</script>
-<script>
+
     function changeVariant(select) {
         const selectedOption = select.options[select.selectedIndex];
         const url = selectedOption.value;
@@ -591,51 +598,54 @@
         const originalPrice = parseFloat(selectedOption.getAttribute('data-original-price'));
         const discountPercentage = parseFloat(selectedOption.getAttribute('data-discount-percentage'));
         const qty = parseInt(selectedOption.getAttribute('data-qty'));
-
-        // Lấy ngày bắt đầu và kết thúc khuyến mãi (nếu có)
         const saleStartStr = selectedOption.getAttribute('data-sale-start');
         const saleEndStr = selectedOption.getAttribute('data-sale-end');
-        const VariantId1 = selectedOption.getAttribute('data-variant-id');
+        const addToCartBtn = document.getElementById('add-to-cart-btn');
+        const addToCartDisabled = document.getElementById('add-to-cart-disabled');
+
+        if (qty > 0) {
+            addToCartBtn.style.display = 'inline-block';
+            addToCartDisabled.style.display = 'none';
+        } else {
+            addToCartBtn.style.display = 'none';
+            addToCartDisabled.style.display = 'inline-block';
+        }
+
         const wishlistButton = document.querySelector('.add-to-wishlist');
         if (wishlistButton) {
             wishlistButton.setAttribute('data-variant-id', variantId);
         }
-        const now = new Date();
 
         let isOnSale = false;
+        const now = new Date();
         if (discountPercentage > 0 && saleStartStr && saleEndStr) {
             const saleStart = new Date(saleStartStr);
             const saleEnd = new Date(saleEndStr);
-            // Kiểm tra nếu now nằm trong khoảng saleStart đến saleEnd (bao gồm cả 2 đầu)
             isOnSale = now >= saleStart && now <= saleEnd;
         }
 
-        // Tính finalPrice dựa trên isOnSale
         const finalPrice = isOnSale ?
             Math.round(originalPrice * (1 - discountPercentage / 100)) :
             originalPrice;
 
-        // Cập nhật giá
         const priceElement = document.getElementById('product-price');
         priceElement.innerHTML = `<span class="text-danger fw-bold">${numberFormat(finalPrice)} vnđ</span>`;
 
-        if (isOnSale && originalPrice != finalPrice) {
+        if (isOnSale && originalPrice !== finalPrice) {
             priceElement.innerHTML += ` <del class="text-muted">${numberFormat(originalPrice)} vnđ</del>`;
             priceElement.innerHTML +=
                 ` <span class="discount-label" style="color: red; font-weight: bold; margin-left: 10px;">Giảm ${discountPercentage}%</span>`;
         }
 
-        // Cập nhật URL
-        window.history.pushState({}, document.title, url);
-
-        // Cập nhật số lượng
         const qtyInput = document.getElementById('product-qty');
         const availabilityElement = document.getElementById('product-availability');
         qtyInput.setAttribute('max', qty);
         qtyInput.value = Math.min(qtyInput.value, qty);
-        const productVariantId = document.getElementById('product_variant_id');
-        productVariantId.value = variantId;
+        document.getElementById('product_variant_id').value = variantId;
         availabilityElement.textContent = qty > 0 ? 'Còn hàng' : 'Hết hàng';
+
+        // Cập nhật URL để giữ variant_name
+        window.history.replaceState({}, document.title, url);
     }
 
     function numberFormat(number) {
@@ -644,32 +654,45 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         const select = document.getElementById('variant-select');
-        if (select && select.value) {
-            changeVariant(select);
+
+        // 🔍 Tìm variant_name từ URL segment cuối
+        const pathSegments = decodeURIComponent(window.location.pathname).split('/');
+        const variantNameFromUrl = pathSegments[pathSegments.length - 1];
+
+        if (select && variantNameFromUrl) {
+            const matchingOption = Array.from(select.options).find(opt => {
+                return opt.textContent.trim() === variantNameFromUrl;
+            });
+
+            if (matchingOption) {
+                select.value = matchingOption.value;
+                changeVariant(select);
+            } else {
+                // Nếu không khớp thì fallback: chọn option đầu
+                changeVariant(select);
+            }
         }
 
-        // Xử lý nút tăng/giảm số lượng
+        // Tăng/giảm số lượng
         const qtyUp = document.querySelector('.qty-up');
         const qtyDown = document.querySelector('.qty-down');
         const qtyInput = document.getElementById('product-qty');
-        const maxQty = qtyInput.getAttribute('max');
 
-        qtyUp.addEventListener('click', function() {
+        qtyUp?.addEventListener('click', function() {
+            const maxQty = parseInt(qtyInput.getAttribute('max'));
             let value = parseInt(qtyInput.value);
             if (value < maxQty) qtyInput.value = value + 1;
         });
 
-        qtyDown.addEventListener('click', function() {
+        qtyDown?.addEventListener('click', function() {
             let value = parseInt(qtyInput.value);
             if (value > 1) qtyInput.value = value - 1;
         });
     });
-</script>
-<script>
+
     document.querySelectorAll('.add-to-wishlist').forEach(button => {
         button.addEventListener('click', function(e) {
             e.preventDefault();
-
             const productId = this.dataset.id;
             const variantId = this.dataset.variantId;
 
@@ -701,6 +724,15 @@
                         this.querySelector('i').classList.add('fa-heart-o');
                         this.querySelector('.tooltipp').textContent = 'Yêu thích';
                         showAlertModal('Đã xóa yêu thích', 'success');
+                    }
+                    const favoriteCountEl = document.getElementById('favorite-count');
+                    if (favoriteCountEl) {
+                        let count = parseInt(favoriteCountEl.textContent) || 0;
+                        if (data.status === 'added') {
+                            favoriteCountEl.textContent = count + 1;
+                        } else if (data.status === 'removed' && count > 0) {
+                            favoriteCountEl.textContent = count - 1;
+                        }
                     }
                 })
                 .catch(err => {

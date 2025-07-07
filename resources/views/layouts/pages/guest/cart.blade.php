@@ -82,16 +82,18 @@
                                 <div class="col-sm-2 col-xs-12 text-center">
                                     <div class="input-group input-group-sm quantity-control">
                                         <span class="input-group-btn">
-                                            <button class="btn btn-default decrement"
-                                                data-id="{{ $item->id }}">-</button>
+                                            <button class="btn btn-default decrement" data-id="{{ $item->product_id }}"
+                                                data-variant-id="{{ isset($item->productVariant) ? $item->productVariant->id : null }}">-</button>
                                         </span>
                                         <input type="number" min="1" value="{{ $item->qty }}"
-                                            class="form-control text-center qty-input" data-id="{{ $item->id }}">
+                                            class="form-control text-center qty-input" data-id="{{ $item->product_id }}"
+                                            data-variant-id="{{ isset($item->productVariant) ? $item->productVariant->id : null }}">
                                         <span class="input-group-btn">
-                                            <button class="btn btn-default increment"
-                                                data-id="{{ $item->id }}">+</button>
+                                            <button class="btn btn-default increment" data-id="{{ $item->product_id }}"
+                                                data-variant-id="{{ isset($item->productVariant) ? $item->productVariant->id : null }}">+</button>
                                         </span>
                                     </div>
+                                    <small class="text-danger d-none error-msg" data-id="{{ $item->product_id }}"></small>
                                 </div>
                                 <div class="col-sm-2 col-xs-12 text-center">
                                     <p class="item-total">
@@ -336,7 +338,7 @@
 <script>
     const updateTimeouts = {}; // Tạm lưu timeout cho từng sản phẩm
 
-    function updateCartQuantity(id, qty) {
+    function updateCartQuantity(id, variant, qty) {
         if (qty < 1) qty = 1;
 
         // Nếu đã có timeout trước đó thì clear để reset
@@ -346,41 +348,72 @@
 
         // Đặt lại timeout sau 500ms mới gọi API
         updateTimeouts[id] = setTimeout(() => {
+            const bodyData = {
+                id,
+                qty
+            };
+
+            // Chỉ thêm variant nếu có
+            if (variant) {
+                bodyData.variant = variant;
+            }
+
             fetch('{{ route('cart.updateQuantity') }}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
-                    body: JSON.stringify({
-                        id,
-                        qty
-                    })
+                    body: JSON.stringify(bodyData)
                 })
                 .then(res => res.json())
                 .then(data => {
-                    if (data.success) {
-                        const itemTotal = document.querySelector(`.qty-input[data-id="${id}"]`)
-                            .closest('.cart-item')
-                            .querySelector('.item-total');
-                        itemTotal.textContent = `${data.item_total} vnđ`;
+                    const input = document.querySelector(`.qty-input[data-id="${id}"]`);
+                    const errorMsg = document.querySelector(`.error-msg[data-id="${id}"]`);
 
-                        document.querySelector('.summary-row:nth-child(1) .text-right')
-                            .textContent = `${data.subtotal} vnđ`;
-                        document.querySelector('.summary-row.total .text-right')
-                            .textContent = `${data.total} vnđ`;
+                    if (data.error) {
+                        input.classList.add('is-invalid');
+
+                        if (data.max_qty) {
+                            input.value = data.max_qty;
+                        }
+
+                        if (errorMsg) {
+                            errorMsg.textContent = data.message;
+                            errorMsg.classList.remove('d-none');
+                        }
+
+                        return;
                     }
+
+                    input.classList.remove('is-invalid');
+                    if (errorMsg) {
+                        errorMsg.textContent = '';
+                        errorMsg.classList.add('d-none');
+                    }
+
+                    const itemTotal = input.closest('.cart-item').querySelector('.item-total');
+                    itemTotal.textContent = `${data.item_total} vnđ`;
+
+                    document.querySelector('.summary-row:nth-child(1) .text-right')
+                        .textContent = `${data.subtotal} vnđ`;
+                    document.querySelector('.summary-row.total .text-right')
+                        .textContent = `${data.total} vnđ`;
                 });
-        }, 500); // Gửi request sau 500ms nếu không có thao tác mới
+        }, 500);
     }
+
 
     // Nút tăng
     document.querySelectorAll('.increment').forEach(button => {
         button.addEventListener('click', function() {
             const id = this.dataset.id;
+            const variant = this.dataset.variantId;
+
             const input = document.querySelector(`.qty-input[data-id="${id}"]`);
             input.value = parseInt(input.value) + 1;
-            updateCartQuantity(id, input.value);
+
+            updateCartQuantity(id, variant, input.value);
         });
     });
 
@@ -388,9 +421,12 @@
     document.querySelectorAll('.decrement').forEach(button => {
         button.addEventListener('click', function() {
             const id = this.dataset.id;
+            const variant = this.dataset.variantId;
+
             const input = document.querySelector(`.qty-input[data-id="${id}"]`);
             input.value = Math.max(1, parseInt(input.value) - 1);
-            updateCartQuantity(id, input.value);
+
+            updateCartQuantity(id, variant, input.value);
         });
     });
 
@@ -398,8 +434,10 @@
     document.querySelectorAll('.qty-input').forEach(input => {
         input.addEventListener('change', function() {
             const id = this.dataset.id;
+            const variant = this.dataset.variantId;
+
             this.value = Math.max(1, parseInt(this.value));
-            updateCartQuantity(id, this.value);
+            updateCartQuantity(id, variant, this.value);
         });
     });
     // Tự động ẩn alert 
@@ -410,7 +448,7 @@
             alert.style.opacity = 0;
             setTimeout(() => alert.remove(), 500);
         }
-    }, 3000); // 3 giây
+    }, 6000); // 3 giây
     $('body').tooltip({
         selector: '[data-toggle="tooltip"]'
     });

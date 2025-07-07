@@ -7,7 +7,7 @@
                 </li>
                 <li><a href="mailto:{{ \App\Models\Setting::get('contact_email') }}"><i class="fa fa-envelope-o"></i>
                         {{ \App\Models\Setting::get('contact_email') }}</a></li>
-                <li><a href="#"><i class="fa fa-map-marker"></i>  {{ \App\Models\Setting::get('address') }}</a></li>
+                <li><a href="#"><i class="fa fa-map-marker"></i> {{ \App\Models\Setting::get('address') }}</a></li>
             </ul>
             <ul class="header-links pull-right"
                 style="list-style: none; display: flex; align-items: center; padding: 0; margin: 0;">
@@ -100,7 +100,7 @@
                             <a href="{{ route('favorites.index') }}">
                                 <i class="fa fa-heart-o"></i>
                                 <span>Yêu thích</span>
-                                <div class="qty">{{ $countFavoriteProduct }}</div>
+                                <div class="qty" id="favorite-count">{{ $countFavoriteProduct }}</div>
                             </a>
                         </div>
                         <!-- /Wishlist -->

@@ -97,6 +97,7 @@ class Product extends Model
             && now()->between($this->discount_start_date, $this->discount_end_date);
     }
 
+
     public function getDisplayPriceAttribute()
     {
         return $this->is_on_sale
@@ -112,5 +113,24 @@ class Product extends Model
     public function wishlists()
     {
         return $this->hasMany(FavoriteProduct::class, 'product_id');
+    }
+
+    public function productVariantsOnTrack()
+    {
+        return $this->hasMany(ProductVariant::class)->where('qty', '>', 0);
+    }
+
+    public function scopeOnTrack($query)
+    {
+        return $query->where('qty', '>', 0);
+    }
+
+    public function getIsOnTrackAttribute()
+    {
+        if ($this->productVariants->count() > 0) {
+            return $this->productVariants->contains(fn($v) => $v->qty > 0);
+        }
+
+        return $this->qty > 0;
     }
 }

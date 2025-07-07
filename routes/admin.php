@@ -93,12 +93,14 @@ Route::middleware('auth', 'verified', 'role:admin')->group(function () {
         });
 
         Route::prefix('order')->name('orders.')->group(function () {
-            Route::get('', [OrderController::class, 'index'])->name('index');
+            Route::get('/', [OrderController::class, 'index'])->name('index');
+            Route::get('/export', [OrderController::class, 'export'])->name('export');
             Route::get('/data', [OrderController::class, 'getData'])->name('data');
             Route::get('/{id}', [OrderController::class, 'show'])->name('show');
             Route::get('/{id}/edit', [OrderController::class, 'edit'])->name('edit');
             Route::put('/{id}', [OrderController::class, 'update'])->name('update');
             Route::delete('/mass-destroy', [OrderController::class, 'massDestroy'])->name('massDestroy');
+
             Route::delete('/{id}', [OrderController::class, 'destroy'])->name('destroy');
         });
 

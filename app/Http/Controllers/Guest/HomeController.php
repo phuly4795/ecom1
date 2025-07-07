@@ -19,18 +19,18 @@ class HomeController extends Controller
     {
         $collectionCategory = Category::orderBy('sort', 'asc')->take(3)->get();
         $categories = Category::orderBy('name', 'asc')->get();
-        $productLatest = Product::with('productImages', 'favoritedByUsers')
+        $productLatest = Product::with(['productImages', 'favoritedByUsers', 'productVariants'])
             ->where('is_featured', 'yes')
             ->latest()
             ->take(5)
             ->get();
 
-        $topSellingProducts = Product::with('category')
+        $topSellingProducts = Product::with('category', 'productVariants')
             ->withCount('orderItems')
             ->orderByDesc('order_items_count')
             ->take(9)
             ->get();
-
+            
         $mostFavorited = Product::with('category')
             ->withCount('wishlists')
             ->orderByDesc('wishlists_count')
@@ -47,8 +47,8 @@ class HomeController extends Controller
 
 
         // Lấy tất cả sản phẩm đang khuyến mãi
-        $products = Product::all()->filter(fn($p) => $p->is_on_sale);
-        $variants = ProductVariant::all()->filter(fn($v) => $v->is_on_sale);
+        $products = Product::onTrack()->get()->filter(fn($p) => $p->is_on_sale);
+        $variants = ProductVariant::onTrack()->get()->filter(fn($v) => $v->is_on_sale);
 
         $startTimes = $products->pluck('discount_start_date')->merge($variants->pluck('discount_start_date'))->filter();
         $endTimes = $products->pluck('discount_end_date')->merge($variants->pluck('discount_end_date'))->filter();

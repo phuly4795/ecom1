@@ -41,7 +41,6 @@
     <script>
         dayjs.extend(dayjs_plugin_relativeTime);
         dayjs.locale('vi');
-        console.log(dayjs().fromNow()); // "vài giây trước"
     </script>
     <script>
         let originalTitle = document.title;
@@ -69,11 +68,11 @@
                                 </div>
                             </a>
                         `;
-                        document.getElementById('messages-list').insertAdjacentHTML('afterbegin', html);
 
 
                         const list = document.getElementById('messages-list');
                         if (list.querySelector('p')) list.innerHTML = '';
+
                         list.insertAdjacentHTML('afterbegin', html);
 
                         const badge = document.getElementById('messages-count');
@@ -115,6 +114,12 @@
                 <i class="fas fa-clock text-white"></i>
             </div>`;
                                 break;
+                            case 'low-stock':
+                                iconHtml = `
+            <div class="icon-circle bg-warning">
+                <i class="fas fa-clock text-white"></i>
+            </div>`;
+                                break;
                             default:
                                 iconHtml = `
             <div class="icon-circle bg-secondary">
@@ -123,7 +128,7 @@
                         }
 
                         let href = '/admin/dashboard';
-                        if (notification.type === 'new-order') href = `/admin/orders/${$notification.id}`;
+                        if (notification.type === 'new-order') href = `/admin/orders/${notification.id}`;
                         else if (notification.type === 'paymented') href = `/admin/orders?status=paid`;
                         else if (notification.type === 'new-user') href = `/admin/users`;
                         else if (notification.type === 'promotion-expire') href =
@@ -137,13 +142,11 @@
                                 </div>
                                 <div>
                                     <div class="small text-gray-500">${dayjs().fromNow()}</div>
-                                    <span class="font-weight-bold">Liên hệ mới từ ${notification.title}</span>
+                                    <span class="font-weight-bold">${notification.title}</span>
                                     <div>${notification.message.substring(0, 50)}...</div>
                                 </div>
                             </a>
                         `;
-                        document.getElementById('messages-list-alert').insertAdjacentHTML('afterbegin', html);
-
 
                         const list = document.getElementById('messages-list-alert');
                         if (list.querySelector('p')) list.innerHTML = '';

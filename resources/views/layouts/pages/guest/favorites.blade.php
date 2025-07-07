@@ -94,9 +94,15 @@
                                 <input type="hidden" name="qty" value="1">
                                 <input type="hidden" name="product_variant_id"
                                     value="{{ $favorite->products->productVariants->first()->id ?? '' }}">
-                                <button type="submit" class="add-to-cart-btn">
-                                    <i class="fa fa-shopping-cart"></i> Thêm giỏ hàng
-                                </button>
+                                @if ($displayItem->qty > 0)
+                                    <button type="submit" class="add-to-cart-btn">
+                                        <i class="fa fa-shopping-cart"></i> Thêm giỏ hàng
+                                    </button>
+                                @else
+                                    <button class="add-to-cart-btn" disabled>
+                                        <i class="fa fa-shopping-cart"></i> Hết hàng
+                                    </button>
+                                @endif
                             </form>
                         </div>
                     </div>
@@ -247,6 +253,15 @@
                         setTimeout(() => {
                             location.reload(); // ✅ Reload sau khi bỏ yêu thích
                         }, 800); // Delay nhẹ để người dùng thấy thông báo
+                    }
+                    const favoriteCountEl = document.getElementById('favorite-count');
+                    if (favoriteCountEl) {
+                        let count = parseInt(favoriteCountEl.textContent) || 0;
+                        if (data.status === 'added') {
+                            favoriteCountEl.textContent = count + 1;
+                        } else if (data.status === 'removed' && count > 0) {
+                            favoriteCountEl.textContent = count - 1;
+                        }
                     }
                 })
                 .catch(err => {

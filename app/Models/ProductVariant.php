@@ -55,4 +55,9 @@ class ProductVariant extends Model
             ? round($this->original_price * (1 - $this->discount_percentage / 100))
             : $this->original_price;
     }
+    
+    public function scopeOnTrack($query)
+    {
+        return $query->where('qty', '>', 0);
+    }
 }

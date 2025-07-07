@@ -10,6 +10,7 @@ use App\Models\Coupon;
 use App\Models\Notification;
 use App\Models\Order;
 use App\Models\OrderDetail;
+use App\Models\Product;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 use App\Models\ShippingAddress;
@@ -40,6 +41,8 @@ class CheckoutController extends Controller
             'shipping_province_id' => 'required_if:use_new_shipping_address,on|exists:provinces,code|nullable',
             'shipping_district_id' => 'required_if:use_new_shipping_address,on|exists:districts,code|nullable',
             'shipping_ward_id' => 'required_if:use_new_shipping_address,on|exists:wards,code|nullable',
+        ], [
+            'terms.accepted' => "Bạn cần đọc điều khoản và điều kiện"
         ]);
 
         $user = Auth::user();
@@ -48,7 +51,23 @@ class CheckoutController extends Controller
             : Cart::with('cartDetails.product')->where('session_id', Session::getId())->first();
 
         if (!$cart || $cart->cartDetails->isEmpty()) {
-            return redirect()->back()->with('error', 'Giỏ hàng của bạn đang trống.');
+            return redirect()->route('cart.show')->with('error', 'Giỏ hàng của bạn đang trống.');
+        }
+        foreach ($cart->cartDetails as $item) {
+            $product = Product::with('productVariants')->find($item->product_id);
+
+            if (!$product) {
+                return redirect()->route('cart.show')->with('error', "Sản phẩm không tồn tại trong hệ thống.");
+            }
+            $variant = $item->product_variant_id
+                ? $product->productVariants->where('id', $item->product_variant_id)->first()
+                : null;
+
+            $availableQty = $variant ? $variant->qty : $product->qty;
+
+            if ($item->qty > $availableQty) {
+                return redirect()->route('cart.show')->with('error', "Sản phẩm \"{$product->title}\" chỉ còn lại {$availableQty} sản phẩm. Vui lòng điều chỉnh số lượng.");
+            }
         }
 
         DB::beginTransaction();
@@ -129,6 +148,24 @@ class CheckoutController extends Controller
             $cart->cartDetails()->delete();
             $cart->delete();
 
+            foreach ($order->orderDetails as $item) {
+                $variant = $item->product->productVariants->first();
+                $displayItem = $variant ?? $item->product;
+                $product = $displayItem;
+                $product->qty -= $item->quantity;
+                $product->save();
+
+                if ($product && $product->qty <= 5) {
+                    $notification = Notification::create([
+                        'type' => 'low-stock',
+                        'title' => 'Sản phẩm sắp hết hàng',
+                        'message' => 'Sản phẩm ' . $item->product_name . ' chỉ còn lại ' . $product->qty . ' sản phẩm trong kho.',
+                        'reference_id' => $product->id
+                    ]);
+                    event(new NewNotification($notification));
+                }
+            }
+
             $notification = Notification::create([
                 'type' => 'new-order',
                 'title' => 'Đơn hàng mới',
@@ -138,15 +175,16 @@ class CheckoutController extends Controller
 
             event(new NewNotification($notification));
             // Gửi email xác nhận đơn hàng
-            if ($order->billing_email) {
-                NotificationFacade::route('mail', $order->billing_email)
-                    ->notify(new OrderPlacedNotification($order));
-            }
+            // if ($order->billing_email) {
+            //     NotificationFacade::route('mail', $order->billing_email)
+            //         ->notify(new OrderPlacedNotification($order));
+            // }
             DB::commit();
 
             return redirect()->route('checkout.thankyou')->with('success', 'Đặt hàng thành công!');
         } catch (\Exception $e) {
             DB::rollBack();
+            dd($e);
             return redirect()->back()->with('error', 'Lỗi khi đặt hàng: ' . $e->getMessage());
         }
     }

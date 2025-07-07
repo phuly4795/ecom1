@@ -16,6 +16,8 @@ class ProductDetailController extends Controller
         $productDetail = Product::with(['productImages', 'brand', 'reviews', 'productVariants'])->where('slug', $slug)->firstOrFail();
 
         $selectedVariant = null;
+        $isDiscountActive = false;
+
         if ($variant) {
             $selectedVariant = $productDetail->productVariants
                 ->firstWhere('variant_name', $variant);
@@ -41,18 +43,19 @@ class ProductDetailController extends Controller
         }
         unset($value); // Unset reference để tránh lỗi
 
-        $selectedVariant = null;
-        $isDiscountActive = false;
         if ($variant) {
-            $selectedVariant = $productDetail->productVariants->firstWhere('variant_name', str_replace('-', ' ', $variant));
+            $selectedVariant = $productDetail->productVariants
+                ->firstWhere('variant_name', $variant);
+
             if ($selectedVariant) {
                 $currentDate = Carbon::now();
                 $startDate = $selectedVariant->discount_start_date ? Carbon::parse($selectedVariant->discount_start_date) : null;
                 $endDate = $selectedVariant->discount_end_date ? Carbon::parse($selectedVariant->discount_end_date) : null;
+
                 $isDiscountActive = $selectedVariant->discounted_price && $startDate && $endDate && $currentDate->between($startDate, $endDate);
             }
         }
-
+        // dd($selectedVariant, $variant);
 
         $reviews = Review::where('product_id', $productDetail->id)
             ->orderByDesc('created_at')

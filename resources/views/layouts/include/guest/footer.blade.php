@@ -54,7 +54,7 @@
 
                  <div class="col-md-3 col-xs-6">
                      <div class="footer">
-                         <h3 class="footer-title">Service</h3>
+                         <h3 class="footer-title">Các dịch vụ</h3>
                          <ul class="footer-links">
                              <li><a href="{{ route('my.account') }}">Hồ sơ cá nhân</a></li>
                              <li><a href="{{ route('cart.show') }}">Giỏ hàng</a></li>

@@ -45,7 +45,7 @@ Route::prefix('product')->name('product.')->group(function () {
 Route::prefix('cart')->name('cart.')->group(function () {
     Route::get('/', [CartController::class, 'index'])->name('show');
     Route::post('/add/{productId}', [CartController::class, 'addToCart'])->name('add');
-    Route::post('/updateQty', [CartController::class, 'updateQty'])->name('updateQty');
+    // Route::post('/updateQty', [CartController::class, 'updateQty'])->name('updateQty');
     Route::delete('/remove/{productId}/{productVariantId?}', [CartController::class, 'remove'])->name('remove');
     Route::post('/apply-coupon', [CartController::class, 'applyCoupon'])->name('applyCoupon');
     Route::get('/checkout', [CartController::class, 'checkout'])->name('checkout');
@@ -72,7 +72,7 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/districts/{provinceId}', [LocationController::class, 'getDistricts'])->name('getDistricts');
 Route::get('/wards/{districtId}', [LocationController::class, 'getWards'])->name('getWards');
 Route::get('/search-products', [ProductController::class, 'search']);
-Route::post('/lien-he', [HomeController::class, 'storeContact']);
+Route::post('/lien-he', [HomeController::class, 'storeContact'])->middleware('throttle:3,1');
 Route::put('/update-info', [ProfileController::class, 'updateInfo'])->name('admin.profile.updateInfo');
 
 Route::post('/subscribe-newsletter', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe')->middleware('throttle:3,1'); // Tối đa 3 lần/phút;;

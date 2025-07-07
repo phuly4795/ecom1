@@ -72,10 +72,12 @@
                                 $href = '/admin/users';
                             } elseif ($notification->type == 'promotion-expire') {
                                 $href = '/admin/coupons';
+                            } elseif ($notification->type == 'low-stock') {
+                                $href = '/admin/product/' . $notification->reference_id . '/edit';
                             }
                             ?>
-                            <a class="dropdown-item d-flex align-items-center notification-link" href="{{ $href }}"
-                                data-id="{{ $notification->id }}">
+                            <a class="dropdown-item d-flex align-items-center notification-link"
+                                href="{{ $href }}" data-id="{{ $notification->id }}">
                                 <div class="mr-3">
                                     @switch($notification->type)
                                         @case('new-order')
@@ -102,10 +104,14 @@
                                             </div>
                                         @break
 
+                                        @case('low-stock')
+                                            <div class="icon-circle bg-warning">
+                                                <i class="fas fa-clock text-white"></i>
+                                            </div>
+                                        @break
+
                                         @default
                                     @endswitch
-
-
                                 </div>
                                 <div>
                                     <div class="small text-gray-500">

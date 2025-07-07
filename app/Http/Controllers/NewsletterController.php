@@ -10,8 +10,12 @@ use Illuminate\Support\Facades\Mail;
 class NewsletterController extends Controller
 {
 
-    public function index() {
-        
+    public function index()
+    {
+        $getAll = Newsletter::all();
+        return view('layouts.pages.admin.newsletter.index', compact(
+            'getAll'
+        ));
     }
 
     public function subscribe(Request $request)

@@ -1,6 +1,7 @@
 <x-guest-layout>
+    @section('title', 'Đăng nhập')
     <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+    {{-- <x-auth-session-status class="mb-4" :status="session('status')" /> --}}
 
     <div class="container">
         <div class="login-container">
@@ -13,6 +14,12 @@
             @if (session('status'))
                 <div class="alert alert-success">
                     {{ session('status') }}
+                </div>
+            @endif
+            
+            @if (session('error'))
+                <div class="alert alert-danger">
+                    {{ session('error') }}
                 </div>
             @endif
 

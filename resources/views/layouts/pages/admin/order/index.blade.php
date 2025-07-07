@@ -19,6 +19,11 @@
                         <span><i class="fa-solid fa-eraser"></i> Xóa đơn hàng</span>
                     </button>
                 </div>
+                <div class="btn-group mb-3">
+                    <a id="exportBtn" href="#" class="btn btn-success">
+                        <i class="fas fa-file-excel"></i> Xuất Excel
+                    </a>
+                </div>
             </div>
         </div>
         <div class="card shadow">
@@ -43,165 +48,181 @@
             </div>
         </div>
     </div>
-    @push('scripts')
-        <script>
-            $(document).ready(function() {
-                var table = $('#orders-table').DataTable({
-                    processing: true,
-                    serverSide: true,
-                    ajax: {
-                        url: "{{ route('admin.orders.data') }}",
-                        type: 'GET',
-                        data: function(d) {
-                            d.status = $('#statusFilter').val();
-                        }
-                    },
-                    columns: [{
-                            data: 'checkbox',
-                            name: 'checkbox',
-                            orderable: false,
-                            searchable: false,
-                            className: 'text-center'
-                        },
-                        {
-                            data: 'order_code',
-                            name: 'order_code'
-                        },
-                        {
-                            data: 'customer',
-                            name: 'customer'
-                        },
-                        {
-                            data: 'total_items',
-                            name: 'total_items',
-                            width: '10%',
-                            className: 'text-center'
-                        },
-                        {
-                            data: 'total_amount',
-                            name: 'total_amount'
-                        },
-                        {
-                            data: 'payment_method',
-                            name: 'payment_method',
-                            width: '10%',
-                        },
-                        {
-                            data: 'status',
-                            name: 'status',
-                            className: 'text-center'
-                        },
-                        {
-                            data: 'created_at',
-                            name: 'created_at'
-                        },
-                        {
-                            data: 'actions',
-                            name: 'actions',
-                            orderable: false,
-                            searchable: false,
-                            className: 'text-center'
-                        }
-                    ],
-                    language: {
-                        url: '//cdn.datatables.net/plug-ins/1.13.1/i18n/vi.json'
-                    },
-                    order: [
-                        [8, 'desc']
-                    ], // Cột "Ngày tạo" giờ là cột thứ 8 (0-based index)
-                    responsive: true,
-                    autoWidth: false
-                });
 
-                $('#statusFilter').on('change', function() {
-                    table.draw();
-                });
-
-                $('body').tooltip({
-                    selector: '[data-toggle="tooltip"]'
-                });
-
-                $('#select-all').click(function() {
-                    $('.row-checkbox').prop('checked', this.checked);
-                    toggleBulkActions();
-                });
-
-                $(document).on('change', '.row-checkbox', function() {
-                    var allChecked = $('.row-checkbox:checked').length === $('.row-checkbox').length;
-                    $('#select-all').prop('checked', allChecked);
-                    toggleBulkActions();
-                });
-
-                function toggleBulkActions() {
-                    if ($('.row-checkbox:checked').length > 0) {
-                        $('#bulk-delete').show();
-                    } else {
-                        $('#bulk-delete').hide();
+    <script>
+        $(document).ready(function() {
+            var table = $('#orders-table').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: "{{ route('admin.orders.data') }}",
+                    type: 'GET',
+                    data: function(d) {
+                        d.status = $('#statusFilter').val();
                     }
+                },
+                columns: [{
+                        data: 'checkbox',
+                        name: 'checkbox',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center'
+                    },
+                    {
+                        data: 'order_code',
+                        name: 'order_code'
+                    },
+                    {
+                        data: 'customer',
+                        name: 'customer'
+                    },
+                    {
+                        data: 'total_items',
+                        name: 'total_items',
+                        width: '10%',
+                        className: 'text-center'
+                    },
+                    {
+                        data: 'total_amount',
+                        name: 'total_amount'
+                    },
+                    {
+                        data: 'payment_method',
+                        name: 'payment_method',
+                        width: '10%',
+                    },
+                    {
+                        data: 'status',
+                        name: 'status',
+                        className: 'text-center'
+                    },
+                    {
+                        data: 'created_at',
+                        name: 'created_at'
+                    },
+                    {
+                        data: 'actions',
+                        name: 'actions',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center'
+                    }
+                ],
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.1/i18n/vi.json'
+                },
+                order: [
+                    [8, 'desc']
+                ], // Cột "Ngày tạo" giờ là cột thứ 8 (0-based index)
+                responsive: true,
+                autoWidth: false
+            });
+
+            $('#statusFilter').on('change', function() {
+                table.draw();
+            });
+
+            $('body').tooltip({
+                selector: '[data-toggle="tooltip"]'
+            });
+
+            $('#select-all').click(function() {
+                $('.row-checkbox').prop('checked', this.checked);
+                toggleBulkActions();
+            });
+
+            $(document).on('change', '.row-checkbox', function() {
+                var allChecked = $('.row-checkbox:checked').length === $('.row-checkbox').length;
+                $('#select-all').prop('checked', allChecked);
+                toggleBulkActions();
+            });
+
+            function toggleBulkActions() {
+                if ($('.row-checkbox:checked').length > 0) {
+                    $('#bulk-delete').show();
+                } else {
+                    $('#bulk-delete').hide();
+                }
+            }
+
+            $('#bulk-delete').click(function(e) {
+                e.preventDefault();
+                var ids = [];
+                $('.row-checkbox:checked').each(function() {
+                    ids.push($(this).val());
+                });
+
+                if (ids.length === 0) {
+                    alert('Vui lòng chọn ít nhất một đơn hàng để xóa');
+                    return;
                 }
 
-                $('#bulk-delete').click(function(e) {
-                    e.preventDefault();
-                    var ids = [];
-                    $('.row-checkbox:checked').each(function() {
-                        ids.push($(this).val());
+                if (confirm('Bạn có chắc chắn muốn xóa các đơn hàng đã chọn?')) {
+                    $.ajax({
+                        url: '{{ route('admin.orders.massDestroy') }}',
+                        type: 'DELETE',
+                        data: {
+                            ids: ids,
+                            _token: '{{ csrf_token() }}'
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                table.ajax.reload();
+                                $('#select-all').prop('checked', false);
+                                showAlertModal(response.message, 'success');
+                            } else {
+                                showAlertModal(response.message, 'error');
+                            }
+                        },
+                        error: function(xhr) {
+                            showAlertModal('Đã xảy ra lỗi khi xóa', 'error');
+                        }
                     });
-
-                    if (ids.length === 0) {
-                        alert('Vui lòng chọn ít nhất một đơn hàng để xóa');
-                        return;
-                    }
-
-                    if (confirm('Bạn có chắc chắn muốn xóa các đơn hàng đã chọn?')) {
-                        $.ajax({
-                            url: '{{ route('admin.orders.massDestroy') }}',
-                            type: 'DELETE',
-                            data: {
-                                ids: ids,
-                                _token: '{{ csrf_token() }}'
-                            },
-                            success: function(response) {
-                                if (response.success) {
-                                    table.ajax.reload();
-                                    $('#select-all').prop('checked', false);
-                                    showAlertModal(response.message, 'success');
-                                } else {
-                                    showAlertModal(response.message, 'error');
-                                }
-                            },
-                            error: function(xhr) {
-                                showAlertModal('Đã xảy ra lỗi khi xóa', 'error');
-                            }
-                        });
-                    }
-                });
-
-                $(document).on('click', '.delete-order', function() {
-                    var id = $(this).data('id');
-                    if (confirm('Bạn có chắc chắn muốn xóa đơn hàng này?')) {
-                        $.ajax({
-                            url: '{{ url('admin/orders') }}/' + id,
-                            type: 'DELETE',
-                            data: {
-                                _token: '{{ csrf_token() }}'
-                            },
-                            success: function(response) {
-                                if (response.success) {
-                                    table.ajax.reload();
-                                    showAlertModal(response.message, 'success');
-                                } else {
-                                    showAlertModal(response.message, 'error');
-                                }
-                            },
-                            error: function(xhr) {
-                                showAlertModal('Đã xảy ra lỗi khi xóa', 'error');
-                            }
-                        });
-                    }
-                });
+                }
             });
-        </script>
-    @endpush
+
+            $(document).on('click', '.delete-order', function() {
+                var id = $(this).data('id');
+                if (confirm('Bạn có chắc chắn muốn xóa đơn hàng này?')) {
+                    $.ajax({
+                        url: '{{ url('admin/orders') }}/' + id,
+                        type: 'DELETE',
+                        data: {
+                            _token: '{{ csrf_token() }}'
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                table.ajax.reload();
+                                showAlertModal(response.message, 'success');
+                            } else {
+                                showAlertModal(response.message, 'error');
+                            }
+                        },
+                        error: function(xhr) {
+                            showAlertModal('Đã xảy ra lỗi khi xóa', 'error');
+                        }
+                    });
+                }
+            });
+        });
+
+
+        $('#statusFilter').on('change', function() {
+            let status = $(this).val();
+            let exportUrl = "{{ route('admin.orders.export') }}";
+
+            if (status) {
+                exportUrl += '?status=' + status;
+            }
+
+            $('#exportBtn').attr('href', exportUrl);
+        });
+
+        // Khởi tạo ngay từ đầu nếu có sẵn giá trị filter
+        $(document).ready(function() {
+            $('#statusFilter').trigger('change');
+        });
+    </script>
 
     <style>
         .action {
