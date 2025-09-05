@@ -454,30 +454,88 @@
     });
 </script>
 <script>
-    $(document).ready(function() {
-        $('[data-toggle="tooltip"]').tooltip();
+    // $(document).ready(function() {
+    //     $('[data-toggle="tooltip"]').tooltip();
 
-        $('.copy-code').on('click', function() {
-            var code = $(this).data('code');
-            var $el = $(this);
+    //     $('.copy-code').on('click', function() {
+    //         var code = $(this).data('code');
+    //         var $el = $(this);
 
-            var $temp = $('<input>');
-            $('body').append($temp);
-            $temp.val(code).select();
+    //         var $temp = $('<input>');
+    //         $('body').append($temp);
+    //         $temp.val(code).select();
+          
+            
+    //         try {
 
-            try {
-                var success = document.execCommand('copy');
-                if (success) {
-                    $el.attr('data-original-title', '✓ Đã sao chép').tooltip('show');
-                    setTimeout(function() {
-                        $el.attr('data-original-title', 'Nhấn để sao chép');
-                    }, 1500);
-                }
-            } catch (err) {
-                alert('Trình duyệt của bạn không hỗ trợ sao chép.');
+    //             navigator.clipboard.writeText(code);
+    //             console.log('Text copied to clipboard');
+
+    //             var success = document.execCommand('copy');
+    //             if (success) {
+    //                   console.log(success);
+    //                 $el.attr('data-original-title', '✓ Đã sao chép').tooltip('show');
+    //                 setTimeout(function() {
+    //                     $el.attr('data-original-title', 'Nhấn để sao chép');
+    //                 }, 1500);
+    //             }
+    //         } catch (err) {
+    //             console.log(err);
+                
+    //             alert('Trình duyệt của bạn không hỗ trợ sao chép.');
+    //         }
+
+    //         $temp.remove();
+    //     });
+    // });
+
+
+    $(document).ready(function () {
+    $('[data-toggle="tooltip"]').tooltip();
+
+    $('.copy-code').on('click', async function () {
+        var code = $(this).data('code');
+        var $el = $(this);
+
+        // Tạo input tạm
+        var $temp = $('<input>');
+        $('body').append($temp);
+        $temp.val(code).select();
+
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                // ✅ Cách mới
+                await navigator.clipboard.writeText(code).then(function () {
+                    showTooltip($el);
+                }).catch(function (err) {
+                    console.error('Clipboard API lỗi:', err);
+                    fallbackCopy($el, $temp[0]);
+                });
+            } else {
+                // ✅ Fallback
+                fallbackCopy($el, $temp[0]);
             }
+        } catch (err) {
+            console.log(err);
+            alert('Trình duyệt của bạn không hỗ trợ sao chép.');
+        }
 
-            $temp.remove();
-        });
+        $temp.remove();
     });
+
+    function fallbackCopy($el, element) {
+        var success = document.execCommand('copy');
+        if (success) {
+            showTooltip($el);
+        }
+    }
+
+    function showTooltip($el) {
+        $el.attr('data-original-title', '✓ Đã sao chép').tooltip('show');
+        setTimeout(function () {
+            $el.attr('data-original-title', 'Nhấn để sao chép');
+        }, 1500);
+    }
+});
+
 </script>

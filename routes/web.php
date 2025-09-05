@@ -45,7 +45,6 @@ Route::prefix('product')->name('product.')->group(function () {
 Route::prefix('cart')->name('cart.')->group(function () {
     Route::get('/', [CartController::class, 'index'])->name('show');
     Route::post('/add/{productId}', [CartController::class, 'addToCart'])->name('add');
-    // Route::post('/updateQty', [CartController::class, 'updateQty'])->name('updateQty');
     Route::delete('/remove/{productId}/{productVariantId?}', [CartController::class, 'remove'])->name('remove');
     Route::post('/apply-coupon', [CartController::class, 'applyCoupon'])->name('applyCoupon');
     Route::get('/checkout', [CartController::class, 'checkout'])->name('checkout');
