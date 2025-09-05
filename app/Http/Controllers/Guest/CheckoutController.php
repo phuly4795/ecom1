@@ -74,9 +74,12 @@ class CheckoutController extends Controller
         try {
             // Tính tổng
             $subtotal = $cart->cartDetails->sum(fn($item) => $item->final_price * $item->qty);
-
             $shippingAddress = ShippingAddress::find($request->shipping_address_id);
-            $shippingFee = $this->getShippingFee($shippingAddress->province_id, $shippingAddress->district_id);
+
+            $province_id = $shippingAddress ? $shippingAddress->province_id : $request->shipping_province_id;
+            $district_id = $shippingAddress ? $shippingAddress->district_id : $request->shipping_district_id;
+
+            $shippingFee = $this->getShippingFee($province_id, $district_id);
             $discount = auth()->user()->cart->discount_amount ?? 0; // nếu có mã thì tính sau
             $total = max($subtotal + $shippingFee - $discount, 0);
 
@@ -149,7 +152,7 @@ class CheckoutController extends Controller
             $cart->delete();
 
             foreach ($order->orderDetails as $item) {
-                $variant = $item->product->productVariants->first();
+                $variant = $item->product->productVariants->where('id', $item->product_variant_id)->first();
                 $displayItem = $variant ?? $item->product;
                 $product = $displayItem;
                 $product->qty -= $item->quantity;
@@ -175,16 +178,15 @@ class CheckoutController extends Controller
 
             event(new NewNotification($notification));
             // Gửi email xác nhận đơn hàng
-            // if ($order->billing_email) {
-            //     NotificationFacade::route('mail', $order->billing_email)
-            //         ->notify(new OrderPlacedNotification($order));
-            // }
+            if ($order->billing_email) {
+                NotificationFacade::route('mail', $order->billing_email)
+                    ->notify(new OrderPlacedNotification($order));
+            }
             DB::commit();
 
             return redirect()->route('checkout.thankyou')->with('success', 'Đặt hàng thành công!');
         } catch (\Exception $e) {
             DB::rollBack();
-            dd($e);
             return redirect()->back()->with('error', 'Lỗi khi đặt hàng: ' . $e->getMessage());
         }
     }

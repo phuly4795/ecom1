@@ -164,15 +164,13 @@
                                 </a>
                             @endforeach
                             <a class="dropdown-item text-center small text-gray-500"
-                                href="{{ route('admin.contacts.index') }}">Xem tất cả</a>
+                                href="{{ route('admin.contacts.index',  ['seen_all' => "true"]) }}">Xem tất cả</a>
                         @else
                             <p class="text-center text-muted mb-0">Không có tin nhắn</p>
                         @endif
 
                     </div>
                 </div>
-
-
             </li>
 
             <div class="topbar-divider d-none d-sm-block"></div>
@@ -203,11 +201,7 @@
                         @csrf
                     </form>
                 </div>
-
             </li>
-
-
         </ul>
-
     </nav>
     <!-- End of Topbar -->

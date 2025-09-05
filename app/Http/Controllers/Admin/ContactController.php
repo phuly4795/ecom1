@@ -7,11 +7,17 @@ use App\Models\Contact;
 use Illuminate\Support\Str;
 use Illuminate\Support\HtmlString;
 use Yajra\DataTables\DataTables;
+use Illuminate\Http\Request;
 
 class ContactController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $seenAll = $request->query('seen_all', false);
+        if ($seenAll){
+            Contact::where('is_read', 0)->update(['is_read' => 1]);
+        }
+        
         return view('layouts.pages.admin.contacts.index');
     }
 

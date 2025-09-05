@@ -45,7 +45,6 @@ class HomeController extends Controller
             ->chunk(3);
         $featured = Product::where('is_featured', true)->take(9)->get()->chunk(3);
 
-
         // Lấy tất cả sản phẩm đang khuyến mãi
         $products = Product::onTrack()->get()->filter(fn($p) => $p->is_on_sale);
         $variants = ProductVariant::onTrack()->get()->filter(fn($v) => $v->is_on_sale);
@@ -56,7 +55,7 @@ class HomeController extends Controller
         $globalStart = $startTimes->min();
         $globalEnd = $endTimes->max();
 
-        // 🟡 Lấy % giảm giá cao nhất
+        // Lấy % giảm giá cao nhất
         $maxDiscountProduct = $products->max('discount_percentage');
         $maxDiscountVariant = $variants->max('discount_percentage');
 

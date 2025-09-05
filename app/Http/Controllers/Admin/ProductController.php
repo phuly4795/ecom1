@@ -77,8 +77,6 @@ class ProductController extends Controller
                 return '<a href="' . $editUrl . '" style="color: #000;font-weight: 700;"><span data-toggle="tooltip" title="' . $product->title . '">' . Str::limit($product->title, 30, '...') . '</span></a>';
             })
 
-
-
             ->editColumn('qty', function ($product) {
                 $html = '<div>';
                 if ($product->product_type == "single") {
