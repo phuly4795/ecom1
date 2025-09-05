@@ -70,16 +70,14 @@
     </div>
     <div id="chat-content" style="height:330px; overflow-y:auto; padding:10px; flex-grow:1;"></div>
     <div
-        style="display: flex
-;
-    padding: 10px;
-    border-top: 1px solid #ddd;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    align-content: center;
-    justify-content: space-around;
-    align-items: center;
-}">
+        style="display: flex;
+        padding: 10px;
+        border-top: 1px solid #ddd;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-content: center;
+        justify-content: space-around;
+        align-items: center;">
         <input type="text" id="chat-input" placeholder="Bạn cần gì?" style="width:80%;" class="form-control">
         <button class="btn btn-danger" onclick="sendMessage()">Gửi</button>
     </div>

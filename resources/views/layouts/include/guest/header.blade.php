@@ -86,7 +86,7 @@
                                 autocomplete="off">
                             <button class="search-btn">Tìm kiếm</button>
                             <div id="search-results"
-                                style="position:absolute; background:#fff; width:100%; z-index:99;"></div>
+                                style="position:absolute; background:#fff; width:95%; z-index:99; margin-top: 2px; border-radius: 10px;"></div>
                         </form>
                     </div>
                 </div>
@@ -267,13 +267,13 @@
 
                         if (data.items.length === 0) {
                             resultBox.innerHTML =
-                                '<div style="display: flex; align-items: center; gap: 10px;">Không tìm thấy sản phẩm nào.</div>';
+                                '<div style="display: flex; align-items: center; gap: 10px; margin: 10px;">Không tìm thấy sản phẩm nào.</div>';
                             return;
                         }
 
                         data.items.forEach(product => {
                             resultBox.innerHTML += `
-                                <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin: 10px">
                                     <div class="search-thumb" style="flex-shrink: 0;">
                                         <img src="${product.image}" alt="${product.name}" width="60" height="60" class="rounded" style="object-fit:cover;">
                                     </div>
