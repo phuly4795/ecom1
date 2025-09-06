@@ -28,7 +28,7 @@ class ShippingFeeImport implements ToCollection, WithHeadingRow, SkipsOnFailure,
             }
 
             $district = District::where('name', $row['district_name'])
-                ->where('province_code', $province->code) // dùng mã tỉnh
+                ->where('city_code', $province->code) // dùng mã tỉnh
                 ->first();
 
             if (!$district) {

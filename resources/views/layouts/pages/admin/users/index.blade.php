@@ -3,7 +3,7 @@
     <div class="container-fluid">
         <h1 class="h3 mb-4 text-gray-800">Danh sách người dùng</h1>
         <div class="action" id="action">
-            <a href="{{ route('admin.users.create') }}" class="btn btn-primary mb-3">Thêm người dùng</a>
+            {{-- <a href="{{ route('admin.users.create') }}" class="btn btn-primary mb-3">Thêm người dùng</a> --}}
             <div class="btn-group mb-3" id="bulk-delete" style="display: none;">
                 <button type="button" class="btn btn-primary">
                     <span class="visually-hidden"><i class="fa-solid fa-eraser"></i> Xóa người dùng</span>

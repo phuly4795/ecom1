@@ -133,10 +133,10 @@ class CouponController extends Controller
         }
     }
 
-    public function destroy(Category $coupon)
+    public function destroy(Coupon $coupon)
     {
         $coupon->delete();
-        return redirect()->route('admin.category.index')->with(['status' => 'success', 'message' => 'Xóa thành công']);
+        return redirect()->route('admin.coupons.index')->with(['status' => 'success', 'message' => 'Xóa thành công']);
     }
 
     // CategoryController.php

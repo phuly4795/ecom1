@@ -9,12 +9,18 @@
                 @foreach ($globalCategories as $category)
                     @php
                         $hasSub = $category->subCategories->where('status', 1)->count() > 0;
-                        $isActive = !$hasSub
-                            ? request()->routeIs('category.show') && request()->route('slug') == $category->slug
-                            : request()->routeIs('subcategory.show') &&
-                                request()->route('slug') ==
-                                    $category->subCategories->where('slug', request()->route('slug'))->first()->slug;
+                        $subCategoryMatch = $category->subCategories->firstWhere('slug', request()->route('slug'));
+                        $isActive = false;
 
+                        if (!$hasSub) {
+                            $isActive =
+                                request()->routeIs('category.show') && request()->route('slug') == $category->slug;
+                        } else {
+                            $isActive =
+                                request()->routeIs('subcategory.show') &&
+                                $subCategoryMatch &&
+                                $subCategoryMatch->slug == request()->route('slug');
+                        }
                     @endphp
                     <li class="{{ $hasSub ? 'dropdown' : '' }} {{ $isActive ? 'active' : '' }}">
                         <a href="{{ route('category.show', $category->slug) }}"

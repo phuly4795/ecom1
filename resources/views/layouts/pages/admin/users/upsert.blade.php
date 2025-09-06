@@ -37,7 +37,7 @@
                     <div class="col-md-6">
                         <label for="email" class="form-label">Địa chỉ email</label>
                         <input type="text" id="email" class="form-control" placeholder="Nhập địa chỉ email"
-                            readonly value="{{ old('email', $user->email ?? '') }}">
+                            {{isset($user->id) ? 'readonly' : ''}} value="{{ old('email', $user->email ?? '') }}">
                         @error('email')
                             <span class="text-danger">{{ $message }}</span>
                         @enderror
@@ -60,7 +60,7 @@
                             <span class="text-danger">{{ $message }}</span>
                         @enderror
                     </div>
-                    @if (Auth::user()->hasRoles('admin'))
+                    @if (Auth::user()->hasRoles('admin') && isset($user->id))
                         <div class="col-md-6">
                             <label for="role_id" class="form-label">Quyền hạn</label>
                             <select name="role_id" id="role_id" class="form-control">

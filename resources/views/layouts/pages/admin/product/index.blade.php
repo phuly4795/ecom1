@@ -14,13 +14,13 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="btn-group mb-3">
+                {{-- <div class="btn-group mb-3">
                     <select id="statusFilter" class="form-control">
                         <option value="">Tất cả trạng thái</option>
                         <option value="1">Hiển thị</option>
                         <option value="0">Ẩn</option>
                     </select>
-                </div>
+                </div> --}}
                 <div class="btn-group mb-3" id="bulk-delete" style="display: none;">
                     <button type="button" class="btn btn-primary">
                         <span class="visually-hidden"><i class="fa-solid fa-eraser"></i> Xóa sản phẩm</span>

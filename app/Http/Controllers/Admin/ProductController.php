@@ -33,9 +33,9 @@ class ProductController extends Controller
             $query->where('category_id', $categoryId);
         }
 
-        if ($status = request('status')) {
-            $query->where('product.status', $status);
-        }
+        // if ($status = request('status')) {
+        //     $query->where('product.status', $status);
+        // }
 
         return DataTables::of($query)
             ->addIndexColumn()

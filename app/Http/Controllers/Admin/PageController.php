@@ -73,6 +73,6 @@ class PageController extends Controller
     public function destroy(Page $page)
     {
         $page->delete();
-        return redirect()->route('layouts.pages.admin.page.index')->with(['status' => 'success', 'message' => 'Xóa trang thành công']);
+        return redirect()->back()->with(['status' => 'success', 'message' => 'Xóa trang thành công']);
     }
 }

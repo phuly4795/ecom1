@@ -92,7 +92,7 @@ class ShippingFeeController extends Controller
 
         try {
             Excel::import(new ShippingFeeImport, $request->file('file'));
-            return redirect()->route('shipping_fees.index')->with('success', 'Import thành công!');
+            return redirect()->route('admin.shipping_fees.index')->with('success', 'Import thành công!');
         } catch (ValidationException $e) {
             $failures = $e->failures();
 

@@ -110,9 +110,9 @@ Route::middleware('auth', 'verified', 'role:admin')->group(function () {
             Route::get('/create', [CouponController::class, 'create'])->name('create');
             Route::get('/{coupon}/edit', [CouponController::class, 'edit'])->name('edit');
             Route::post('coupon', [CouponController::class, 'storeOrUpdate'])->name('store');
-            Route::put('Coupon/{id}', [CouponController::class, 'storeOrUpdate'])->name('update');
+            Route::put('coupon/{id}', [CouponController::class, 'storeOrUpdate'])->name('update');
             Route::delete('/mass-destroy', [CouponController::class, 'massDestroy'])->name('massDestroy');
-            Route::delete('/{Coupon}', [CouponController::class, 'destroy'])->name('destroy');
+            Route::delete('/{coupon}', [CouponController::class, 'destroy'])->name('destroy');
             Route::patch('{coupon}/toggle-status', [CouponController::class, 'toggleStatus'])->name('toggleStatus');
         });
 

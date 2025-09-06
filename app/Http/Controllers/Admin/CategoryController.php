@@ -68,28 +68,31 @@ class CategoryController extends Controller
     public function storeOrUpdate(Request $request, $id = null)
     {
         $rules = [
-            'name' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:categories,slug,' . $id,
+            'name'   => 'required|string|max:255',
+            'slug'   => 'required|string|max:255|unique:categories,slug,' . $id,
             'status' => 'required|in:0,1',
-            'sort' => 'required|integer|min:1',
+            'sort'   => 'required|integer|min:1',
+            'image'   => 'max:2048',
         ];
 
-        // Chỉ thêm rule hình ảnh nếu có file
-        if ($request->hasFile('image')) {
-            $rules['image'] = 'image|mimes:jpeg,png,jpg,gif|max:2048';
-        }
+        // if ($request->hasFile('image')) {
+        //     $rules['image'] = 'image|mimes:jpeg,png,jpg,gif|max:2048';
+        // }
 
         $validated = $request->validate($rules, [
-            'slug.unique' => 'Danh mục này đã tồn tại, vui lòng chọn tên khác.',
+            'slug.unique'   => 'Danh mục này đã tồn tại, vui lòng chọn tên khác.',
             'sort.required' => 'Vui lòng chọn vị trí.',
-            'image.image' => 'File phải là hình ảnh.',
+            'image.image'   => 'File phải là hình ảnh.',
         ]);
+
         try {
             if ($id) {
+                // === CẬP NHẬT ===
                 $category = Category::findOrFail($id);
                 $oldSort = $category->sort;
                 $newSort = $validated['sort'];
 
+                // Sắp xếp lại vị trí sort
                 if ($oldSort != $newSort) {
                     if ($newSort < $oldSort) {
                         Category::where('sort', '>=', $newSort)
@@ -101,35 +104,39 @@ class CategoryController extends Controller
                             ->decrement('sort');
                     }
                 }
+                
+                $data = $validated;
+                // dd($data);
+                // Xử lý ảnh
+                // if ($request->hasFile('image')) {
+                //     if ($category->image) {
+                //         Storage::disk('public')->delete($category->image);
+                //     }
+                //     $data['image'] = Storage::disk('public')->putFileAs(
+                //         'categories',
+                //         $request->file('image'),
+                //         time() . '_' . $request->file('image')->getClientOriginalName()
+                //     );
+                // }
 
-                if ($request->hasFile('image')) {
-                    if ($category->image) {
-                        Storage::disk('public')->delete($category->image);
-                    }
-                    $validated['image'] = Storage::disk('public')->putFileAs(
-                        'categories',
-                        $request->file('image'),
-                        time() . '_' . $request->file('image')->getClientOriginalName()
-                    );
-                } else {
-                    unset($validated['image']); // tránh override ảnh cũ nếu không có ảnh mới
-                }
-
-                $category->update($validated);
+                $category->update($data);
                 $message = 'Cập nhật danh mục thành công.';
             } else {
+                // === THÊM MỚI ===
                 $sort = $validated['sort'];
                 Category::where('sort', '>=', $sort)->increment('sort');
 
-                if ($request->hasFile('image')) {
-                    $validated['image'] = Storage::disk('public')->putFileAs(
-                        'categories',
-                        $request->file('image'),
-                        time() . '_' . $request->file('image')->getClientOriginalName()
-                    );
-                }
+                $data = $validated;
 
-                $category = Category::create($validated);
+                // if ($request->hasFile('image')) {
+                //     $data['image'] = Storage::disk('public')->putFileAs(
+                //         'categories',
+                //         $request->file('image'),
+                //         time() . '_' . $request->file('image')->getClientOriginalName()
+                //     );
+                // }
+
+                Category::create($data);
                 $message = 'Thêm danh mục thành công.';
             }
 
@@ -140,6 +147,7 @@ class CategoryController extends Controller
                 ->withErrors(['error' => 'Có lỗi xảy ra: ' . $e->getMessage()]);
         }
     }
+
 
 
     public function destroy(Category $category)

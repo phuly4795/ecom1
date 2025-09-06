@@ -32,7 +32,7 @@ class ContactController extends Controller
                 $markUrl = route('admin.contacts.markAsRead', $contact);
 
                 $html = '<div class="d-flex gap-2">';
-                $html .= '<a href="' . $showUrl . '" class="btn btn-sm btn-primary">Xem</a>';
+                $html .= '<a href="' . $showUrl . '" class="btn btn-sm btn-primary" style="margin-right: 5%;"">Xem</a>';
                 $html .= '<form action="' . $markUrl . '" method="POST" class="d-inline">';
                 $html .= csrf_field();
                 $html .= '<button type="submit" class="btn btn-sm btn-success">Đã đọc</button>';

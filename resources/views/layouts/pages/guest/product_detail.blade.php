@@ -131,9 +131,9 @@
                             </div>
                         </form>
 
-                        <ul class="product-btns">
+                        <ul class="product-btns" style="margin-top: -2%;">
                             @if (Auth::check())
-                                <button class="add-to-wishlist" data-id="{{ $product->id }}" data-variant-id>
+                                <button class="add-to-wishlist" data-id="{{ $product->id }}" data-variant-id st>
                                     <i class="fa fa-heart{{ $isFavorited ? '' : '-o' }} wishlist-icon"></i>
                                     <span class="tooltipp">{{ $isFavorited ? 'Đã yêu thích' : 'Yêu thích' }}</span>
                                 </button>
@@ -432,7 +432,8 @@
                         $displayItem = $variant ?? $item;
                         $variant =
                             isset($item->productVariants) && $item->productVariants != '[]'
-                                ? $item->productVariants->where('product_id', $item->id)->first(fn($v) => $v->qty > 0)->id
+                                ? $item->productVariants->where('product_id', $item->id)->first(fn($v) => $v->qty > 0)
+                                    ->id
                                 : null;
                         $isFavorited = $item->favoritedByUsers->contains(auth()->id()); // luôn check từ $product
 
@@ -741,3 +742,12 @@
         });
     });
 </script>
+<style>
+    .add-to-wishlist {
+        border: 1px solid #ef233c;
+        border-radius: 10px;
+        background: none;
+        color: #ef233c;
+        font-weight: 700;
+    }
+</style>
