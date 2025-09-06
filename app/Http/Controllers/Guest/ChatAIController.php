@@ -93,7 +93,7 @@ class ChatAIController extends Controller
                     <tbody>';
                 $price = 0;
                 foreach ($products as $product) {
-                    $variant = $product->productVariants->first();
+                    $variant = $product->productVariants->first(fn($v) => $v->qty > 0);
                     $displayItem = $variant ?? $product;
                     if ($displayItem->getIsOnSaleAttribute()) {
                         $price = $displayItem->getDisplayPriceAttribute();
@@ -122,7 +122,7 @@ class ChatAIController extends Controller
                         </thead><tbody>';
 
                 foreach ($products as $product) {
-                    $variant = $product->productVariants->first();
+                    $variant = $product->productVariants->first(fn($v) => $v->qty > 0);
                     $displayItem = $variant ?? $product;
                     $price = $displayItem->getIsOnSaleAttribute() ? $displayItem->getDisplayPriceAttribute() : $displayItem->original_price;
 

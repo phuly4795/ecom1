@@ -230,7 +230,7 @@
                                                     </td>
                                                     <td>{{ $coupon->type == 'fixed' ? number_format($coupon->value) . ' vnđ' : (int) $coupon->value . '%' }}
                                                     </td>
-                                                    <td>{{ \Carbon\Carbon::parse($coupon->expired_at)->format('H:i:s d/m/Y') }}
+                                                    <td>{{ \Carbon\Carbon::parse($coupon->end_date)->format('H:i:s d/m/Y') }}
                                                     </td>
                                                     <td>{{ $coupon->used }}/{{ $coupon->usage_limit }}</td>
                                                 </tr>

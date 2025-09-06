@@ -4,7 +4,7 @@
     @endphp
     @foreach ($products as $product)
         <?php
-        $variant = $isKhuyenMaiPage ? $product->productVariants->filter(fn($v) => $v->is_on_sale)->first() : $product->productVariants->first();
+        $variant = $isKhuyenMaiPage ? $product->productVariants->filter(fn($v) => $v->is_on_sale)->first() : $product->productVariants->first(fn($v) => $v->qty > 0);
         $displayItem = $variant ?? $product;
         $variantId = $variant?->id; // Dùng null-safe nếu cần lấy ID
         $isFavorited = $product->favoritedByUsers->contains(auth()->id()); // luôn check từ $product
@@ -87,7 +87,7 @@
                         @csrf
                         <input type="hidden" name="qty" value="1">
                         <input type="hidden" name="product_variant_id"
-                            value="{{ $product->productVariants->first()->id ?? '' }}">
+                            value="{{ $product->productVariants->first(fn($v) => $v->qty > 0)->id ?? '' }}">
                         @if ($displayItem->qty > 0)
                             <button type="submit" class="add-to-cart-btn">
                                 <i class="fa fa-shopping-cart"></i> Thêm giỏ hàng

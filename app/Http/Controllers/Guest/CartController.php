@@ -58,10 +58,19 @@ class CartController extends Controller
 
         $cartItems = $cart ? $cart->cartDetails : collect();
 
-        $coupons = Coupon::where('is_active', true)
+        $coupons = Coupon::where('is_active', 1)
             ->whereColumn('used', '<', 'usage_limit')
-            ->whereDate('end_date', '>=', now())
+            ->whereDate('end_date', '>', Carbon::now())
             ->get();
+
+        if (isset($cart->coupon_code)) {
+            $appliedCoupon = Coupon::where('code', $cart->coupon_code)->first();
+            if (!$appliedCoupon || $appliedCoupon->end_date < Carbon::now() || !$appliedCoupon->is_active) {
+                $cart->coupon_code = null;
+                $cart->discount_amount = null;
+                $cart->save();
+            }
+        }
 
         return view('layouts.pages.guest.cart', compact(
             'cartItems',
@@ -249,6 +258,15 @@ class CartController extends Controller
 
         if (!$cart || $cart->cartDetails->isEmpty()) {
             return redirect()->back()->with('error', 'Giỏ hàng của bạn đang trống.');
+        }
+
+        if ($cart->coupon_code) {
+            $appliedCoupon = Coupon::where('code', $cart->coupon_code)->first();
+            if (!$appliedCoupon || $appliedCoupon->end_date < Carbon::now() || !$appliedCoupon->is_active) {
+                $cart->coupon_code = null;
+                $cart->discount_amount = null;
+                $cart->save();
+            }
         }
 
         $cartItems = collect();

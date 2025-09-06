@@ -19,6 +19,7 @@ use App\Notifications\OrderPlacedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 
 class CheckoutController extends Controller
 {
@@ -53,6 +54,16 @@ class CheckoutController extends Controller
         if (!$cart || $cart->cartDetails->isEmpty()) {
             return redirect()->route('cart.show')->with('error', 'Giỏ hàng của bạn đang trống.');
         }
+        
+        if ($cart->coupon_code) {
+            $appliedCoupon = Coupon::where('code', $cart->coupon_code)->first();
+            if (!$appliedCoupon || $appliedCoupon->end_date < Carbon::now() || !$appliedCoupon->is_active) {
+                $cart->coupon_code = null;
+                $cart->discount_amount = null;
+                $cart->save();
+            }
+        }
+
         foreach ($cart->cartDetails as $item) {
             $product = Product::with('productVariants')->find($item->product_id);
 

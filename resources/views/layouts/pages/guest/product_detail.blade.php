@@ -66,7 +66,7 @@
 
                 <!-- Product details -->
                 <?php
-                $variant = $selectedVariant ?? $product->productVariants->first(); // ✅ Ưu tiên biến thể được chọn
+                $variant = $selectedVariant ?? $product->productVariants->first(fn($v) => $v->qty > 0); // ✅ Ưu tiên biến thể được chọn
                 $displayItem = $variant ?? $product;
                 $isFavorited = $product->favoritedByUsers->contains(auth()->id()); // luôn check từ $product
                 ?>
@@ -428,11 +428,11 @@
                 @foreach ($productLastest as $item)
                     @php
                         // Chọn item để hiển thị giá: nếu có variant thì dùng variant đầu tiên
-                        $variant = $item->productVariants->first();
+                        $variant = $item->productVariants->first(fn($v) => $v->qty > 0);
                         $displayItem = $variant ?? $item;
                         $variant =
                             isset($item->productVariants) && $item->productVariants != '[]'
-                                ? $item->productVariants->where('product_id', $item->id)->first()->id
+                                ? $item->productVariants->where('product_id', $item->id)->first(fn($v) => $v->qty > 0)->id
                                 : null;
                         $isFavorited = $item->favoritedByUsers->contains(auth()->id()); // luôn check từ $product
 

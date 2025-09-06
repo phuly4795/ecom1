@@ -128,7 +128,7 @@
                         }
 
                         let href = '/admin/dashboard';
-                        if (notification.type === 'new-order') href = `/admin/orders/${notification.id}`;
+                        if (notification.type === 'new-order') href = `/admin/order/${notification.id}`;
                         else if (notification.type === 'paymented') href = `/admin/orders?status=paid`;
                         else if (notification.type === 'new-user') href = `/admin/users`;
                         else if (notification.type === 'promotion-expire') href =

@@ -146,10 +146,41 @@
                     }
                 });
             });
+
+            $('#categories-table').DataTable({
+                "initComplete": function() {
+                    $('.dataTables_length select').addClass('form-control input-sm');
+                }
+            });
         </script>
     @endpush
 
     <style>
+        /* Giãn cách cho dropdown length trong DataTables */
+        .dataTables_length label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            /* tạo khoảng cách giữa Show, select và entries */
+        }
+
+        .dataTables_length select {
+            width: auto;
+            /* để select nhỏ gọn, không full width */
+            display: inline-block;
+            margin: 0 5px;
+        }
+
+        .dataTables_length label {
+            white-space: nowrap;
+        }
+
+        .dataTables_length label select {
+            margin: 0 5px;
+            display: inline-block;
+            width: auto;
+        }
+
         .action {
             display: flex;
             flex-direction: row;

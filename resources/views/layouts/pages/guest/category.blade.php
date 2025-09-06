@@ -68,7 +68,7 @@
                             <h3 class="aside-title">Sản phẩm bán chạy</h3>
                             @foreach ($bestSellingProducts as $productSelling)
                                 @php
-                                    $variantBestSelling = $productSelling->productVariants->first();
+                                    $variantBestSelling = $productSelling->productVariants->first(fn($v) => $v->qty > 0);
                                     $displayItemBestSelling = $variantBestSelling ?? $productSelling;
                                     $image = $productSelling->productImages->where('type', 1)->first()->image ?? '';
                                     $imagePath = $image ? asset('storage/' . $image) : asset('asset/img/no-image.png');
@@ -118,7 +118,7 @@
                             @foreach ($products as $product)
                                 <?php
                                 $isKhuyenMaiPage = request()->is('category/khuyen-mai');
-                                $variant = $isKhuyenMaiPage ? $product->productVariants->filter(fn($v) => $v->is_on_sale)->first() : $product->productVariants->first();
+                                $variant = $isKhuyenMaiPage ? $product->productVariants->filter(fn($v) => $v->is_on_sale)->first() : $product->productVariants->first(fn($v) => $v->qty > 0);
                                 $displayItem = $variant ?? $product;
                                 $variantId = $variant?->id; // Dùng null-safe nếu cần lấy ID
                                 $isFavorited = $product->favoritedByUsers->contains(auth()->id()); // luôn check từ $product
@@ -208,7 +208,7 @@
                                                 @csrf
                                                 <input type="hidden" name="qty" value="1">
                                                 <input type="hidden" name="product_variant_id"
-                                                    value="{{ $product->productVariants->first()->id ?? '' }}">
+                                                    value="{{ $product->productVariants->first(fn($v) => $v->qty > 0)->id ?? '' }}">
                                                 @if ($displayItem->qty > 0)
                                                     <button type="submit" class="add-to-cart-btn">
                                                         <i class="fa fa-shopping-cart"></i> Thêm giỏ hàng

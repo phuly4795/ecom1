@@ -8,7 +8,7 @@
             @foreach ($favorites as $favorite)
                 @php
                     // Chọn item để hiển thị giá: nếu có variant thì dùng variant đầu tiên
-                    $variant = $favorite->products->productVariants->first();
+                    $variant = $favorite->products->productVariants->first(fn($v) => $v->qty > 0);
                     $displayItem = $variant ?? $favorite->products;
                     $variant =
                         isset($favorite->products->productVariants) && $favorite->products->productVariants != '[]'
@@ -93,7 +93,7 @@
                                 @csrf
                                 <input type="hidden" name="qty" value="1">
                                 <input type="hidden" name="product_variant_id"
-                                    value="{{ $favorite->products->productVariants->first()->id ?? '' }}">
+                                    value="{{ $favorite->products->productVariants->first(fn($v) => $v->qty > 0)->id ?? '' }}">
                                 @if ($displayItem->qty > 0)
                                     <button type="submit" class="add-to-cart-btn">
                                         <i class="fa fa-shopping-cart"></i> Thêm giỏ hàng

@@ -43,7 +43,7 @@ class ProductController extends Controller
                     ? asset('storage/' . $image)
                     : asset('asset/img/no-image.png');
 
-                $variant = $item->productVariants->first();
+                $variant = $item->productVariants->first(fn($v) => $v->qty > 0);
                 $displayItem = $variant ?? $item;
 
                 $newFinalPrice = $displayItem->is_on_sale ? $displayItem->display_price : $displayItem->original_price;

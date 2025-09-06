@@ -417,7 +417,7 @@
                                         <div class="product-body">
                                             @php
                                                 // Chọn item để hiển thị giá: nếu có variant thì dùng variant đầu tiên
-                                                $variantProductTopRated = $productTopRated->productVariants->first();
+                                                $variantProductTopRated = $productTopRated->productVariants->first(fn($v) => $v->qty > 0);
                                                 $displayProductTopRated = $variantProductTopRated ?? $productTopRated;
                                                 $variantProductTopRated =
                                                     isset($productTopRated->productVariants) &&
@@ -495,7 +495,7 @@
                                         <div class="product-body">
                                             @php
                                                 // Chọn item để hiển thị giá: nếu có variant thì dùng variant đầu tiên
-                                                $variantProductFeatured = $ProductFeatured->productVariants->first();
+                                                $variantProductFeatured = $ProductFeatured->productVariants->first(fn($v) => $v->qty > 0);
                                                 $displayProductFeatured = $variantProductFeatured ?? $ProductFeatured;
                                                 $variantProductFeatured =
                                                     isset($ProductFeatured->productVariants) &&
@@ -575,7 +575,7 @@
                                         <div class="product-body">
                                             @php
                                                 // Chọn item để hiển thị giá: nếu có variant thì dùng variant đầu tiên
-                                                $variantProductmostFavorited = $ProductmostFavorited->productVariants->first();
+                                                $variantProductmostFavorited = $ProductmostFavorited->productVariants->first(fn($v) => $v->qty > 0);
                                                 $displayProductmostFavorited =
                                                     $variantProductmostFavorited ?? $ProductmostFavorited;
                                                 $variantProductmostFavorited =
