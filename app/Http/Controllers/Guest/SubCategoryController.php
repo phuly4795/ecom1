@@ -76,13 +76,20 @@ class SubCategoryController extends Controller
             : [];
 
         $brands = Brand::whereIn('id', $brandIds)->get();
-
-        $bestSellingProducts = Product::with('category')
-            ->select('products.*', DB::raw('SUM(order_details.quantity) as total_sold'))
+        
+        $bestSellingProductId = Product::select('products.id', DB::raw('SUM(order_details.quantity) as total_sold'))
             ->join('order_details', 'order_details.product_id', '=', 'products.id')
+            // ->join('sub_categories', 'sub_categories.id', '=', 'products.subcategory_id')
+            ->whereHas('subCategory', function ($q) use ($slug) {
+                $q->where('slug', $slug);
+            })
             ->groupBy('order_details.product_id')
             ->orderByDesc('total_sold')
             ->take(3)
+            ->pluck('id')->toArray();
+
+        $bestSellingProducts = Product::whereIn('id', $bestSellingProductId)
+            ->with(['category', 'subCategory'])
             ->get();
 
         $productCountsByBrand = Product::where('subcategory_id', $subCategory->id)

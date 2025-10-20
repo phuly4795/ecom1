@@ -72,13 +72,18 @@ class CategoryController extends Controller
             $priceMin = $allPrices->min() ?? 0;
             $priceMax = $allPrices->max() ?? 0;
 
-            $bestSellingProducts = Product::with('category')
-                ->select('products.*', DB::raw('SUM(order_details.quantity) as total_sold'))
-                ->join('order_details', 'order_details.product_id', '=', 'products.id')
-                ->groupBy('order_details.product_id')
-                ->orderByDesc('total_sold')
-                ->take(3)
-                ->get();
+        $bestSellingProductId = Product::select('products.id', DB::raw('SUM(order_details.quantity) as total_sold'))
+            ->join('order_details', 'order_details.product_id', '=', 'products.id')
+            ->join('categories', 'categories.id', '=', 'products.category_id')
+            ->groupBy('order_details.product_id')
+            ->where('categories.slug', $slug)
+            ->orderByDesc('total_sold')
+            ->take(3)
+            ->pluck('id')->toArray();
+
+        $bestSellingProducts = Product::whereIn('id', $bestSellingProductId)
+            ->with('category')
+            ->get();
 
             // 3. Trả về theo AJAX hoặc view
             if ($request->ajax()) {
@@ -159,12 +164,17 @@ class CategoryController extends Controller
             ->groupBy('brand_id')
             ->pluck('total', 'brand_id');
 
-        $bestSellingProducts = Product::with('category')
-            ->select('products.*', DB::raw('SUM(order_details.quantity) as total_sold'))
+        $bestSellingProductId = Product::select('products.id', DB::raw('SUM(order_details.quantity) as total_sold'))
             ->join('order_details', 'order_details.product_id', '=', 'products.id')
+            ->join('categories', 'categories.id', '=', 'products.category_id')
             ->groupBy('order_details.product_id')
+            ->where('categories.slug', $slug)
             ->orderByDesc('total_sold')
             ->take(3)
+            ->pluck('id')->toArray();
+
+        $bestSellingProducts = Product::whereIn('id', $bestSellingProductId)
+            ->with('category')
             ->get();
 
         // Tính min/max giá từ bảng product_variants của tất cả sản phẩm trong category này
