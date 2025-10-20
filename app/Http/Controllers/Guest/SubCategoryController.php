@@ -83,7 +83,7 @@ class SubCategoryController extends Controller
             ->whereHas('subCategory', function ($q) use ($slug) {
                 $q->where('slug', $slug);
             })
-            ->groupBy('order_details.product_id')
+            ->groupBy('products.id')
             ->orderByDesc('total_sold')
             ->take(3)
             ->pluck('id')->toArray();
