@@ -75,7 +75,7 @@ class CategoryController extends Controller
             $bestSellingProducts = Product::with('category')
                 ->select('products.*', DB::raw('SUM(order_details.quantity) as total_sold'))
                 ->join('order_details', 'order_details.product_id', '=', 'products.id')
-                ->groupBy('products.id')
+                ->groupBy('order_details.product_id')
                 ->orderByDesc('total_sold')
                 ->take(3)
                 ->get();
@@ -162,7 +162,7 @@ class CategoryController extends Controller
         $bestSellingProducts = Product::with('category')
             ->select('products.*', DB::raw('SUM(order_details.quantity) as total_sold'))
             ->join('order_details', 'order_details.product_id', '=', 'products.id')
-            ->groupBy('products.id')
+            ->groupBy('order_details.product_id')
             ->orderByDesc('total_sold')
             ->take(3)
             ->get();
