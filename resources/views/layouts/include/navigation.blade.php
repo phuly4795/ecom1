@@ -101,11 +101,11 @@
 
     <hr class="sidebar-divider">
 
-    {{-- <li class="nav-item">
+    <li class="nav-item">
         <a class="nav-link" href="/laravel-websockets">
             <i class="fas fa-arrow-left"></i>
             <span>Kiểm tra websockets</span></a>
-    </li> --}}
+    </li>
 
     <li class="nav-item">
         <a class="nav-link" href="{{ route('home') }}">
