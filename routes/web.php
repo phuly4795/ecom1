@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PageController;
+use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Guest\AccountController;
 use App\Http\Controllers\Guest\SubCategoryController;
 use App\Http\Controllers\Guest\CartController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\Guest\CategoryController;
 use App\Http\Controllers\Guest\CheckoutController;
 use App\Http\Controllers\Guest\FavoriteProductController;
 use App\Http\Controllers\Guest\HomeController;
+use App\Http\Controllers\Guest\PaymentController;
 use App\Http\Controllers\Guest\ProductController;
 use App\Http\Controllers\Guest\ProductDetailController;
 use App\Http\Controllers\LocationController;
@@ -16,6 +18,8 @@ use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Models\Role;
+use BeyondCode\LaravelWebSockets\Facades\WebSocketsRouter;
+use BeyondCode\LaravelWebSockets\WebSockets\WebSocketHandler;
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/admin.php';
@@ -54,7 +58,8 @@ Route::prefix('cart')->name('cart.')->group(function () {
 });
 
 Route::prefix('checkout')->name('checkout.')->group(function () {
-    Route::post('/checkout/place-order', [CheckoutController::class, 'placeOrder'])->name('placeOrder');
+    Route::post('/place-order', [CheckoutController::class, 'placeOrder'])->name('placeOrder');
+    Route::post('/paypal', [CheckoutController::class, 'paypalCheckout'])->name('paypal');
     Route::get('/thank-you', [CheckoutController::class, 'thankYou'])->name('thankyou');
 });
 
@@ -76,7 +81,18 @@ Route::put('/update-info', [ProfileController::class, 'updateInfo'])->name('admi
 
 Route::post('/subscribe-newsletter', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe')->middleware('throttle:3,1'); // Tối đa 3 lần/phút;;
 
-// 
+// đăng nhập bằng google
+Route::get('auth/google', [GoogleController::class, 'redirectToGoogle'])->name('google.login');
+Route::get('auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
+
+// Thanh toán bằng paypal
+Route::get('paypal/create', [PaymentController::class, 'createPayment'])->name('paypal.create');
+Route::post('paypal/success', [PaymentController::class, 'success'])->name('paypal.success');
+Route::get('paypal/cancel', function() { return 'Payment cancelled'; })->name('paypal.cancel');
+
 
 // Public route
 Route::get('/{slug}', [PageController::class, 'show'])->name('pages.show');
+
+
+WebSocketsRouter::webSocket('/app/{appKey}', WebSocketHandler::class);
