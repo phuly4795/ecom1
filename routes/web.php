@@ -18,8 +18,6 @@ use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Models\Role;
-use BeyondCode\LaravelWebSockets\Facades\WebSocketsRouter;
-use BeyondCode\LaravelWebSockets\WebSockets\WebSocketHandler;
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/admin.php';
@@ -59,7 +57,6 @@ Route::prefix('cart')->name('cart.')->group(function () {
 
 Route::prefix('checkout')->name('checkout.')->group(function () {
     Route::post('/place-order', [CheckoutController::class, 'placeOrder'])->name('placeOrder');
-    Route::post('/paypal', [CheckoutController::class, 'paypalCheckout'])->name('paypal');
     Route::get('/thank-you', [CheckoutController::class, 'thankYou'])->name('thankyou');
 });
 
@@ -90,9 +87,5 @@ Route::get('paypal/create', [PaymentController::class, 'createPayment'])->name('
 Route::post('paypal/success', [PaymentController::class, 'success'])->name('paypal.success');
 Route::get('paypal/cancel', function() { return 'Payment cancelled'; })->name('paypal.cancel');
 
-
 // Public route
 Route::get('/{slug}', [PageController::class, 'show'])->name('pages.show');
-
-
-WebSocketsRouter::webSocket('/app/{appKey}', WebSocketHandler::class);

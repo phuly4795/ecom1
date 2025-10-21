@@ -245,6 +245,18 @@
                                     <p><b>Khi thanh toán vui lòng điền mã đơn hàng vào nội dung chuyển khoản.</b></p>
                                 </div>
                             </div>
+                            <div class="input-radio">
+                                <input type="radio" name="payment_method" id="payment-3" value="paypal">
+                                <label for="payment-3">
+                                    <span></span>
+                                    Thanh toán qua PayPal
+                                </label>
+                                <div class="caption">
+                                    <p>Thanh toán bằng tài khoản PayPal hoặc thẻ quốc tế (Visa, Master...).</p>
+                                    <!-- Đây là nơi nút PayPal sẽ hiển thị -->
+                                    <div id="paypal-button-container" style="margin-top:10px;"></div>
+                                </div>
+                            </div>
                         </div>
                         <div class="input-checkbox">
                             <input type="checkbox" id="terms" name="terms">
@@ -260,6 +272,8 @@
         </div>
     </div>
     <!-- /SECTION -->
+    <script src="https://www.paypal.com/sdk/js?client-id={{ env('PAYPAL_SANDBOX_CLIENT_ID') }}&currency=USD"></script>
+
 </x-guest-layout>
 <style>
     .order-col .item-price {
@@ -463,4 +477,75 @@
             }
         }
     });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkoutForm = document.querySelector('form[action="{{ route('checkout.placeOrder') }}"]');
+            paypal.Buttons({
+                style: {
+                    layout: 'vertical',
+                    color: 'gold'
+                },
+                createOrder: function(data, actions) {
+                    return actions.order.create({
+                        purchase_units: [{
+                            amount: {
+                                currency_code: "USD",
+                                value: parseFloat(
+                                    "{{ number_format($total / 24000, 2, '.', '') }}"
+                                    )
+                            }
+                        }]
+                    });
+                },
+                onApprove: function(data, actions) {
+                    return actions.order.capture().then(function(details) {
+                        // Gửi thông tin PayPal về server xác nhận
+                        fetch("{{ route('paypal.success') }}", {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    orderID: data.orderID,
+                                    payerID: data.payerID,
+                                    details: details
+                                })
+                            })
+                            .then(res => res.json())
+                            .then(result => {
+                                if (result.success) {
+                                    Swal.fire({
+                                        icon: "success",
+                                        title: "Thanh toán thành công!",
+                                        text: "Đang xử lý đơn hàng của bạn...",
+                                        timer: 1500,
+                                        showConfirmButton: false
+                                    });
+
+                                    // ✅ Tự động submit form đặt hàng
+                                    setTimeout(() => {
+                                        // Gán phương thức thanh toán là paypal
+                                        checkoutForm.querySelector(
+                                            'input[name="payment_method"][value="paypal"]'
+                                            ).checked = true;
+                                        checkoutForm.submit();
+                                    }, 1600);
+                                } else {
+                                    Swal.fire("Lỗi", "Không thể xác nhận thanh toán!",
+                                        "error");
+                                }
+                            })
+                            .catch(err => {
+                                console.error(err);
+                                Swal.fire("Lỗi",
+                                    "Có lỗi xảy ra khi xác nhận thanh toán!",
+                                    "error");
+                            });
+                    });
+                }
+            }).render('#paypal-button-container');
+        }
+    );
 </script>

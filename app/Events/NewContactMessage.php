@@ -36,4 +36,9 @@ class NewContactMessage implements ShouldBroadcast
             ]
         ];
     }
+    
+    public function broadcastAs()
+    {
+        return 'new-contact';
+    }
 }

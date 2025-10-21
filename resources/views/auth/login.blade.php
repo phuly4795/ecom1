@@ -16,7 +16,7 @@
                     {{ session('status') }}
                 </div>
             @endif
-            
+
             @if (session('error'))
                 <div class="alert alert-danger">
                     {{ session('error') }}
@@ -81,7 +81,14 @@
                         <i class="fa fa-sign-in"></i> Đăng nhập
                     </button>
                 </div>
-
+                <hr>
+                <div class="text-center">
+                    <a href="{{ route('google.login') }}" class="btn btn-danger login-btn"
+                        style="background-color:#db4437;border:none;">
+                        <i class="fa fa-google"></i> Đăng nhập bằng Google
+                    </a>
+                </div>
+                <hr>
                 <!-- Quên mật khẩu -->
                 <div class="text-center">
                     <a href="{{ route('password.request') }}">Quên mật khẩu?</a>

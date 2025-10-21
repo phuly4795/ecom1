@@ -20,6 +20,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class CheckoutController extends Controller
 {
@@ -33,7 +34,7 @@ class CheckoutController extends Controller
             'billing_province_id' => 'required|exists:provinces,code',
             'billing_district_id' => 'required|exists:districts,code',
             'billing_ward_id' => 'required|exists:wards,code',
-            'payment_method' => 'required|in:cash,transfer',
+            'payment_method' => 'required|in:cash,transfer,paypal',
             'terms' => 'accepted',
             'shipping_address_id' => 'nullable|exists:shipping_addresses,id',
             'shipping_full_name' => 'required_if:use_new_shipping_address,on|string|nullable',
@@ -54,7 +55,7 @@ class CheckoutController extends Controller
         if (!$cart || $cart->cartDetails->isEmpty()) {
             return redirect()->route('cart.show')->with('error', 'Giỏ hàng của bạn đang trống.');
         }
-        
+
         if ($cart->coupon_code) {
             $appliedCoupon = Coupon::where('code', $cart->coupon_code)->first();
             if (!$appliedCoupon || $appliedCoupon->end_date < Carbon::now() || !$appliedCoupon->is_active) {
@@ -198,6 +199,7 @@ class CheckoutController extends Controller
             return redirect()->route('checkout.thankyou')->with('success', 'Đặt hàng thành công!');
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Lỗi khi đặt hàng: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Lỗi khi đặt hàng: ' . $e->getMessage());
         }
     }

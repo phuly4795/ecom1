@@ -50,7 +50,7 @@
             if (window.Echo) {
                 // thông báo liên hệ
                 window.Echo.channel('contact-messages')
-                    .listen('NewContactMessage', (e) => {
+                    .listen('.new-contact', (e) => {
                         console.log('📨 New message received:', e.contact);
 
                         const contact = e.contact;

@@ -34,7 +34,8 @@ class User extends Authenticatable
         'district_id',
         'ward_id',
         'address',
-        'image'
+        'avatar',
+        'type_login'
     ];
 
     /**
