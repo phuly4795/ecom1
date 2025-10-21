@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AllowWebSocketsDashboard;
 use BeyondCode\LaravelWebSockets\Dashboard\Http\Middleware\Authorize;
 
 return [
@@ -70,7 +71,7 @@ return [
      */
     'middleware' => [
         'web',
-        Authorize::class,
+        AllowWebSocketsDashboard::class,
     ],
 
     'statistics' => [
