@@ -65,11 +65,20 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/order/track/{id}', [AccountController::class, 'track'])->name('order.track');
     Route::get('/account/orders/{id}', [AccountController::class, 'show'])->name('account.order.detail');
     Route::post('/account/orders/{id}/cancel', [AccountController::class, 'cancelOrder'])->name('account.orders.cancel');
+    Route::post('/account/address/store', [AccountController::class, 'addressStore'])->name('account.address.store');
+    Route::post('/account/address/update/{id}', [AccountController::class, 'addressUpdate'])
+        ->name('account.address.update');
+    Route::delete('/account/address/delete/{id}', [AccountController::class, 'addressDelete'])
+        ->name('account.address.delete');
+
+    Route::post('/account/address/{id}/set-default', [AccountController::class, 'setDefault'])
+    ->name('account.address.setDefault');
 
     Route::post('/favorites/{product}', [FavoriteProductController::class, 'toggle'])->name('favorites.toggle');
     Route::get('/favorites', [FavoriteProductController::class, 'index'])->name('favorites.index');
 });
 
+Route::get('/provinces', [LocationController::class, 'provinces'])->name('getProvinces');
 Route::get('/districts/{provinceId}', [LocationController::class, 'getDistricts'])->name('getDistricts');
 Route::get('/wards/{districtId}', [LocationController::class, 'getWards'])->name('getWards');
 Route::get('/search-products', [ProductController::class, 'search']);
@@ -85,7 +94,9 @@ Route::get('auth/google/callback', [GoogleController::class, 'handleGoogleCallba
 // Thanh toán bằng paypal
 Route::get('paypal/create', [PaymentController::class, 'createPayment'])->name('paypal.create');
 Route::post('paypal/success', [PaymentController::class, 'success'])->name('paypal.success');
-Route::get('paypal/cancel', function() { return 'Payment cancelled'; })->name('paypal.cancel');
+Route::get('paypal/cancel', function () {
+    return 'Payment cancelled';
+})->name('paypal.cancel');
 
 // Public route
 Route::get('/{slug}', [PageController::class, 'show'])->name('pages.show');

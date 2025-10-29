@@ -28,6 +28,11 @@
     <!-- Account Section -->
     <section class="account-section py-5">
         <div class="container">
+            @if (session('success'))
+                <div class="alert alert-success">
+                    {{ session('success') }}
+                </div>
+            @endif
             <div class="row">
                 <!-- Sidebar Menu -->
                 <div class="col-md-3">
@@ -40,6 +45,9 @@
                             <li class="list-group-item"><a href="{{ route('my.account') }}?tab=orders"
                                     class="{{ request()->query('tab') == 'orders' ? 'active' : '' }}"><i
                                         class="fa fa-shopping-cart"></i> Đơn hàng của tôi</a></li>
+                            <li class="list-group-item"><a href="{{ route('my.account') }}?tab=address"
+                                    class="{{ request()->query('tab') == 'address' ? 'active' : '' }}"><i
+                                        class="fa fa-truck"></i> Địa chỉ</a></li>
                             <li class="list-group-item"><a href="{{ route('my.account') }}?tab=change-password"
                                     class="{{ request()->query('tab') == 'change-password' ? 'active' : '' }}"><i
                                         class="fa fa-lock"></i> Thay đổi mật khẩu</a></li>
@@ -124,6 +132,83 @@
                                     </div>
                                 </div>
                             @endif
+                        @elseif ($tab == 'address')
+                            <div class="panel panel-default">
+                                <div class="panel-heading clearfix">
+                                    <h4 class="pull-left" style="margin:0;">Địa chỉ của tôi</h4>
+                                    <button class="btn btn-danger btn-sm pull-right" data-toggle="modal"
+                                        data-target="#addAddressModal">
+                                        <i class="glyphicon glyphicon-plus"></i> Thêm địa chỉ mới
+                                    </button>
+                                </div>
+                                <div class="panel-body">
+                                    @if ($addresses->isEmpty())
+                                        <p>Bạn chưa có địa chỉ nào!</p>
+                                    @else
+                                        @foreach ($addresses as $address)
+                                            <div class="address-item"
+                                                style="border-bottom:1px solid #eee; padding:15px 0;">
+                                                <div class="row">
+                                                    <div class="col-sm-9">
+                                                        <strong
+                                                            class="text-uppercase">{{ $address->full_name }}</strong>
+                                                        <span class="text-muted">(+84) {{ $address->telephone }}</span>
+                                                        <div>{{ $address->address }}</div>
+                                                        <div class="text-muted">
+                                                            {{ $address->ward->full_name }},
+                                                            {{ $address->district->full_name }},
+                                                            {{ $address->province->full_name }}
+                                                        </div>
+                                                        @if ($address->is_default)
+                                                            <span class="label label-danger"
+                                                                style="margin-top:5px; display:inline-block;">Mặc
+                                                                định</span>
+                                                        @endif
+                                                    </div>
+                                                    <div class="col-sm-3 text-right">
+                                                        <a href="#" class="text-primary edit-address"
+                                                            data-toggle="modal" data-target="#addAddressModal"
+                                                            data-id="{{ $address->id }}"
+                                                            data-full_name="{{ $address->full_name }}"
+                                                            data-telephone="{{ $address->telephone }}"
+                                                            data-address="{{ $address->address }}"
+                                                            data-province="{{ $address->province_id }}"
+                                                            data-district="{{ $address->district_id }}"
+                                                            data-ward="{{ $address->ward_id }}"
+                                                            data-is_default="{{ $address->is_default }}">
+                                                            Cập nhật
+                                                        </a>
+                                                        @if (!$address->is_default)
+                                                            <span class="text-muted">|</span>
+
+                                                            <form
+                                                                action="{{ route('account.address.delete', ['id' => $address->id]) }}"
+                                                                method="POST" style="display:inline;">
+                                                                @method('DELETE')
+                                                                @csrf
+                                                                <a href="javascript:void(0);"
+                                                                    onclick="if(confirm('Bạn có chắc muốn xóa địa chỉ này không?')) { this.closest('form').submit(); }"
+                                                                    class="text-danger">
+                                                                    Xóa
+                                                                </a>
+                                                            </form>
+                                                            <form
+                                                                action="{{ route('account.address.setDefault', $address->id) }}"
+                                                                method="POST" style="margin-top:10px;">
+                                                                @csrf
+                                                                <button type="submit" class="btn btn-default btn-xs"
+                                                                    {{ $address->is_default ? 'disabled' : '' }}>
+                                                                    {{ $address->is_default ? 'Mặc định' : 'Thiết lập mặc định' }}
+                                                                </button>
+                                                            </form>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    @endif
+                                </div>
+                            </div>
                         @elseif ($tab == 'profile')
                             <h2 class="account-welcome">Hồ sơ cá nhân</h2>
                             {{-- <p class="account-description">Xem và chỉnh sửa thông tin cá nhân của bạn tại đây.</p> --}}
@@ -146,11 +231,13 @@
                                         <div class="p-3 py-5">
                                             <div class="row mt-2">
                                                 <div class="col-md-12"><label class="labels">Họ và tên</label><input
-                                                        type="text" class="form-control" placeholder="Nhập họ và tên"
-                                                        name="name" value="{{ $user->name ?? '' }}"></div>
+                                                        type="text" class="form-control"
+                                                        placeholder="Nhập họ và tên" name="name"
+                                                        value="{{ $user->name ?? '' }}"></div>
                                                 <div class="col-md-12 mt-3"><label class="labels">Email</label><input
                                                         type="text" class="form-control" placeholder="Nhập email"
-                                                        name="email" value="{{ $user->email ?? '' }}" readonly></div>
+                                                        name="email" value="{{ $user->email ?? '' }}" readonly>
+                                                </div>
                                                 <div class="col-md-12 mt-3"><label class="labels">Số điện
                                                         thoại</label><input type="text" class="form-control"
                                                         placeholder="Nhập số điện thoại" name="phone"
@@ -196,8 +283,7 @@
                                                 </div>
                                             </div>
                                             <div class="mt-5 text-left"><button class="btn btn-primary profile-button"
-                                                    type="button">Lưu hồ
-                                                    sơ</button></div>
+                                                    type="button">Lưu hồ sơ</button></div>
                                         </div>
                                     </div>
                                 </div>
@@ -291,8 +377,199 @@
                 </div>
             </div>
         </div>
+
+        <div id="addAddressModal" class="modal fade" tabindex="-1" role="dialog"
+            aria-labelledby="addAddressLabel">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <form id="addAddressForm" action="{{ route('account.address.store') }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="id" id="address_id">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal"
+                                aria-label="Close">&times;</button>
+                            <h4 class="modal-title" id="addAddressLabel">Thêm địa chỉ mới</h4>
+                        </div>
+
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-sm-6 form-group">
+                                    <label>Họ và tên</label>
+                                    <input type="text" name="full_name" class="form-control" required
+                                        placeholder="Ví dụ: Nguyễn Văn A">
+                                </div>
+                                <div class="col-sm-6 form-group">
+                                    <label>Số điện thoại</label>
+                                    <input type="text" name="telephone" class="form-control" required
+                                        placeholder="Ví dụ: 0912345678">
+                                </div>
+
+                                <div class="col-sm-4 form-group">
+                                    <label>Tỉnh / Thành phố</label>
+                                    <select name="province_id" id="modal_province" class="form-control" required>
+                                        <option value="">-- Chọn Tỉnh / Thành phố --</option>
+                                    </select>
+                                </div>
+                                <div class="col-sm-4 form-group">
+                                    <label>Quận / Huyện</label>
+                                    <select name="district_id" id="modal_district" class="form-control" required>
+                                        <option value="">-- Chọn Quận / Huyện --</option>
+                                    </select>
+                                </div>
+                                <div class="col-sm-4 form-group">
+                                    <label>Phường / Xã</label>
+                                    <select name="ward_id" id="modal_ward" class="form-control" required>
+                                        <option value="">-- Chọn Phường / Xã --</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-sm-12 form-group">
+                                    <label>Địa chỉ cụ thể</label>
+                                    <input type="text" name="address" class="form-control"
+                                        placeholder="Ví dụ: 141/2b KV Yên Bình" required>
+                                </div>
+
+                                <div class="col-sm-12">
+                                    <div class="checkbox">
+                                        <label>
+                                            <input type="checkbox" name="is_default"> Đặt làm địa chỉ mặc định
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Trở lại</button>
+                            <button type="submit" class="btn btn-danger">Hoàn thành</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+
     </section>
 </x-guest-layout>
+
+<script>
+    $(document).ready(function() {
+        // ===== Khi chọn Tỉnh =====
+        $('#modal_province').change(function() {
+            var provinceCode = $(this).val();
+            $('#modal_district').html('<option value="">-- Chọn Quận / Huyện --</option>');
+            $('#modal_ward').html('<option value="">-- Chọn Phường / Xã --</option>');
+            if (provinceCode) {
+                $.get('/districts/' + provinceCode, function(data) {
+                    $.each(data, function(key, district) {
+                        $('#modal_district').append('<option value="' + district.code +
+                            '">' +
+                            district.full_name + '</option>');
+                    });
+                });
+            }
+        });
+
+        // ===== Khi chọn Huyện =====
+        $('#modal_district').change(function() {
+            var districtCode = $(this).val();
+            $('#modal_ward').html('<option value="">-- Chọn Phường / Xã --</option>');
+            if (districtCode) {
+                $.get('/wards/' + districtCode, function(data) {
+                    $.each(data, function(key, ward) {
+                        $('#modal_ward').append('<option value="' + ward.code + '">' +
+                            ward.full_name + '</option>');
+                    });
+                });
+            }
+        });
+
+        // ===== Hàm load danh sách Tỉnh =====
+        function loadProvinces(callback = null) {
+            if ($('#modal_province option').length <= 1) {
+                $.get('/provinces', function(data) {
+                    $('#modal_province').html('<option value="">-- Chọn Tỉnh / Thành phố --</option>');
+                    $.each(data, function(key, province) {
+                        $('#modal_province').append('<option value="' + province.code + '">' +
+                            province.full_name + '</option>');
+                    });
+                    if (callback) callback();
+                });
+            } else if (callback) {
+                callback();
+            }
+        }
+
+        // Khi bấm "Thêm địa chỉ mới"
+        $('button[data-target="#addAddressModal"]').click(function() {
+            $('#addAddressForm')[0].reset();
+            $('#address_id').val('');
+            $('#addAddressLabel').text('Thêm địa chỉ mới');
+            $('#addAddressForm').attr('action', '{{ route('account.address.store') }}');
+            $('#addAddressForm button[type=submit]').text('Hoàn thành');
+            // Reset các dropdown
+            $('#modal_district').html('<option value="">-- Chọn Quận / Huyện --</option>');
+            $('#modal_ward').html('<option value="">-- Chọn Phường / Xã --</option>');
+
+            loadProvinces();
+        });
+
+        // Khi bấm "Cập nhật" → fill form
+        $('.edit-address').click(function() {
+            var id = $(this).data('id');
+            $('#address_id').val(id);
+            $('#addAddressLabel').text('Cập nhật địa chỉ');
+            $('#addAddressForm').attr('action', '/account/address/update/' + id);
+            $('#addAddressForm button[type=submit]').text('Cập nhật');
+
+            // Gán giá trị text
+            $('input[name="full_name"]').val($(this).data('full_name'));
+            $('input[name="telephone"]').val($(this).data('telephone'));
+            $('#addAddressForm input[name="address"]').val($(this).data('address'));
+            $('input[name="is_default"]').prop('checked', $(this).data('is_default') == 1);
+
+            // Lấy mã địa lý
+            const provinceCode = String($(this).data('province') || '');
+            const districtCode = String($(this).data('district') || '');
+            const wardCode = String($(this).data('ward') || '');
+
+            // ======= LOAD PROVINCES =======
+            loadProvinces(function() {
+                $('#modal_province').val(provinceCode);
+                // ======= LOAD DISTRICTS =======
+                $.get('/districts/' + provinceCode, function(districts) {
+                    $('#modal_district').html(
+                        '<option value="">-- Chọn Quận / Huyện --</option>');
+                    $.each(districts, function(_, d) {
+                        // ✅ fix field name full_name
+                        $('#modal_district').append('<option value="' + d.code +
+                            '">' + (d.full_name || d.name) + '</option>');
+                    });
+                    $('#modal_district').val(districtCode);
+                    // ======= LOAD WARDS =======
+                    $.get('/wards/' + districtCode, function(wards) {
+                        $('#modal_ward').html(
+                            '<option value="">-- Chọn Phường / Xã --</option>'
+                        );
+                        $.each(wards, function(_, w) {
+                            // ✅ fix field name full_name
+                            $('#modal_ward').append('<option value="' +
+                                w.code + '">' + (w.full_name || w
+                                    .name) + '</option>');
+                        });
+                        setTimeout(() => {
+                            $('#modal_ward').val(wardCode);
+                        }, 150);
+                    });
+                });
+            });
+        });
+
+
+
+    });
+</script>
+
 <style>
     .account-section {
         background-color: #f5f7fa;
@@ -822,5 +1099,55 @@
 
     .help-block {
         color: #a94442;
+    }
+
+    .dflex {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-content: center;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 2%;
+    }
+</style>
+
+<style>
+    .panel-heading {
+        background: #f8f9fa;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .address-item strong {
+        color: #333;
+    }
+
+    .address-item .label-danger {
+        background: #fceaea;
+        color: #d43f3a;
+        border: 1px solid #d43f3a;
+        font-weight: normal;
+    }
+
+    .btn-danger {
+        background-color: #d0011b;
+        border-color: #c40016;
+    }
+
+    .btn-danger:hover {
+        background-color: #b30014;
+    }
+
+    .modal-content {
+        border-radius: 4px;
+    }
+
+    .modal-header {
+        background: #f5f5f5;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .panel-default {
+        border-color: #fff;
     }
 </style>

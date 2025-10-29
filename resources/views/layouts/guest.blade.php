@@ -29,7 +29,7 @@
     <link type="text/css" rel="stylesheet" href="{{ asset('asset/guest/css/nouislider.min.css') }}" />
 
     <!-- Font Awesome Icon -->
-    <link rel="stylesheet" href="{{ asset('asset/guest/css/font-awesome.min.c') }}ss">
+    <link rel="stylesheet" href="{{ asset('asset/guest/css/font-awesome.min.css') }}">
 
     <!-- Custom stlylesheet -->
     <link type="text/css" rel="stylesheet" href="{{ asset('asset/guest/css/style.css') }}" />

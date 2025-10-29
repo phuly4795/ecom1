@@ -99,21 +99,26 @@ class CheckoutController extends Controller
             $shippingAddressId = $request->shipping_address_id;
             $useNewShippingAddress = $request->has('use_new_shipping_address');
 
-            if ($useNewShippingAddress) {
-                // Lưu địa chỉ giao hàng mới nếu người dùng đăng nhập
-                if ($user) {
-                    $shippingAddress = ShippingAddress::create([
-                        'user_id' => $user->id,
-                        'full_name' => $request->shipping_full_name,
-                        'email' => $request->shipping_email,
-                        'telephone' => $request->shipping_telephone,
-                        'address' => $request->shipping_address,
-                        'province_id' => $request->shipping_province_id,
-                        'district_id' => $request->shipping_district_id,
-                        'ward_id' => $request->shipping_ward_id,
-                    ]);
-                    $shippingAddressId = $shippingAddress->id;
+            if ($useNewShippingAddress && $user) {
+                if ($request->is_default) {
+                    ShippingAddress::where('user_id', $user->id)
+                        ->update(['is_default' => 0]);
                 }
+
+                // Lưu địa chỉ giao hàng mới nếu người dùng đăng nhập
+                $shippingAddress = ShippingAddress::create([
+                    'user_id' => $user->id,
+                    'full_name' => $request->shipping_full_name,
+                    'email' => $request->shipping_email,
+                    'telephone' => $request->shipping_telephone,
+                    'address' => $request->shipping_address,
+                    'province_id' => $request->shipping_province_id,
+                    'district_id' => $request->shipping_district_id,
+                    'ward_id' => $request->shipping_ward_id,
+                    'is_default' => $request->is_default ? 1 : 0,
+                ]);
+
+                $shippingAddressId = $shippingAddress->id;
             }
             // Lấy số thứ tự tiếp theo
             $lastOrder = Order::orderBy('id', 'desc')->first();

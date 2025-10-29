@@ -217,7 +217,7 @@
                                 </div>
                                 <div class="col-md-6 mt-3">
                                     <label for="qty" class="form-label">Số lượng</label>
-                                    <input type="number" name="qty" id="qty" class="form-control"
+                                    <input type="number" name="qty" id="qty" class="form-control" readonly value="0"
                                         value="{{ old('qty', $product->qty ?? '') }}">
                                 </div>
                             </div>
@@ -297,7 +297,7 @@
                                                                 <label for="">Số lượng sản phẩm</label>
                                                                 <input type="number"
                                                                     name="variants[existing][qty][{{ $variant->id }}]"
-                                                                    class="form-control" placeholder="Số lượng"
+                                                                    class="form-control" placeholder="Số lượng" readonly
                                                                     value="{{ $variant->qty }}">
                                                             </div>
                                                             <div class="col-md-4" style="margin-top: 4%">
@@ -368,7 +368,7 @@
                                                     <div class="col-md-4">
                                                         <label for="">Số lượng sản phẩm</label>
                                                         <input type="number" name="variants[new][qty][]"
-                                                            class="form-control" placeholder="Số lượng">
+                                                            class="form-control" placeholder="Số lượng" readonly>
                                                     </div>
                                                     <div class="col-md-4" style="margin-top: 4%">
                                                         <label for=""></label>

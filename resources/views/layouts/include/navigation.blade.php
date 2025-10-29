@@ -46,6 +46,12 @@
             <span>Quản lý sản phẩm</span></a>
     </li>
 
+    <li class="nav-item {{ request()->routeIs('admin.warehouse.*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('admin.warehouse.index') }}">
+            <i class="fas fa-box-open"></i>
+            <span>Quản lý Kho</span></a>
+    </li>
+
     <hr class="sidebar-divider">
 
     <li class="nav-item {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">

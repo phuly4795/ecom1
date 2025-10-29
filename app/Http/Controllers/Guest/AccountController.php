@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Province;
 use App\Models\Role;
+use App\Models\ShippingAddress;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class AccountController extends Controller
@@ -14,12 +16,14 @@ class AccountController extends Controller
     {
         $roles = Role::orderBy('name', 'asc')->get();
         $provinces = Province::all();
-        $orders = Order::where('user_id', Auth::id())->orderBy('created_at', 'desc')->paginate(10); // hoặc paginate(10)
+        $orders = Order::where('user_id', Auth::id())->orderBy('created_at', 'desc')->paginate(10);
+        $addresses = ShippingAddress::where('user_id', Auth::id())->orderBy('is_default', 'desc')->get();
         return view('layouts.pages.guest.my_account', [
             'user' => Auth::user(),
             'provinces' => $provinces,
             'roles' => $roles,
             'orders' => $orders,
+            'addresses' => $addresses,
             'breadcrumbs' => [
                 ['name' => 'Trang chủ', 'url' => route('home')],
                 ['name' => 'Tài khoản của tôi', 'url' => null],
@@ -92,12 +96,104 @@ class AccountController extends Controller
     {
         $order = Order::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
 
-        if (in_array($order->status, ['waiting_pay','pending', 'processing'])) {
+        if (in_array($order->status, ['waiting_pay', 'pending', 'processing'])) {
             $order->status = 'cancelled';
             $order->save();
             return response()->json(['success' => true, 'message' => 'Đơn hàng đã được hủy']);
         }
 
         return response()->json(['success' => false, 'message' => 'Không thể hủy đơn hàng ở trạng thái này'], 422);
+    }
+
+    public function addressStore(Request $request)
+    {
+        $user = Auth::user();
+
+        // Nếu người dùng chọn địa chỉ này là mặc định
+        $isDefault = $request->has('is_default') ? 1 : 0;
+
+        if ($isDefault) {
+            // Reset tất cả địa chỉ cũ về 0 (không mặc định)
+            ShippingAddress::where('user_id', $user->id)
+                ->update(['is_default' => 0]);
+        }
+
+        ShippingAddress::create([
+            'user_id' => $user->id,
+            'full_name' => $request->full_name,
+            'telephone' => $request->telephone,
+            'address' => $request->address,
+            'province_id' => $request->province_id,
+            'district_id' => $request->district_id,
+            'ward_id' => $request->ward_id,
+            'is_default' => $isDefault,
+        ]);
+        return redirect()->back()->with('success', 'Địa chỉ đã được thêm thành công.');
+    }
+
+    public function addressUpdate(Request $request, $id)
+    {
+        $user = Auth::user();
+
+        // Tìm địa chỉ thuộc user
+        $address = ShippingAddress::where('id', $id)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        // Nếu người dùng chọn địa chỉ này là mặc định
+        $isDefault = $request->has('is_default') ? 1 : $address->is_default;
+
+        if ($isDefault) {
+            // Reset tất cả địa chỉ cũ về 0 (không mặc định)
+            ShippingAddress::where('user_id', $user->id)
+                ->where('id', '!=', $id) 
+                ->update(['is_default' => 0]);
+        }
+
+        // Cập nhật thông tin địa chỉ
+        $address->update([
+            'full_name' => $request->full_name,
+            'telephone' => $request->telephone,
+            'address' => $request->address,
+            'province_id' => $request->province_id,
+            'district_id' => $request->district_id,
+            'ward_id' => $request->ward_id,
+            'is_default' => $isDefault,
+        ]);
+
+        return redirect()->back()->with('success', 'Địa chỉ đã được cập nhật thành công.');
+    }
+
+    public function setDefault($id)
+    {
+        $user = Auth::user();
+
+        // Tìm địa chỉ thuộc user
+        $address = ShippingAddress::where('id', $id)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        // Reset tất cả địa chỉ khác về 0
+        ShippingAddress::where('user_id', $user->id)
+            ->update(['is_default' => 0]);
+
+        // Đặt địa chỉ này thành mặc định
+        $address->update(['is_default' => 1]);
+
+        return redirect()->back()->with('success', 'Đã thiết lập địa chỉ mặc định thành công.');
+    }
+
+    public function addressDelete(Request $request, $id)
+    {
+        $user = Auth::user();
+
+        // Tìm địa chỉ thuộc user
+        $address = ShippingAddress::where('id', $id)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $address->delete();
+
+        return redirect()->back()->with('success', 'Địa chỉ đã được xóa thành công.');
     }
 }

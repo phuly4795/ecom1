@@ -11,6 +11,12 @@ class ProductController extends Controller
 {
     public function storeReview(Request $request, $productId)
     {
+
+        $checkLogin = auth()->check();
+        if (!$checkLogin) {
+            return redirect()->back()->with('error', 'Bạn cần đăng nhập để gửi đánh giá.');
+        }
+
         $request->validate([
             'user_name' => 'required|string|max:255',
             'email' => 'required|email',

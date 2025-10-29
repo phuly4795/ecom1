@@ -10,6 +10,11 @@
             {{ session('success') }}
         </div>
     @endif
+    @if (session('error'))
+        <div class="alert alert-danger">
+            {{ session('error') }}
+        </div>
+    @endif
     <!-- BREADCRUMB -->
     <div id="breadcrumb" class="section">
         <!-- container -->
@@ -372,7 +377,7 @@
                                     <!-- Review Form -->
                                     <div class="col-md-3">
                                         <div id="review-form">
-                                            <form class="review-form"
+                                            <form class="review-form" id="reviewForm"
                                                 action="{{ route('product.review.store', $product->id) }}"
                                                 method="POST">
                                                 @csrf
@@ -572,6 +577,14 @@
         object-fit: contain;
     }
 </style>
+@guest
+    <script>
+        document.getElementById('reviewForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            showAlertModal('Vui lòng đăng nhập để sử dụng tính năng này', 'warning');
+        });
+    </script>
+@endguest
 <script>
     $('body').tooltip({
         selector: '[data-toggle="tooltip"]'

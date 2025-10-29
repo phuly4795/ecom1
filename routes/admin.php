@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\ShippingFeeController;
 use App\Http\Controllers\Admin\SubCategoryController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\WarehouseController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\ProfileController;
@@ -90,6 +91,18 @@ Route::middleware('auth', 'verified', 'role:admin')->group(function () {
 
             Route::get('/get-subcategories/{category_id}', [ProductController::class, 'getSubcategories'])->name('getSubcategories');
             Route::patch('{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('toggleStatus');
+        });
+
+         Route::prefix('warehouse')->name('warehouse.')->group(function () {
+            Route::get('/', [WarehouseController::class, 'index'])->name('index');               // Danh sách
+            Route::get('/create', [ShippingFeeController::class, 'create'])->name('create');       // Form thêm mới
+            Route::post('/', [ShippingFeeController::class, 'store'])->name('store');              // Xử lý thêm mới
+            Route::get('/{shippingFee}/edit', [ShippingFeeController::class, 'edit'])->name('edit'); // Form cập nhật
+            Route::put('/{shippingFee}', [ShippingFeeController::class, 'update'])->name('update'); // Xử lý cập nhật
+            Route::delete('/{shippingFee}', [ShippingFeeController::class, 'destroy'])->name('destroy'); // Xóa
+
+            // Import Excel
+            Route::post('/import', [WarehouseController::class, 'import'])->name('import');
         });
 
         Route::prefix('order')->name('orders.')->group(function () {

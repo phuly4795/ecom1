@@ -3,11 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\District;
+use App\Models\Province;
 use App\Models\Ward;
-use Illuminate\Http\Request;
 
 class LocationController extends Controller
 {
+
+    public function provinces()
+    {
+        return Province::select('code', 'full_name')->orderBy('full_name')->get();
+    }
+
     public function getDistricts($provinceId)
     {
         $district = District::where('city_code', $provinceId)->get();

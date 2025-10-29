@@ -149,6 +149,9 @@
                                         <input class="input" type="text" name="shipping_address"
                                             placeholder="Số nhà, tên đường..." value="{{ old('shipping_address') }}">
                                     </div>
+                                    <div class="form-group">
+                                        <input type="checkbox" name="is_default"> Đặt làm địa chỉ mặc định
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -481,71 +484,70 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const checkoutForm = document.querySelector('form[action="{{ route('checkout.placeOrder') }}"]');
-            paypal.Buttons({
-                style: {
-                    layout: 'vertical',
-                    color: 'gold'
-                },
-                createOrder: function(data, actions) {
-                    return actions.order.create({
-                        purchase_units: [{
-                            amount: {
-                                currency_code: "USD",
-                                value: parseFloat(
-                                    "{{ number_format($total / 24000, 2, '.', '') }}"
-                                    )
-                            }
-                        }]
-                    });
-                },
-                onApprove: function(data, actions) {
-                    return actions.order.capture().then(function(details) {
-                        // Gửi thông tin PayPal về server xác nhận
-                        fetch("{{ route('paypal.success') }}", {
-                                method: 'POST',
-                                headers: {
-                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    orderID: data.orderID,
-                                    payerID: data.payerID,
-                                    details: details
-                                })
+        paypal.Buttons({
+            style: {
+                layout: 'vertical',
+                color: 'gold'
+            },
+            createOrder: function(data, actions) {
+                return actions.order.create({
+                    purchase_units: [{
+                        amount: {
+                            currency_code: "USD",
+                            value: parseFloat(
+                                "{{ number_format($total / 24000, 2, '.', '') }}"
+                            )
+                        }
+                    }]
+                });
+            },
+            onApprove: function(data, actions) {
+                return actions.order.capture().then(function(details) {
+                    // Gửi thông tin PayPal về server xác nhận
+                    fetch("{{ route('paypal.success') }}", {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                orderID: data.orderID,
+                                payerID: data.payerID,
+                                details: details
                             })
-                            .then(res => res.json())
-                            .then(result => {
-                                if (result.success) {
-                                    Swal.fire({
-                                        icon: "success",
-                                        title: "Thanh toán thành công!",
-                                        text: "Đang xử lý đơn hàng của bạn...",
-                                        timer: 1500,
-                                        showConfirmButton: false
-                                    });
+                        })
+                        .then(res => res.json())
+                        .then(result => {
+                            if (result.success) {
+                                Swal.fire({
+                                    icon: "success",
+                                    title: "Thanh toán thành công!",
+                                    text: "Đang xử lý đơn hàng của bạn...",
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
 
-                                    // ✅ Tự động submit form đặt hàng
-                                    setTimeout(() => {
-                                        // Gán phương thức thanh toán là paypal
-                                        checkoutForm.querySelector(
-                                            'input[name="payment_method"][value="paypal"]'
-                                            ).checked = true;
-                                        checkoutForm.submit();
-                                    }, 1600);
-                                } else {
-                                    Swal.fire("Lỗi", "Không thể xác nhận thanh toán!",
-                                        "error");
-                                }
-                            })
-                            .catch(err => {
-                                console.error(err);
-                                Swal.fire("Lỗi",
-                                    "Có lỗi xảy ra khi xác nhận thanh toán!",
+                                // ✅ Tự động submit form đặt hàng
+                                setTimeout(() => {
+                                    // Gán phương thức thanh toán là paypal
+                                    checkoutForm.querySelector(
+                                        'input[name="payment_method"][value="paypal"]'
+                                    ).checked = true;
+                                    checkoutForm.submit();
+                                }, 1600);
+                            } else {
+                                Swal.fire("Lỗi", "Không thể xác nhận thanh toán!",
                                     "error");
-                            });
-                    });
-                }
-            }).render('#paypal-button-container');
-        }
-    );
+                            }
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            Swal.fire("Lỗi",
+                                "Có lỗi xảy ra khi xác nhận thanh toán!",
+                                "error");
+                        });
+                });
+            }
+        }).render('#paypal-button-container');
+    });
 </script>

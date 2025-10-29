@@ -73,6 +73,7 @@ class OrderController extends Controller
                     $statuses = [
                         'cash' => 'Tiền mặt',
                         'transfer' => 'Chuyển khoản',
+                        'paypal' => 'Thanh toán PayPal',
                     ];
                     return $statuses[$order->payment_method];
                 })

@@ -103,6 +103,7 @@
                             {{ match ($order->payment_method) {
                                 'cash' => 'Tiền mặt',
                                 'transfer' => 'Chuyển khoản',
+                                 'paypal' => 'Thanh toán PayPal',
                                 default => ucfirst($order->payment_method),
                             } }}
                         <p><strong>Phí vận chuyển:</strong> {{ number_format($order->shipping_fee) }} đ</p>
