@@ -103,6 +103,7 @@ Route::middleware('auth', 'verified', 'role:admin')->group(function () {
 
             // Import Excel
             Route::post('/import', [WarehouseController::class, 'import'])->name('import');
+            Route::get('/export-template', [WarehouseController::class, 'exportTemplate'])->name('exportTemplate');
         });
 
         Route::prefix('order')->name('orders.')->group(function () {

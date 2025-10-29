@@ -61,6 +61,12 @@ class ProductImport implements ToCollection, WithHeadingRow
 
         // --- 3. Nếu không có lỗi thì bắt đầu import ---
         foreach ($rows as $row) {
+
+            $qty = trim($row['so_luong'] ?? '');
+            if (!is_numeric($qty) || (float)$qty <= 0) {
+                continue;
+            }
+
             $product = Product::where('sku', $row['ma_san_pham'])->first();
             $productVariant = !empty($row['ma_bien_the']) ? ProductVariant::where('sku', $row['ma_bien_the'])->first() : null;
 

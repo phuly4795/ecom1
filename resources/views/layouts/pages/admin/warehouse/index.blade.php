@@ -30,8 +30,8 @@
                                 <input type="file" class="form-control" name="file" id="file" required
                                     accept=".xlsx,.xls">
                                 <p class="help-block">
-                                    Bạn có thể <a href="{{ asset('sample/import_product_template.xlsx') }}"
-                                        target="_blank">tải file mẫu tại đây</a>.
+                                    Bạn có thể <a href="{{ route('admin.warehouse.exportTemplate') }}" target="_blank">tải
+                                        file mẫu tại đây</a>.
                                 </p>
                             </div>
 

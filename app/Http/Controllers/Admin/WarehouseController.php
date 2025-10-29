@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\ProductTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Imports\ProductImport;
 use App\Imports\ShippingFeeImport;
@@ -83,6 +84,11 @@ class WarehouseController extends Controller
     {
         $shippingFee->delete();
         return redirect()->route('admin.shipping_fees.index')->with('success', 'Đã xóa phí vận chuyển');
+    }
+
+    public function exportTemplate()
+    {
+        return Excel::download(new ProductTemplateExport, 'template_san_pham.xlsx');
     }
 
     public function import(Request $request)
