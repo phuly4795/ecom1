@@ -93,17 +93,14 @@ Route::middleware('auth', 'verified', 'role:admin')->group(function () {
             Route::patch('{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('toggleStatus');
         });
 
-         Route::prefix('warehouse')->name('warehouse.')->group(function () {
+        Route::prefix('warehouse')->name('warehouse.')->group(function () {
             Route::get('/', [WarehouseController::class, 'index'])->name('index');               // Danh sách
-            Route::get('/create', [ShippingFeeController::class, 'create'])->name('create');       // Form thêm mới
-            Route::post('/', [ShippingFeeController::class, 'store'])->name('store');              // Xử lý thêm mới
-            Route::get('/{shippingFee}/edit', [ShippingFeeController::class, 'edit'])->name('edit'); // Form cập nhật
-            Route::put('/{shippingFee}', [ShippingFeeController::class, 'update'])->name('update'); // Xử lý cập nhật
-            Route::delete('/{shippingFee}', [ShippingFeeController::class, 'destroy'])->name('destroy'); // Xóa
+            Route::get('/{warehouse}/detail', [WarehouseController::class, 'detail'])->name('detail'); // Form cập nhật
 
             // Import Excel
             Route::post('/import', [WarehouseController::class, 'import'])->name('import');
             Route::get('/export-template', [WarehouseController::class, 'exportTemplate'])->name('exportTemplate');
+            Route::get('/export-warehouse-receipt/{warehouse}', [WarehouseController::class, 'exportWarehouseReceipt'])->name('exportWarehouseReceipt');
         });
 
         Route::prefix('order')->name('orders.')->group(function () {

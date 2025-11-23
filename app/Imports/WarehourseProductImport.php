@@ -8,15 +8,23 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\ShippingFee;
 use App\Models\Warehouse;
+use App\Models\WarehouseDetail;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Exception;
 
-class ProductImport implements ToCollection, WithHeadingRow
+class WarehourseProductImport implements ToCollection, WithHeadingRow
 {
     public $errors = [];
+    protected $name;
+    
+    public function __construct($name)
+    {
+        $this->name = $name;
+
+    }
 
     public function collection(Collection $rows)
     {
@@ -29,6 +37,12 @@ class ProductImport implements ToCollection, WithHeadingRow
                 $this->errors[] = "Dòng {$rowNumber}: Không tìm thấy sản phẩm có mã {$row['ma_san_pham']}";
                 continue;
             }
+
+            if ($product->status == 0) {
+                $this->errors[] = "Dòng {$rowNumber}: Sản phẩm có mã {$row['ma_san_pham']} không ở trạng thái hoạt động!";
+                continue;
+            }
+
 
             if ($product->product_type == 'variant' && empty($row['ma_bien_the'])) {
                 $this->errors[] = "Dòng {$rowNumber}: Sản phẩm có biến thể, vui lòng cung cấp mã biến thể!";
@@ -60,6 +74,12 @@ class ProductImport implements ToCollection, WithHeadingRow
         }
 
         // --- 3. Nếu không có lỗi thì bắt đầu import ---
+        $warehouse = Warehouse::create([
+            'name'               => $this->name,
+            'user_id'            => Auth::id(),
+            'created_by'         => Auth::user()->name ?? 'System',
+        ]);
+
         foreach ($rows as $row) {
 
             $qty = trim($row['so_luong'] ?? '');
@@ -70,12 +90,12 @@ class ProductImport implements ToCollection, WithHeadingRow
             $product = Product::where('sku', $row['ma_san_pham'])->first();
             $productVariant = !empty($row['ma_bien_the']) ? ProductVariant::where('sku', $row['ma_bien_the'])->first() : null;
 
-            Warehouse::create([
+            WarehouseDetail::create([
+                'warehouse_id'       => $warehouse->id,
                 'product_id'         => $product->id,
                 'product_variant_id' => $productVariant->id ?? null,
                 'qty'                => $row['so_luong'],
                 'price'              => $row['gia_nhap'],
-                'user_id'            => Auth::id(),
                 'created_by'         => Auth::user()->name ?? 'System',
             ]);
 

@@ -6,13 +6,8 @@
             {{-- <a href="{{ route('admin.shipping_fees.create') }}" class="btn btn-primary mb-3">Thêm phí vận chuyển</a> --}}
             <!-- Nút mở modal -->
             <button type="button" class="btn btn-success mb-3" data-toggle="modal" data-target="#importModal">
-                Nhập sản phẩm
+                Thêm đợt nhập
             </button>
-            <div class="btn-group mb-3" id="bulk-delete" style="display: none;">
-                <button type="button" class="btn btn-danger">
-                    <i class="fa-solid fa-trash"></i> Xóa phí vận chuyển
-                </button>
-            </div>
         </div>
         <div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel">
             <div class="modal-dialog" role="document">
@@ -26,15 +21,20 @@
                         </div>
                         <div class="modal-body">
                             <div class="form-group">
+                                <label for="name">Tên đợt nhập</label>
+                                <input type="text" class="form-control" name="name" id="name" required
+                                    placeholder="Nhập tên đợt nhập...">
+                            </div>
+                            <div class="form-group">
                                 <label for="file">Chọn tệp Excel</label>
                                 <input type="file" class="form-control" name="file" id="file" required
                                     accept=".xlsx,.xls">
                                 <p class="help-block">
-                                    Bạn có thể <a href="{{ route('admin.warehouse.exportTemplate') }}" target="_blank">tải
+                                    Bạn có thể <a href="{{ route('admin.warehouse.exportTemplate') }}"
+                                        target="_blank">tải
                                         file mẫu tại đây</a>.
                                 </p>
                             </div>
-
                         </div>
                         <div class="modal-footer">
                             <button type="submit" class="btn btn-primary">Import</button>
@@ -66,36 +66,26 @@
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>Tên sản phẩm</th>
-                            <th>Tên biến thể</th>
-                            <th>Số lượng</th>
-                            <th>Giá nhập</th>
-                            <th>Ngày nhập</th>
+                            <th>#</th>
+                            <th>Tên đợt nhập</th>
                             <th>Người nhập</th>
+                            <th>Ngày nhập</th>
                             <th>Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($data as $item)
                             <tr>
-
-                                <td><a
-                                        href="{{ route('admin.product.edit', $item->products->id) }}">{{ Str::limit($item->products->title, 50) }}</a>
-                                </td>
-                                <td>{{ Str::limit($item->productVariants->variant_name ?? '-', 50) }}</td>
-                                <td>{{ $item->qty }}</td>
-                                <td>{{ number_format($item->price) . ' vnđ' }}</td>
+                                <td>{{ $item->id }}</td>
+                                <td>{{ Str::limit($item->name, 50, '...') }}</td>
                                 <td>{{ \Carbon\Carbon::parse($item->create_at)->format('d/m/Y') }}</td>
                                 <td>{{ $item->created_by }}</td>
-                                <td>
-                                    <a href="{{ route('admin.shipping_fees.edit', $item) }}"
-                                        class="btn btn-sm btn-warning">Sửa</a>
-                                    <form method="POST" action="{{ route('admin.shipping_fees.destroy', $item) }}"
-                                        style="display:inline;">
-                                        @csrf @method('DELETE')
-                                        <button class="btn btn-sm btn-danger"
-                                            onclick="return confirm('Xóa phí này?')">Xóa</button>
-                                    </form>
+                                <td><a href="{{ route('admin.warehouse.detail', $item) }}"
+                                        class="btn btn-primary">Xem chi tiết</a>
+                                    |
+
+                                    <a href="{{ route('admin.warehouse.exportWarehouseReceipt', $item) }}"
+                                        class="btn btn-warning">Xuất phiếu nhập</a>
                                 </td>
                             </tr>
                         @endforeach

@@ -4,14 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Exports\ProductTemplateExport;
 use App\Http\Controllers\Controller;
-use App\Imports\ProductImport;
-use App\Imports\ShippingFeeImport;
-use App\Models\District;
-use App\Models\Province;
-use App\Models\ShippingFee;
+use App\Imports\WarehourseProductImport;
 use App\Models\Warehouse;
+use App\Models\WarehouseDetail;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Validators\ValidationException;
 
@@ -19,71 +16,17 @@ class WarehouseController extends Controller
 {
     public function index()
     {
-        $data = Warehouse::with(['user', 'products', 'productVariants'])->paginate(20);
+        $data = Warehouse::with(['user'])->latest('id')->paginate(20);
         return view('layouts.pages.admin.warehouse.index', compact('data'));
     }
 
-    public function create()
+    public function detail(Warehouse $Warehouse)
     {
-        $provinces = Province::all();
-        return view('layouts.pages.admin.shipping_fees.upsert', [
-            'provinces' => $provinces,
-            'shippingFee' => null,
-            'districts' => []
+        $data = WarehouseDetail::with(['warehouse', 'product', 'productVariant'])->where('warehouse_id', $Warehouse->id)->paginate(20);
+
+        return view('layouts.pages.admin.warehouse.detail', [
+            'data' => $data
         ]);
-    }
-
-    public function store(Request $request)
-    {
-        $request->validate([
-            'province_id' => 'required',
-            'district_id' => 'required',
-            'fee' => 'required|numeric',
-        ]);
-
-        ShippingFee::updateOrCreate(
-            [
-                'province_id' => $request->province_id,
-                'district_id' => $request->district_id,
-            ],
-            ['fee' => $request->fee]
-        );
-
-        return redirect()->route('admin.shipping_fees.index')->with('success', 'Đã lưu phí vận chuyển');
-    }
-
-    public function edit(ShippingFee $shippingFee)
-    {
-        $provinces = Province::all();
-        $districts = District::where('city_code', $shippingFee->province_id)->get();
-        return view('layouts.pages.admin.shipping_fees.upsert', [
-            'shippingFee' => $shippingFee,
-            'provinces' => $provinces,
-            'districts' => $districts,
-        ]);
-    }
-
-    public function update(Request $request, ShippingFee $shippingFee)
-    {
-        $request->validate([
-            'province_id' => 'required',
-            'district_id' => 'required',
-            'fee' => 'required|numeric',
-        ]);
-
-        $shippingFee->update([
-            'province_id' => $request->province_id,
-            'district_id' => $request->district_id,
-            'fee' => $request->fee
-        ]);
-
-        return redirect()->route('admin.shipping_fees.index')->with('success', 'Cập nhật thành công');
-    }
-
-    public function destroy(ShippingFee $shippingFee)
-    {
-        $shippingFee->delete();
-        return redirect()->route('admin.shipping_fees.index')->with('success', 'Đã xóa phí vận chuyển');
     }
 
     public function exportTemplate()
@@ -91,14 +34,38 @@ class WarehouseController extends Controller
         return Excel::download(new ProductTemplateExport, 'template_san_pham.xlsx');
     }
 
+    public function exportWarehouseReceipt(Warehouse $warehouse)
+    {
+        // Lấy chi tiết sản phẩm thuộc đợt nhập
+        $details = $warehouse->details()
+            ->with(['product', 'productVariant'])
+            ->get();
+
+        $pdf = Pdf::loadView('layouts.pages.admin.warehouse.receipt', [
+            'warehouse' => $warehouse,
+            'details'   => $details
+        ]);
+
+        return $pdf->download('xuat-phieu-nhap-' . $warehouse->id . '.pdf');
+    }
+
+
     public function import(Request $request)
     {
         $request->validate([
             'file' => 'required|mimes:xlsx,xls',
+            'name' => 'required|string|max:255',
+        ], [
+            'name.required' => 'Vui lòng nhập tên đợt nhập',
+            'name.string' => 'Tên đợt nhập phải là chuỗi ký tự',
+            'name.max' => 'Tên đợt nhập không được vượt quá 255 ký tự',
+            'file.required' => 'Vui lòng chọn tệp Excel để nhập',
+            'file.mimes' => 'Tệp phải có định dạng xlsx hoặc xls',
         ]);
 
         try {
-            $import = new ProductImport();
+            $name = $request->input('name');
+            $import = new WarehourseProductImport($name);
 
             Excel::import($import, $request->file('file'));
 
@@ -115,18 +82,5 @@ class WarehouseController extends Controller
                 'file' => 'Một số dòng trong file có lỗi: ' . $failures[0]->errors()[0] ?? 'Lỗi không xác định'
             ]);
         }
-    }
-    public function getFee(Request $request)
-    {
-        $provinceId = $request->province_id;
-        $districtId = $request->district_id;
-
-        $fee = ShippingFee::where('province_id', $provinceId)
-            ->where('district_id', $districtId)
-            ->value('fee');
-
-        return response()->json([
-            'fee' => $fee ?? config('settings.default_shipping_fee', 50000) // mặc định nếu không tìm thấy
-        ]);
     }
 }
