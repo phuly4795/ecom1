@@ -103,7 +103,7 @@
                             {{ match ($order->payment_method) {
                                 'cash' => 'Tiền mặt',
                                 'transfer' => 'Chuyển khoản',
-                                 'paypal' => 'Thanh toán PayPal',
+                                'paypal' => 'Thanh toán PayPal',
                                 default => ucfirst($order->payment_method),
                             } }}
                         <p><strong>Phí vận chuyển:</strong> {{ number_format($order->shipping_fee) }} đ</p>
@@ -114,10 +114,12 @@
                                     style="color: red">(-{{ number_format($order->discount_amount) . ' vnđ' }})</b></p>
                         @endif
 
+                        <p><strong>Ghi chú của khách hàng:</strong></p>
+                        <textarea class="form-control" rows="4" name="note" readonly>{{ $order->note }}</textarea>
                     </div>
                 </div>
 
-                @if ($isEdit)
+                {{-- @if ($isEdit)
                     <div class="form-group">
                         <label for="note"><strong>Ghi chú:</strong></label>
                         <textarea name="note" id="note" class="form-control @error('note') is-invalid @enderror" rows="4">{{ old('note', $order->note) }}</textarea>
@@ -125,12 +127,12 @@
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
-                @endif
+                @endif --}}
 
                 @if ($isEdit)
                     <div class="mt-3">
                         <button type="submit" class="btn btn-primary">Cập nhật</button>
-                        <a href="{{ route('admin.orders.index') }}" class="btn btn-secondary">Hủy</a>
+                        <a href="{{ route('admin.orders.index') }}" class="btn btn-secondary">Trở về</a>
                     </div>
                 @endif
 

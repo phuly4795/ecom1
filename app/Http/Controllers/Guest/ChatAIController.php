@@ -8,6 +8,7 @@ use App\Models\ChatHistory;
 use App\Models\Product;
 use App\Models\SubCategory;
 use App\Services\GeminiService;
+use App\Services\GroqService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -34,7 +35,7 @@ class ChatAIController extends Controller
 
         // Gửi yêu cầu ban đầu cho AI để lấy câu trả lời (không có bảng lúc này)
         $systemPrompt = "Bạn là trợ lý AI bán hàng. Hãy trả lời khách hàng một cách tự nhiên, thân thiện.";
-        $rawReply = GeminiService::chat($userMessage, $systemPrompt);
+        $rawReply = GroqService::chat($userMessage, $systemPrompt);
         $reply = $this->formatAiResponse($rawReply);
 
         // Gộp cả user + AI trả lời lại để dò keyword

@@ -131,15 +131,13 @@ class OrderController extends Controller
 
         $validated = $request->validate([
             'status' => 'required|in:waiting_pay,pending,processing,completed,cancelled',
-            'note' => 'nullable|string|max:500',
         ]);
 
         $order->update([
             'status' => $validated['status'],
-            'note' => $validated['note'],
         ]);
 
-        return redirect()->route('admin.orders.index')->with('success', 'Cập nhật đơn hàng thành công');
+        return redirect()->route('admin.orders.index')->with(['status' => 'success', 'message' => 'Cập nhật đơn hàng thành công']);
     }
 
     public function massDestroy(Request $request)

@@ -67,6 +67,7 @@ class AccountController extends Controller
                 'billing_email' => $order->billing_email ?? null,
                 'billing_telephone' => $order->billing_telephone ?? null,
                 'billing_address' => $order->billing_address ?? null,
+                'note' => $order->note ?? null,
                 'billingWard' => $order->billingWard ? ['name' => $order->billingWard->full_name] : null,
                 'billingDistrict' => $order->billingDistrict ? ['name' => $order->billingDistrict->full_name] : null,
                 'billingProvince' => $order->billingProvince ? ['name' => $order->billingProvince->full_name] : null,

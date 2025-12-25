@@ -17,9 +17,22 @@ class DashboardController extends Controller
     public function index()
     {
         // Đơn hàng theo trạng thái
-        $ordersByStatus = Order::select('status', DB::raw('count(*) as total'))
-            ->groupBy('status')
-            ->pluck('total', 'status');
+        $ordersByStatus = Order::select(
+            [
+                DB::raw("
+            CASE status
+                WHEN 'waiting_pay' THEN 'Chờ thanh toán'
+                WHEN 'pending' THEN 'Đang chờ'
+                WHEN 'processing' THEN 'Đang xử lý'
+                WHEN 'completed' THEN 'Hoàn thành'
+                WHEN 'cancelled' THEN 'Đã hủy'
+            END as status_vi
+        "),
+                DB::raw('count(*) as total')
+            ]
+        )
+            ->groupBy('status_vi')
+            ->pluck('total', 'status_vi');
 
         // Người dùng mới trong 7 ngày
         $usersLast7Days = User::select(DB::raw('DATE(created_at) as date'), DB::raw('count(*) as total'))
@@ -73,7 +86,7 @@ class DashboardController extends Controller
 
         // Doanh thu 7 ngày gần nhất
         $revenueLast7Days = Order::where('status', 'completed')
-            ->whereDate('created_at', '>=', Carbon::now()->subDays(6))
+            ->whereDate('created_at', '>=', Carbon::now()->subDays(30))
             ->selectRaw('DATE(created_at) as date, SUM(total_amount) as total')
             ->groupBy('date')
             ->orderBy('date')

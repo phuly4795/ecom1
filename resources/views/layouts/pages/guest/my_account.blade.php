@@ -304,11 +304,12 @@
                                 @csrf
                                 <!-- Password -->
                                 <div class="mb-3 mt-3" style="margin-bottom: 3%">
-                                    <x-input-label for="password" :value="__('Nhập mật khẩu cũ')" />
+                                    <x-input-label for="password" :value="__('Mật khẩu cũ')" />
                                     <x-text-input id="current_password"
                                         class="block form-control mt-1 w-full  {{ $errors->has('current_password') ? 'has-error' : '' }}"
                                         type="current_password" name="current_password" required
-                                        autocomplete="current_password" />
+                                        autocomplete="current_password" 
+                                        placeholder="Nhập mật khẩu cũ"/>
                                     <x-input-error :messages="$errors->get('current_password')" class="mt-2" />
                                 </div>
                                 <!-- Password -->
@@ -316,7 +317,8 @@
                                     <x-input-label for="password" :value="__('Mật khẩu mới')" />
                                     <x-text-input id="password"
                                         class="block form-control mt-1 w-full  {{ $errors->has('password') ? 'has-error' : '' }}"
-                                        type="password" name="password" required autocomplete="new-password" />
+                                        type="password" name="password" required autocomplete="new-password" 
+                                        placeholder="Nhập mật khẩu mới"/>
                                     <x-input-error :messages="$errors->get('password')" class="mt-2" />
                                 </div>
 
@@ -327,7 +329,8 @@
                                     <x-text-input id="password_confirmation"
                                         class="block form-control mt-1 w-full {{ $errors->has('password_confirmation') ? 'has-error' : '' }}"
                                         type="password" name="password_confirmation" required
-                                        autocomplete="new-password" />
+                                        autocomplete="new-password"
+                                        placeholder="Nhập lại mật khẩu" />
 
                                     <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
                                 </div>
@@ -828,6 +831,10 @@
                                         }
                                     </tbody>
                                 </table>
+                            </div>
+                            <h6 class="m-0 font-weight-bold text-primary">Ghi chú đơn hàng</h6>
+                            <div class="mb-3">
+                                <p>${order.note || 'Không có ghi chú'}</p>
                             </div>
                         </div>
                     </div>
