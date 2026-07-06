@@ -11,12 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('chat_histories', function (Blueprint $table) {
+        Schema::create('carts', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id')->nullable();
             $table->string('session_id')->nullable();
-            $table->enum('sender', ['user', 'ai']);
-            $table->text('message');
+            $table->decimal('discount_amount', 15, 2)->default(0);
+            $table->string('coupon_code')->nullable();
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->timestamps();
         });
     }
@@ -26,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('chat_histories');
+        Schema::dropIfExists('carts');
     }
 };

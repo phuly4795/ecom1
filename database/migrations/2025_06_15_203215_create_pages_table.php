@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->string('slug')->unique();
-            $table->text('content');
+            $table->text('content_json')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
