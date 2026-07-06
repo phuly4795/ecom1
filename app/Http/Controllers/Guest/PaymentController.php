@@ -53,30 +53,31 @@ class PaymentController extends Controller
     {
         Log::info('PayPal success callback', $request->all());
 
-        // Kiểm tra cơ bản — khi dùng sandbox có thể đơn giản thế này
         if ($this->verifyPayment($request)) {
-            // Xác nhận hợp lệ
             return response()->json(['success' => true]);
         }
 
-        // Nếu không hợp lệ
         return response()->json(['success' => false], 400);
     }
 
-    /**
-     * ✅ Kiểm tra giao dịch có hợp lệ hay không
-     */
     protected function verifyPayment(Request $request)
     {
-        // Trong sandbox, chỉ cần có orderID + status COMPLETED là coi như thành công
-        $details = $request->input('details', []);
+        $orderId = $request->input('orderID');
+        if (!$orderId) {
+            return false;
+        }
 
-        if (
-            isset($request->orderID)
-            && isset($details['status'])
-            && $details['status'] === 'COMPLETED'
-        ) {
-            return true;
+        try {
+            $provider = new PayPalClient;
+            $provider->setApiCredentials(config('paypal'));
+            $provider->getAccessToken();
+            $paypalOrder = $provider->showOrderDetails($orderId);
+
+            if (isset($paypalOrder['status']) && $paypalOrder['status'] === 'COMPLETED') {
+                return true;
+            }
+        } catch (\Exception $e) {
+            Log::error('PayPal verify error: ' . $e->getMessage());
         }
 
         return false;

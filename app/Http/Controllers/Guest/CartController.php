@@ -161,15 +161,8 @@ class CartController extends Controller
             return back()->with('error', 'Mã giảm giá đã được áp dụng.');
         }
 
-        // $value = 0;
-        // if ($coupon->type == 'fixed') {
-        //     $value = $coupon->value;
-        // } elseif($coupon->type == 'percent') {
-
-        // }
-
         $cart->coupon_code = $coupon->code;
-        $cart->discount_amount = $coupon->value; // hoặc tính theo %
+        $cart->discount_amount = $coupon->value;
         $cart->save();
 
         return back()->with('success', 'Áp dụng mã giảm giá thành công!');
@@ -204,23 +197,27 @@ class CartController extends Controller
             ? $product->productVariants->where('id', $productVariantId)->first()
             : null;
 
-        // Kiểm tra số lượng tồn kho
-        $availableQty = $variant ? $variant->qty : $product->qty;
-        if ($qty > $availableQty) {
-            return redirect()->back()->with(['status' => 'error', 'message' => 'Số lượng sản phẩm vượt quá tồn kho!']);
-        }
-
         // Tính giá
         $item = $variant ?? $product;
         $originalPrice = $item->original_price;
         $finalPrice = $item->getIsOnSaleAttribute() == true ? $item->getDisplayPriceAttribute() : $originalPrice;
 
         if ($cartDetail) {
-            // Nếu đã có → tăng số lượng
-            $cartDetail->qty += $qty;
-            $cartDetail->final_price = $finalPrice; // cập nhật giá mới nếu có
+            // Nếu đã có → kiểm tra tổng số lượng với tồn kho
+            $newQty = $cartDetail->qty + $qty;
+            $availableQty = $variant ? $variant->qty : $product->qty;
+            if ($newQty > $availableQty) {
+                return redirect()->back()->with(['status' => 'error', 'message' => 'Số lượng sản phẩm trong giỏ vượt quá tồn kho!']);
+            }
+            $cartDetail->qty = $newQty;
+            $cartDetail->final_price = $finalPrice;
             $cartDetail->save();
         } else {
+            // Kiểm tra số lượng tồn kho cho sản phẩm mới
+            $availableQty = $variant ? $variant->qty : $product->qty;
+            if ($qty > $availableQty) {
+                return redirect()->back()->with(['status' => 'error', 'message' => 'Số lượng sản phẩm vượt quá tồn kho!']);
+            }
             // Nếu chưa có → thêm mới
             CartDetail::create([
                 'cart_id'            => $cart->id,
@@ -342,10 +339,9 @@ class CartController extends Controller
                 'total' => number_format($total),
             ]);
         } catch (\Throwable $th) {
-            dd($th);
-            // \Log::error('Lỗi khi cập nhật giỏ hàng: ' . $th->getMessage(), [
-            //     'trace' => $th->getTraceAsString()
-            // ]);
+            \Log::error('Lỗi khi cập nhật giỏ hàng: ' . $th->getMessage(), [
+                'trace' => $th->getTraceAsString()
+            ]);
 
             return response()->json([
                 'error' => true,

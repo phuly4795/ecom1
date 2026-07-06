@@ -54,13 +54,13 @@ class CategoryController extends Controller
     public function create()
     {
         $categoriesCount = Category::count();
-        $maxPosition = isset($category) ? $categoriesCount : $categoriesCount + 1;
+        $maxPosition = $categoriesCount + 1;
         return view('layouts.pages.admin.category.upsert', compact('maxPosition'));
     }
     public function edit(Category $category)
     {
         $categoriesCount = Category::count();
-        $maxPosition = isset($category) ? $categoriesCount : $categoriesCount + 1;
+        $maxPosition = $categoriesCount;
 
         return view('layouts.pages.admin.category.upsert', compact('category', 'maxPosition'));
     }

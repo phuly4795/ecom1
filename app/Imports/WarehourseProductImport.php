@@ -2,15 +2,13 @@
 
 namespace App\Imports;
 
-use App\Models\Province;
-use App\Models\District;
 use App\Models\Product;
 use App\Models\ProductVariant;
-use App\Models\ShippingFee;
 use App\Models\Warehouse;
 use App\Models\WarehouseDetail;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Exception;
@@ -74,11 +72,13 @@ class WarehourseProductImport implements ToCollection, WithHeadingRow
         }
 
         // --- 3. Nếu không có lỗi thì bắt đầu import ---
-        $warehouse = Warehouse::create([
-            'name'               => $this->name,
-            'user_id'            => Auth::id(),
-            'created_by'         => Auth::user()->name ?? 'System',
-        ]);
+        DB::beginTransaction();
+        try {
+            $warehouse = Warehouse::create([
+                'name'               => $this->name,
+                'user_id'            => Auth::id(),
+                'created_by'         => Auth::user()->name ?? 'System',
+            ]);
 
         foreach ($rows as $row) {
 
@@ -104,6 +104,12 @@ class WarehourseProductImport implements ToCollection, WithHeadingRow
             } else {
                 $product->increment('qty', $row['so_luong']);
             }
+        }
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $this->errors[] = 'Lỗi hệ thống: ' . $e->getMessage();
         }
     }
 }

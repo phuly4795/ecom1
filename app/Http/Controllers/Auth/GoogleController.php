@@ -19,18 +19,20 @@ class GoogleController extends Controller
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
 
-            $user = User::updateOrCreate(
-                ['email' => $googleUser->getEmail()],
-                [
-                    'name'     => $googleUser->getName(),
-                    'password' => bcrypt(str()->random(16)), // random password
+            $user = User::where('email', $googleUser->getEmail())->first();
+
+            if (!$user) {
+                $user = User::create([
+                    'name' => $googleUser->getName(),
+                    'email' => $googleUser->getEmail(),
+                    'password' => bcrypt(str()->random(16)),
                     'type_login' => 'google',
                     'is_active' => 1,
-                ]
-            );
-
-            // Gán vai trò Customer mặc định (ID 2)
-            $user->roles()->syncWithoutDetaching([2]);
+                ]);
+                $user->roles()->syncWithoutDetaching([2]);
+            } elseif ($user->name !== $googleUser->getName()) {
+                $user->update(['name' => $googleUser->getName()]);
+            }
 
             Auth::login($user);
 

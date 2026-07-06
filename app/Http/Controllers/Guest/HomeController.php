@@ -80,7 +80,7 @@ class HomeController extends Controller
             'content.max' => "Nội dung tối đa chỉ 255 ký tự"
         ]);
 
-        $contact = Contact::create($request->all());
+        $contact = Contact::create($request->only(['name', 'email', 'content']));
 
         event(new NewContactMessage($contact));
         return back()->with(['status' => 'success', 'message' => 'Đánh giá của bạn đã được gửi thành công!']);

@@ -83,7 +83,7 @@ Route::get('/districts/{provinceId}', [LocationController::class, 'getDistricts'
 Route::get('/wards/{districtId}', [LocationController::class, 'getWards'])->name('getWards');
 Route::get('/search-products', [ProductController::class, 'search']);
 Route::post('/lien-he', [HomeController::class, 'storeContact'])->middleware('throttle:3,1');
-Route::put('/update-info', [ProfileController::class, 'updateInfo'])->name('admin.profile.updateInfo');
+Route::put('/update-info', [ProfileController::class, 'updateInfo'])->name('admin.profile.updateInfo')->middleware('auth');
 
 Route::post('/subscribe-newsletter', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe')->middleware('throttle:3,1'); // Tối đa 3 lần/phút;;
 

@@ -110,11 +110,18 @@ class AccountController extends Controller
     {
         $user = Auth::user();
 
-        // Nếu người dùng chọn địa chỉ này là mặc định
+        $request->validate([
+            'full_name' => 'required|string|max:255',
+            'telephone' => 'required|string|max:20',
+            'address' => 'required|string|max:255',
+            'province_id' => 'required',
+            'district_id' => 'required',
+            'ward_id' => 'required',
+        ]);
+
         $isDefault = $request->has('is_default') ? 1 : 0;
 
         if ($isDefault) {
-            // Reset tất cả địa chỉ cũ về 0 (không mặc định)
             ShippingAddress::where('user_id', $user->id)
                 ->update(['is_default' => 0]);
         }
@@ -136,22 +143,27 @@ class AccountController extends Controller
     {
         $user = Auth::user();
 
-        // Tìm địa chỉ thuộc user
+        $request->validate([
+            'full_name' => 'required|string|max:255',
+            'telephone' => 'required|string|max:20',
+            'address' => 'required|string|max:255',
+            'province_id' => 'required',
+            'district_id' => 'required',
+            'ward_id' => 'required',
+        ]);
+
         $address = ShippingAddress::where('id', $id)
             ->where('user_id', $user->id)
             ->firstOrFail();
 
-        // Nếu người dùng chọn địa chỉ này là mặc định
         $isDefault = $request->has('is_default') ? 1 : $address->is_default;
 
         if ($isDefault) {
-            // Reset tất cả địa chỉ cũ về 0 (không mặc định)
             ShippingAddress::where('user_id', $user->id)
                 ->where('id', '!=', $id) 
                 ->update(['is_default' => 0]);
         }
 
-        // Cập nhật thông tin địa chỉ
         $address->update([
             'full_name' => $request->full_name,
             'telephone' => $request->telephone,

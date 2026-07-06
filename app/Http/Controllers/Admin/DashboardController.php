@@ -41,10 +41,12 @@ class DashboardController extends Controller
             ->orderBy('date')
             ->get();
 
-        // Sản phẩm bán chạy (Top 5)
+        // Sản phẩm bán chạy (Top 5) - hỗ trợ cả variant và không variant
         $bestSellers = DB::table('order_details')
-            ->join('product_variants', 'order_details.product_variant_id', '=', 'product_variants.id')
-            ->join('products', 'product_variants.product_id', '=', 'products.id')
+            ->join('products', function ($join) {
+                $join->on('order_details.product_id', '=', 'products.id');
+            })
+            ->leftJoin('product_variants', 'order_details.product_variant_id', '=', 'product_variants.id')
             ->select('products.id', 'products.title', DB::raw('SUM(order_details.quantity) as total_sold'))
             ->groupBy('products.id', 'products.title')
             ->orderByDesc('total_sold')
@@ -71,9 +73,9 @@ class DashboardController extends Controller
         }
 
         // Top khách hàng theo tổng chi tiêu
-        $topCustomers = User::select('users.name', DB::raw('SUM(orders.total_amount) as total_spent'))
+        $topCustomers = User::select('users.id', 'users.name', DB::raw('SUM(orders.total_amount) as total_spent'))
             ->join('orders', 'users.id', '=', 'orders.user_id')
-            ->groupBy('users.name')
+            ->groupBy('users.id', 'users.name')
             ->orderByDesc('total_spent')
             ->limit(5)
             ->get();

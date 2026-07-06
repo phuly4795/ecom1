@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class CheckoutController extends Controller
 {
@@ -67,40 +68,43 @@ class CheckoutController extends Controller
             }
         }
 
-        foreach ($cart->cartDetails as $item) {
-            $product = Product::with('productVariants')->find($item->product_id);
-
-            if (!$product) {
-                return redirect()->route('cart.show')->with('error', "Sản phẩm không tồn tại trong hệ thống.");
-            }
-            $variant = $item->product_variant_id
-                ? $product->productVariants->where('id', $item->product_variant_id)->first()
-                : null;
-
-            $availableQty = $variant ? $variant->qty : $product->qty;
-
-            if ($item->qty > $availableQty) {
-                return redirect()->route('cart.show')->with('error', "Sản phẩm \"{$product->title}\" chỉ còn lại {$availableQty} sản phẩm. Vui lòng điều chỉnh số lượng.");
-            }
-        }
-
         DB::beginTransaction();
         try {
             // Tính tổng
             $subtotal = $cart->cartDetails->sum(fn($item) => $item->final_price * $item->qty);
-            $shippingAddress = ShippingAddress::find($request->shipping_address_id);
+
+            // Fix IDOR: Chỉ cho phép dùng địa chỉ của chính user
+            $shippingAddress = null;
+            if ($request->shipping_address_id) {
+                $shippingAddress = ShippingAddress::where('id', $request->shipping_address_id)
+                    ->where('user_id', $user ? $user->id : null)
+                    ->first();
+                if (!$shippingAddress) {
+                    DB::rollBack();
+                    return redirect()->back()->with('error', 'Địa chỉ giao hàng không hợp lệ.');
+                }
+            }
 
             $province_id = $shippingAddress ? $shippingAddress->province_id : $request->shipping_province_id;
             $district_id = $shippingAddress ? $shippingAddress->district_id : $request->shipping_district_id;
 
             $shippingFee = $this->getShippingFee($province_id, $district_id);
-            $discount = $cart->discount_amount ?? 0; // nếu có mã thì tính sau
-            $total = max($subtotal + $shippingFee - $discount, 0);
+            $discountAmount = 0;
+            if ($cart->coupon_code && $cart->discount_amount) {
+                $appliedCoupon = Coupon::where('code', $cart->coupon_code)->first();
+                if ($appliedCoupon && $appliedCoupon->type === 'percent') {
+                    $discountAmount = round($subtotal * $appliedCoupon->value / 100);
+                } else {
+                    $discountAmount = $cart->discount_amount;
+                }
+            }
+            $total = max($subtotal + $shippingFee - $discountAmount, 0);
 
             // Xác thực thanh toán PayPal ở phía Server
             if ($request->payment_method === 'paypal') {
                 $paypalOrderId = $request->input('paypal_order_id');
                 if (!$paypalOrderId) {
+                    DB::rollBack();
                     return redirect()->back()->with('error', 'Thiếu mã giao dịch PayPal.');
                 }
 
@@ -119,13 +123,14 @@ class CheckoutController extends Controller
                 }
 
                 if (!isset($paypalOrder['status']) || $paypalOrder['status'] !== 'COMPLETED') {
+                    DB::rollBack();
                     return redirect()->back()->with('error', 'Thanh toán qua PayPal chưa hoàn tất hoặc không hợp lệ.');
                 }
 
-                // Kiểm tra số tiền (quy đổi tổng tiền đơn hàng VNĐ sang USD tỉ giá 24000)
                 $paypalAmount = $paypalOrder['purchase_units'][0]['amount']['value'] ?? 0;
                 $expectedAmount = round($total / 24000, 2);
                 if (abs($paypalAmount - $expectedAmount) > 0.5) {
+                    DB::rollBack();
                     return redirect()->back()->with('error', 'Số tiền thanh toán trên PayPal không khớp với tổng tiền đơn hàng.');
                 }
             }
@@ -140,7 +145,6 @@ class CheckoutController extends Controller
                         ->update(['is_default' => 0]);
                 }
 
-                // Lưu địa chỉ giao hàng mới nếu người dùng đăng nhập
                 $shippingAddress = ShippingAddress::create([
                     'user_id' => $user->id,
                     'full_name' => $request->shipping_full_name,
@@ -155,10 +159,29 @@ class CheckoutController extends Controller
 
                 $shippingAddressId = $shippingAddress->id;
             }
-            // Lấy số thứ tự tiếp theo
-            $lastOrder = Order::orderBy('id', 'desc')->first();
-            $nextId = $lastOrder ? $lastOrder->id + 1 : 1;
-            $orderCode = 'ORD-' . str_pad($nextId, 6, '0', STR_PAD_LEFT);
+
+            // Fix Race Condition: Lock hàng và kiểm tra tồn kho trong transaction
+            $stockItems = [];
+            foreach ($cart->cartDetails as $item) {
+                $product = Product::with('productVariants')->lockForUpdate()->find($item->product_id);
+                if (!$product) {
+                    DB::rollBack();
+                    return redirect()->route('cart.show')->with('error', "Sản phẩm không tồn tại trong hệ thống.");
+                }
+                $variant = $item->product_variant_id
+                    ? $product->productVariants()->lockForUpdate()->where('id', $item->product_variant_id)->first()
+                    : null;
+
+                $availableQty = $variant ? $variant->qty : $product->qty;
+                if ($item->qty > $availableQty) {
+                    DB::rollBack();
+                    return redirect()->route('cart.show')->with('error', "Sản phẩm \"{$product->title}\" chỉ còn lại {$availableQty} sản phẩm. Vui lòng điều chỉnh số lượng.");
+                }
+                $stockItems[] = ['product' => $product, 'variant' => $variant, 'item' => $item];
+            }
+
+            // Fix Order Code: Dùng UUID để tránh trùng
+            $orderCode = 'ORD-' . strtoupper(Str::random(8));
 
             // Tạo đơn hàng
             $order = Order::create([
@@ -177,7 +200,7 @@ class CheckoutController extends Controller
                 'shipping_fee' => $shippingFee,
                 'total_amount' => $total,
                 'coupon_code' => $cart->coupon_code,
-                'discount_amount' => $cart->discount_amount,
+                'discount_amount' => $discountAmount,
                 'status' => $request->payment_method === 'transfer' ? 'waiting_pay' : ($request->payment_method === 'paypal' ? 'processing' : 'pending'),
             ]);
 
@@ -203,18 +226,27 @@ class CheckoutController extends Controller
             $cart->cartDetails()->delete();
             $cart->delete();
 
-            foreach ($order->orderDetails as $item) {
-                $variant = $item->product->productVariants->where('id', $item->product_variant_id)->first();
-                $displayItem = $variant ?? $item->product;
-                $product = $displayItem;
-                $product->qty -= $item->quantity;
-                $product->save();
+            // Fix Race Condition: Trừ stock với dữ liệu đã lock
+            foreach ($stockItems as $stockItem) {
+                $product = $stockItem['product'];
+                $variant = $stockItem['variant'];
+                $item = $stockItem['item'];
 
-                if ($product && $product->qty <= 5) {
+                if ($variant) {
+                    $variant->qty -= $item->quantity;
+                    $variant->save();
+                    $checkQty = $variant->qty;
+                } else {
+                    $product->qty -= $item->quantity;
+                    $product->save();
+                    $checkQty = $product->qty;
+                }
+
+                if ($checkQty <= 5) {
                     $notification = Notification::create([
                         'type' => 'low-stock',
                         'title' => 'Sản phẩm sắp hết hàng',
-                        'message' => 'Sản phẩm ' . $item->product_name . ' chỉ còn lại ' . $product->qty . ' sản phẩm trong kho.',
+                        'message' => 'Sản phẩm ' . $item->product_name . ' chỉ còn lại ' . $checkQty . ' sản phẩm trong kho.',
                         'reference_id' => $product->id
                     ]);
                     event(new NewNotification($notification));

@@ -21,7 +21,7 @@ class NewContactMessage implements ShouldBroadcast
 
     public function broadcastOn()
     {
-        return new Channel('contact-messages'); // tên channel
+        return new Channel('contact-messages');
     }
 
     public function broadcastWith()

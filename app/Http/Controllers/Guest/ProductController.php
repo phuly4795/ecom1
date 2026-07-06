@@ -25,7 +25,7 @@ class ProductController extends Controller
         ]);
 
         $product = Product::findOrFail($productId);
-        $product->reviews()->create($request->all());
+        $product->reviews()->create($request->only(['user_name', 'email', 'comment', 'rating']));
 
         return redirect()->back()->with('success', 'Đánh giá của bạn đã được gửi thành công!');
     }

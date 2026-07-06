@@ -451,8 +451,13 @@ class ProductController extends Controller
     {
         $request->validate(['ids' => 'required|array', 'ids.*' => 'exists:products,id']);
 
-        ProductVariant::whereIn('product_id', $request->ids)->delete();
-        Product::whereIn('id', $request->ids)->delete();
+        foreach ($request->ids as $id) {
+            $product = Product::with('productVariants')->find($id);
+            if ($product) {
+                $product->productVariants()->delete();
+                $product->delete();
+            }
+        }
 
         return response()->json(['success' => 'success', 'message' => 'Xóa hàng loạt thành công']);
     }
@@ -513,8 +518,8 @@ class ProductController extends Controller
 
     public function getSubcategories($category_id)
     {
-        $subcategories = SubCategory::where('category_id', $category_id)->get();
-        return response()->json($subcategories);
+        $category = Category::with('subCategories')->findOrFail($category_id);
+        return response()->json($category->subCategories);
     }
 
     public function generateBarcode($length = 10)
@@ -617,6 +622,17 @@ class ProductController extends Controller
 
         $url = $request->input('url');
 
+        // Fix SSRF: Chỉ cho phép URL bên ngoài, chặn IP nội bộ
+        $parsedUrl = parse_url($url);
+        $host = $parsedUrl['host'] ?? '';
+        $hostIp = gethostbyname($host);
+        if (filter_var($hostIp, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            return response()->json([
+                'success' => false,
+                'message' => 'URL không hợp lệ: không được phép truy cập địa chỉ nội bộ.'
+            ], 400);
+        }
+
         try {
             // Sử dụng cURL để tải nội dung HTML giả lập trình duyệt
             $ch = curl_init();
@@ -625,7 +641,7 @@ class ProductController extends Controller
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
             curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36');
             curl_setopt($ch, CURLOPT_TIMEOUT, 20);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
                 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                 'Accept-Language: vi-VN,vi;q=0.9,en;q=0.8',
@@ -1107,6 +1123,14 @@ class ProductController extends Controller
         }
     }
 
+    private function isInternalUrl($url)
+    {
+        $parsed = parse_url($url);
+        $host = $parsed['host'] ?? '';
+        $ip = gethostbyname($host);
+        return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false;
+    }
+
     public function crawlDownloadImages(Request $request)
     {
         $request->validate([
@@ -1115,11 +1139,20 @@ class ProductController extends Controller
             'gallery_images.*' => 'url'
         ]);
 
+        $mainUrl = $request->input('main_image');
+        if ($this->isInternalUrl($mainUrl)) {
+            return response()->json(['success' => false, 'message' => 'URL ảnh không hợp lệ.'], 400);
+        }
+        foreach ($request->input('gallery_images', []) as $galUrl) {
+            if ($this->isInternalUrl($galUrl)) {
+                return response()->json(['success' => false, 'message' => 'URL ảnh phụ không hợp lệ.'], 400);
+            }
+        }
+
         try {
             $localImagePaths = [];
 
             // 1. Tải ảnh chính
-            $mainUrl = $request->input('main_image');
             $mainContent = @file_get_contents($mainUrl);
             if (!$mainContent) {
                 throw new \Exception("Không thể tải hình ảnh chính từ: " . $mainUrl);

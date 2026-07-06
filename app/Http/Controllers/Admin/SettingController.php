@@ -16,14 +16,18 @@ class SettingController extends Controller
 
     public function update(Request $request)
     {
+        $allowedKeys = ['phone', 'email', 'address', 'info', 'default_shipping_fee', 'company_name', 'facebook', 'youtube', 'zalo', 'map'];
+        $dynamicKeys = [];
+
         foreach ($request->except('_token', 'dynamic_settings') as $key => $value) {
-            Setting::updateOrCreate(['key' => $key], ['value' => $value]);
+            if (in_array($key, $allowedKeys)) {
+                Setting::updateOrCreate(['key' => $key], ['value' => $value]);
+            }
         }
 
-        // Lưu dynamic settings
         if ($request->has('dynamic_settings')) {
             foreach ($request->dynamic_settings as $key => $value) {
-                if (!empty($key)) {
+                if (!empty($key) && preg_match('/^[a-zA-Z0-9_]+$/', $key)) {
                     Setting::updateOrCreate(['key' => $key], ['value' => $value]);
                 }
             }

@@ -33,7 +33,7 @@ Route::middleware('auth', 'verified', 'role:admin')->group(function () {
             $role->name   =  'Customer';
             $role->slug   =  'customer';
             $role->save();
-        });
+        })->withoutMiddleware('verified');
 
         Route::prefix('category')->name('category.')->group(function () {
             Route::get('/', [CategoryController::class, 'index'])->name('index');
@@ -195,5 +195,8 @@ Route::middleware('auth', 'verified', 'role:admin')->group(function () {
     });
 });
 Route::fallback(function () {
-    return view('layouts.pages.admin.404');
+    if (auth()->check() && auth()->user()->roles()->where('name', 'admin')->exists()) {
+        return view('layouts.pages.admin.404');
+    }
+    abort(404);
 });

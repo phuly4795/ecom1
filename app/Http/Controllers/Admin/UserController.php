@@ -18,7 +18,7 @@ class UserController extends Controller
 
     public function data()
     {
-        $query = User::query(); // Thêm eager loading
+        $query = User::with('roles');
 
         return DataTables::of($query)
             ->addIndexColumn()
@@ -39,7 +39,6 @@ class UserController extends Controller
             })
 
             ->editColumn('user_roles', function ($user) {
-                $user = User::with('roles')->find($user->id);
                 return optional($user->roles->first())->name ?? 'Không có';
             })
 
