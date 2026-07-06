@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Page;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -12,9 +13,9 @@ class PageController extends Controller
     public function show($slug)
     {
         $page = Page::where('slug', $slug)->where('is_active', 1)->firstOrFail();
-        // Giải mã JSON thành mảng PHP
-        $page->content_json = json_decode($page->content_json, true);
-        return view('layouts.pages.guest.show', compact('page'));
+        $page->content_json = json_decode($page->content_json, true) ?? [];
+        $products = Product::where('status', 1)->orderBy('title')->get();
+        return view('layouts.pages.guest.show', compact('page', 'products'));
     }
     public function index()
     {
@@ -24,7 +25,8 @@ class PageController extends Controller
 
     public function create()
     {
-        return view('layouts.pages.admin.page.upsert');
+        $products = Product::where('status', 1)->orderBy('title')->get();
+        return view('layouts.pages.admin.page.upsert', compact('products'));
     }
 
     public function store(Request $request)
@@ -49,7 +51,8 @@ class PageController extends Controller
     public function edit(Page $page)
     {
         $page->content_json = json_decode($page->content_json, true) ?? [];
-        return view('layouts.pages.admin.page.upsert', compact('page'));
+        $products = Product::where('status', 1)->orderBy('title')->get();
+        return view('layouts.pages.admin.page.upsert', compact('page', 'products'));
     }
 
     public function update(Request $request, Page $page)

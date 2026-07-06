@@ -91,6 +91,11 @@ Route::middleware('auth', 'verified', 'role:admin')->group(function () {
 
             Route::get('/get-subcategories/{category_id}', [ProductController::class, 'getSubcategories'])->name('getSubcategories');
             Route::patch('{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('toggleStatus');
+            Route::post('{product}/clone', [ProductController::class, 'clone'])->name('clone');
+            Route::post('crawl', [ProductController::class, 'crawl'])->name('crawl');
+            Route::post('crawl/download', [ProductController::class, 'crawlDownloadImages'])->name('crawl.downloadImages');
+            Route::post('quick-category', [ProductController::class, 'quickCreateCategory'])->name('quickCategory');
+            Route::post('quick-brand', [ProductController::class, 'quickCreateBrand'])->name('quickBrand');
         });
 
         Route::prefix('warehouse')->name('warehouse.')->group(function () {

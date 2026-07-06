@@ -15,6 +15,7 @@
             <div class="row">
                 <form action="{{ route('checkout.placeOrder') }}" method="POST">
                     @csrf
+                    <input type="hidden" name="paypal_order_id" id="paypal_order_id">
                     <div class="col-md-7">
                         <!-- Billing Details -->
                         <div class="billing-details">
@@ -529,7 +530,8 @@
 
                                 // ✅ Tự động submit form đặt hàng
                                 setTimeout(() => {
-                                    // Gán phương thức thanh toán là paypal
+                                    // Gán phương thức thanh toán là paypal và lưu mã giao dịch
+                                    document.getElementById('paypal_order_id').value = data.orderID;
                                     checkoutForm.querySelector(
                                         'input[name="payment_method"][value="paypal"]'
                                     ).checked = true;

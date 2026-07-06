@@ -25,6 +25,40 @@
                 @method('PUT')
             @endif
 
+            @if (!isset($product->id))
+                <!-- Bộ cào thông tin tự động từ link đối thủ -->
+                <div class="card p-4 mb-4 shadow-sm border-left-primary bg-white rounded" style="border-left: 4px solid #4e73df !important;">
+                    <h5 class="font-weight-bold text-primary mb-3"><i class="fa-solid fa-cloud-arrow-down mr-1"></i> Tự động điền nhanh sản phẩm từ URL</h5>
+                    <div class="input-group">
+                        <input type="url" id="crawl-url-input" class="form-control" placeholder="Dán link sản phẩm (VD: FPT Shop, Tiki, CellphoneS...)">
+                        <div class="input-group-append">
+                            <button type="button" class="btn btn-primary px-4 shadow-sm" id="btn-start-crawl">
+                                <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Nạp dữ liệu
+                            </button>
+                        </div>
+                    </div>
+                    <small class="text-muted mt-2 d-block">
+                        <i class="fa-solid fa-circle-question mr-1"></i> Dán đường dẫn trang chi tiết sản phẩm, hệ thống sẽ tự quét Tên, Giá, Mô tả, Thông số kỹ thuật và tải ảnh sản phẩm về server cho bạn.
+                    </small>
+
+                    <!-- Vùng hiển thị chọn ảnh trực quan (Ẩn mặc định) -->
+                    <div id="crawler-image-picker-section" style="display: none;" class="mt-4 border-top pt-3">
+                        <h6 class="font-weight-bold text-dark mb-3"><i class="fa-solid fa-images mr-1 text-info"></i> Chọn ảnh sản phẩm cào được:</h6>
+                        <div class="alert alert-info py-2 mb-3" style="font-size: 13px;">
+                            <i class="fa-solid fa-circle-info mr-1"></i> Chọn <strong>1 ảnh chính</strong> (vòng tròn) và tích chọn các <strong>ảnh phụ</strong> (ô vuông) bạn muốn sử dụng. Các ảnh rác/không chọn sẽ bị bỏ qua.
+                        </div>
+                        <div class="row" id="crawler-image-grid" style="margin-right: -5px; margin-left: -5px;">
+                            <!-- Ảnh JS tự chèn vào đây -->
+                        </div>
+                        <div class="mt-3 text-right">
+                            <button type="button" class="btn btn-success btn-sm shadow-sm px-4" id="btn-confirm-import-images">
+                                <i class="fa-solid fa-cloud-arrow-down mr-1"></i> Tải & Nạp ảnh đã chọn
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <div class="row">
                 <div class="col-md-8">
                     <div class="card p-4 mb-3 shadow-sm rounded bg-white">
@@ -67,7 +101,18 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label h5" style="font-weight: 700">Thông số kỹ thuật</label>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <label class="form-label h5 mb-0" style="font-weight: 700">Thông số kỹ thuật</label>
+                                <div class="d-flex align-items-center" style="gap: 8px;">
+                                    <span class="small text-muted font-weight-bold">Mẫu thông số:</span>
+                                    <select id="spec-template-selector" class="form-control form-control-sm" style="width: auto;">
+                                        <option value="">-- Chọn mẫu thông số --</option>
+                                        <option value="phone">Điện thoại / Máy tính bảng</option>
+                                        <option value="laptop">Laptop / Máy tính</option>
+                                        <option value="accessory">Phụ kiện & Thiết bị khác</option>
+                                    </select>
+                                </div>
+                            </div>
                             <div id="specifications-groups">
                                 @if (isset($product->id) && !empty($product->specifications))
                                     @php
@@ -217,8 +262,11 @@
                                 </div>
                                 <div class="col-md-6 mt-3">
                                     <label for="qty" class="form-label">Số lượng</label>
-                                    <input type="number" name="qty" id="qty" class="form-control" readonly value="0"
-                                        value="{{ old('qty', $product->qty ?? '') }}">
+                                    <input type="number" name="qty" id="qty" class="form-control bg-light" readonly
+                                        value="{{ old('qty', $product->qty ?? '0') }}">
+                                    <small class="text-muted d-block mt-1">
+                                        <i class="fa-solid fa-circle-info text-primary mr-1"></i> Số lượng cập nhật tự động qua Phiếu Nhập Kho. <a href="{{ route('admin.warehouse.index') }}" target="_blank" class="font-weight-bold">Tới quản lý Kho hàng →</a>
+                                    </small>
                                 </div>
                             </div>
                         </div>
@@ -229,156 +277,160 @@
                         style="{{ (!isset($product->id) && old('product_type') != 'variant') || (isset($product->id) && $product->product_type != 'variant') ? 'display: none;' : '' }}">
                         <div class="mb-3">
                             <label class="form-label h5 mb-3" style="font-weight: 700">Danh sách biến thể</label>
+
+                            <!-- Bộ áp dụng nhanh giá trị cho toàn bộ biến thể -->
+                            <div class="border p-3 rounded mb-4 bg-light shadow-xs border-left-success" style="border-left: 4px solid #1cc88a !important;">
+                                <h6 class="font-weight-bold text-success mb-2"><i class="fa-solid fa-bolt mr-1"></i> Thiết lập nhanh cho tất cả biến thể:</h6>
+                                <div class="row">
+                                    <div class="col-md-3 mb-2">
+                                        <label class="small font-weight-bold text-muted mb-1">Giá gốc chung</label>
+                                        <input type="number" id="bulk-original-price" class="form-control form-control-sm" placeholder="Giá gốc chung">
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <label class="small font-weight-bold text-muted mb-1">% giảm giá chung</label>
+                                        <input type="number" id="bulk-discount-pct" class="form-control form-control-sm" placeholder="% giảm giá" min="0" max="100">
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <label class="small font-weight-bold text-muted mb-1">Ngày bắt đầu KM</label>
+                                        <input type="date" id="bulk-start-date" class="form-control form-control-sm">
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <label class="small font-weight-bold text-muted mb-1">Ngày kết thúc KM</label>
+                                        <input type="date" id="bulk-end-date" class="form-control form-control-sm">
+                                    </div>
+                                </div>
+                                <div class="text-right mt-2">
+                                    <button type="button" class="btn btn-sm btn-success px-3 shadow-xs" id="btn-apply-bulk-variants">
+                                        <i class="fa-solid fa-check mr-1"></i> Áp dụng cho tất cả
+                                    </button>
+                                </div>
+                            </div>
+
                             <div class="row">
                                 <div class="col-md-12">
                                     <div id="variant-container">
                                         @if (isset($product->id) && $product->product_type == 'variant' && $product->productVariants->isNotEmpty())
                                             @foreach ($product->productVariants as $key => $variant)
-                                                <div class="variant-row row mb-3">
-                                                    <h4 class="mb-3" style="margin-left: 2%">Biến thế
-                                                        {{ $key + 1 }}</h4>
-                                                    <div class="col-md-12">
-                                                        <div class="row">
-                                                            <div class="col-md-4">
-                                                                <label for="">Tên biến thế</label>
-                                                                <input type="text"
-                                                                    name="variants[existing][name][{{ $variant->id }}]"
-                                                                    class="form-control"
-                                                                    placeholder="Tên biến thể (VD: Size S)"
-                                                                    value="{{ $variant->variant_name }}">
-                                                            </div>
-                                                            <div class="col-md-4">
-                                                                <label for="">Giá gốc biến thế</label>
-                                                                <input type="number"
-                                                                    name="variants[existing][original_price][{{ $variant->id }}]"
-                                                                    class="form-control" placeholder="Giá gốc"
-                                                                    value="{{ $variant->original_price }}">
-                                                            </div>
-                                                            <div class="col-md-4">
-                                                                <label for="">Giá giảm biến thế</label>
-                                                                <input type="number"
-                                                                    name="variants[existing][discount_percentage][{{ $variant->id }}]"
-                                                                    class="form-control" placeholder="% giảm"
-                                                                    value="{{ $variant->discount_percentage ?? '' }}"
-                                                                    min="0" max="100">
-                                                            </div>
+                                                <div class="variant-row border rounded p-3 mb-3 bg-white shadow-xs" style="border-left: 4px solid #36b9cc !important;">
+                                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                                        <h5 class="font-weight-bold text-dark mb-0"><i class="fa-solid fa-cube text-info mr-1"></i> Biến thể {{ $key + 1 }}</h5>
+                                                        <button type="button" class="btn btn-danger btn-sm remove-variant"><i class="fa-solid fa-trash-can mr-1"></i> Xóa biến thể</button>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-md-4 mb-2">
+                                                            <label class="small font-weight-bold text-dark">Tên biến thể</label>
+                                                            <input type="text"
+                                                                name="variants[existing][name][{{ $variant->id }}]"
+                                                                class="form-control form-control-sm"
+                                                                placeholder="Tên biến thể (VD: Màu Đen, 256GB)"
+                                                                value="{{ $variant->variant_name }}">
+                                                        </div>
+                                                        <div class="col-md-4 mb-2">
+                                                            <label class="small font-weight-bold text-dark">Giá gốc</label>
+                                                            <input type="number"
+                                                                name="variants[existing][original_price][{{ $variant->id }}]"
+                                                                class="form-control form-control-sm" placeholder="Giá gốc"
+                                                                value="{{ $variant->original_price }}">
+                                                        </div>
+                                                        <div class="col-md-4 mb-2">
+                                                            <label class="small font-weight-bold text-dark">Giá giảm (%)</label>
+                                                            <input type="number"
+                                                                name="variants[existing][discount_percentage][{{ $variant->id }}]"
+                                                                class="form-control form-control-sm" placeholder="% giảm"
+                                                                value="{{ $variant->discount_percentage ?? '' }}"
+                                                                min="0" max="100">
                                                         </div>
                                                     </div>
-                                                    <div class="col-md-12">
-                                                        <div class="row">
-                                                            <div class="col-md-4">
-                                                                <label for="">Ngày bắt đầu giảm giá</label>
-                                                                <input type="date"
-                                                                    name="variants[existing][discount_start_date][{{ $variant->id }}]"
-                                                                    class="form-control"
-                                                                    placeholder="Ngày bắt đầu giảm giá"
-                                                                    value="{{ optional($variant->discount_start_date)->format('Y-m-d') ?? '' }}">
-                                                            </div>
-                                                            <div class="col-md-4">
-                                                                <label for="">Ngày kết thúc giảm giá</label>
-                                                                <input type="date"
-                                                                    name="variants[existing][discount_end_date][{{ $variant->id }}]"
-                                                                    class="form-control"
-                                                                    placeholder="Ngày kết thúc giảm giá"
-                                                                    value="{{ optional($variant->discount_end_date)->format('Y-m-d') ?? '' }}">
-                                                            </div>
-                                                            <div class="col-md-4">
-                                                                <label for="">SKU biến thể</label>
-                                                                <input type="text"
-                                                                    name="variants[existing][sku][{{ $variant->id }}]"
-                                                                    class="form-control" placeholder="SKU"
-                                                                    value="{{ $variant->sku }}" readonly>
-                                                            </div>
+                                                    <div class="row mt-2">
+                                                        <div class="col-md-4 mb-2">
+                                                            <label class="small font-weight-bold text-dark">Ngày bắt đầu giảm giá</label>
+                                                            <input type="date"
+                                                                name="variants[existing][discount_start_date][{{ $variant->id }}]"
+                                                                class="form-control form-control-sm"
+                                                                value="{{ optional($variant->discount_start_date)->format('Y-m-d') ?? '' }}">
                                                         </div>
-                                                    </div>
-                                                    <div class="col-md-12">
-                                                        <div class="row">
-                                                            <div class="col-md-4">
-                                                                <label for="">Số lượng sản phẩm</label>
-                                                                <input type="number"
-                                                                    name="variants[existing][qty][{{ $variant->id }}]"
-                                                                    class="form-control" placeholder="Số lượng" readonly
-                                                                    value="{{ $variant->qty }}">
-                                                            </div>
-                                                            <div class="col-md-4" style="margin-top: 4%">
-                                                                <label for=""></label>
-                                                                <button type="button"
-                                                                    class="btn btn-danger remove-variant">Xóa</button>
-                                                            </div>
+                                                        <div class="col-md-4 mb-2">
+                                                            <label class="small font-weight-bold text-dark">Ngày kết thúc giảm giá</label>
+                                                            <input type="date"
+                                                                name="variants[existing][discount_end_date][{{ $variant->id }}]"
+                                                                class="form-control form-control-sm"
+                                                                value="{{ optional($variant->discount_end_date)->format('Y-m-d') ?? '' }}">
+                                                        </div>
+                                                        <div class="col-md-2 mb-2">
+                                                            <label class="small font-weight-bold text-dark">SKU biến thể</label>
+                                                            <input type="text"
+                                                                name="variants[existing][sku][{{ $variant->id }}]"
+                                                                class="form-control form-control-sm bg-light" placeholder="SKU"
+                                                                value="{{ $variant->sku }}" readonly>
+                                                        </div>
+                                                        <div class="col-md-2 mb-2">
+                                                            <label class="small font-weight-bold text-dark">Số lượng</label>
+                                                            <input type="number"
+                                                                name="variants[existing][qty][{{ $variant->id }}]"
+                                                                class="form-control form-control-sm bg-light" placeholder="Số lượng" readonly
+                                                                value="{{ $variant->qty }}">
+                                                            <small class="text-muted d-block mt-1" style="font-size: 10px;">Nhập qua phiếu kho</small>
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <hr>
                                             @endforeach
                                         @endif
-                                        <div class="col-md-12 text-right variant-action" style="margin-top: 4%">
-                                            <label for=""></label>
-                                            <button type="button" class="btn btn-success add-variant">Thêm biến
-                                                thể</button>
+                                        <div class="col-md-12 text-right variant-action" style="margin-top: 4%" id="add-variant-wrapper">
+                                            <button type="button" class="btn btn-success add-variant"><i class="fa-solid fa-plus mr-1"></i> Thêm biến thể mới</button>
                                         </div>
                                     </div>
                                     <template id="variant-template">
-                                        <div class="variant-row row mb-3">
-                                            <h4 class="variant-title mb-3" style="margin-left: 2%">Biến thể</h4>
-                                            <div class="col-md-12">
-                                                <div class="row">
-                                                    <div class="col-md-4">
-                                                        <label for="">Tên biến thể</label>
-                                                        <input type="text" name="variants[new][name][]"
-                                                            class="form-control"
-                                                            placeholder="Tên biến thể (VD: Size S)">
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <label for="">Giá gốc biến thể</label>
-                                                        <input type="number" name="variants[new][original_price][]"
-                                                            class="form-control" placeholder="Giá gốc">
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <label for="">Giá giảm biến thể</label>
-                                                        <input type="number"
-                                                            name="variants[new][discount_percentage][]"
-                                                            class="form-control" placeholder="% giảm" min="0"
-                                                            max="100">
-                                                    </div>
+                                        <div class="variant-row border rounded p-3 mb-3 bg-white shadow-xs" style="border-left: 4px solid #1cc88a !important;">
+                                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                                <h5 class="variant-title font-weight-bold text-dark mb-0"><i class="fa-solid fa-cube text-success mr-1"></i> Biến thể mới</h5>
+                                                <button type="button" class="btn btn-danger btn-sm remove-variant"><i class="fa-solid fa-trash-can mr-1"></i> Xóa biến thể</button>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-4 mb-2">
+                                                    <label class="small font-weight-bold text-dark">Tên biến thể</label>
+                                                    <input type="text" name="variants[new][name][]"
+                                                        class="form-control form-control-sm"
+                                                        placeholder="Tên biến thể (VD: Màu Đỏ, 128GB)">
+                                                </div>
+                                                <div class="col-md-4 mb-2">
+                                                    <label class="small font-weight-bold text-dark">Giá gốc biến thể</label>
+                                                    <input type="number" name="variants[new][original_price][]"
+                                                        class="form-control form-control-sm" placeholder="Giá gốc">
+                                                </div>
+                                                <div class="col-md-4 mb-2">
+                                                    <label class="small font-weight-bold text-dark">Giá giảm (%)</label>
+                                                    <input type="number"
+                                                        name="variants[new][discount_percentage][]"
+                                                        class="form-control form-control-sm" placeholder="% giảm" min="0"
+                                                        max="100">
                                                 </div>
                                             </div>
-                                            <div class="col-md-12">
-                                                <div class="row">
-                                                    <div class="col-md-4">
-                                                        <label for="">Ngày bắt đầu giảm giá</label>
-                                                        <input type="date"
-                                                            name="variants[new][discount_start_date][]"
-                                                            class="form-control">
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <label for="">Ngày kết thúc giảm giá</label>
-                                                        <input type="date"
-                                                            name="variants[new][discount_end_date][]"
-                                                            class="form-control">
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <label for="">SKU biến thể</label>
-                                                        <input type="text" name="variants[new][sku][]"
-                                                            class="variant-sku form-control" readonly>
-                                                    </div>
+                                            <div class="row mt-2">
+                                                <div class="col-md-4 mb-2">
+                                                    <label class="small font-weight-bold text-dark">Ngày bắt đầu giảm giá</label>
+                                                    <input type="date"
+                                                        name="variants[new][discount_start_date][]"
+                                                        class="form-control form-control-sm">
                                                 </div>
-                                            </div>
-                                            <div class="col-md-12">
-                                                <div class="row">
-                                                    <div class="col-md-4">
-                                                        <label for="">Số lượng sản phẩm</label>
-                                                        <input type="number" name="variants[new][qty][]"
-                                                            class="form-control" placeholder="Số lượng" readonly>
-                                                    </div>
-                                                    <div class="col-md-4" style="margin-top: 4%">
-                                                        <label for=""></label>
-                                                        <button type="button"
-                                                            class="btn btn-danger remove-variant">Xóa</button>
-                                                    </div>
+                                                <div class="col-md-4 mb-2">
+                                                    <label class="small font-weight-bold text-dark">Ngày kết thúc giảm giá</label>
+                                                    <input type="date"
+                                                        name="variants[new][discount_end_date][]"
+                                                        class="form-control form-control-sm">
+                                                </div>
+                                                <div class="col-md-2 mb-2">
+                                                    <label class="small font-weight-bold text-dark">SKU biến thể</label>
+                                                    <input type="text" name="variants[new][sku][]"
+                                                        class="variant-sku form-control form-control-sm bg-light" readonly>
+                                                </div>
+                                                <div class="col-md-2 mb-2">
+                                                    <label class="small font-weight-bold text-dark">Số lượng</label>
+                                                    <input type="number" name="variants[new][qty][]"
+                                                        class="form-control form-control-sm bg-light" readonly value="0">
+                                                    <small class="text-muted d-block mt-1" style="font-size: 10px;">Nhập qua phiếu kho</small>
                                                 </div>
                                             </div>
                                         </div>
-                                        <hr>
                                     </template>
                                 </div>
                             </div>
@@ -398,8 +450,12 @@
                     </div>
                     <div class="card p-4 mb-3 shadow-sm rounded bg-white">
                         <div class="mb-3">
-                            <label for="category" class="form-label h5 mb-3" style="font-weight: 700">Danh mục sản
-                                phẩm</label>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <label for="category" class="form-label h5 mb-0" style="font-weight: 700">Danh mục sản phẩm</label>
+                                <button type="button" class="btn btn-sm btn-link p-0 text-primary font-weight-bold" id="btn-add-quick-category" style="text-decoration: none;">
+                                    <i class="fa-solid fa-plus-circle mr-1"></i> Thêm nhanh
+                                </button>
+                            </div>
                             @php
                                 // Giá trị mặc định được chọn
                                 $selectedJson = json_encode([
@@ -425,8 +481,12 @@
 
                     <div class="card p-4 mb-3 shadow-sm rounded bg-white">
                         <div class="mb-3">
-                            <label for="brand_id" class="form-label h5 mb-3" style="font-weight: 700">Thương hiệu sản
-                                phẩm</label>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <label for="brand_id" class="form-label h5 mb-0" style="font-weight: 700">Thương hiệu sản phẩm</label>
+                                <button type="button" class="btn btn-sm btn-link p-0 text-primary font-weight-bold" id="btn-add-quick-brand" style="text-decoration: none;">
+                                    <i class="fa-solid fa-plus-circle mr-1"></i> Thêm nhanh
+                                </button>
+                            </div>
                             <select name="brand_id" id="brand_id" class="form-control">
                                 <option value="">Chọn thương hiệu</option>
                                 @foreach ($brands as $brand)
@@ -515,6 +575,130 @@
     <script>
         let groupIndex =
             {{ isset($product->id) && !empty($product->specifications) ? count($product->specifications) : 1 }};
+
+        // Mẫu cấu hình thông số kỹ thuật tiêu chuẩn
+        const specTemplates = {
+            phone: [
+                {
+                    name: "Màn hình & Cấu hình",
+                    items: ["Công nghệ màn hình", "Kích thước màn hình", "Độ phân giải", "Hệ điều hành", "Chip xử lý (CPU)", "Bộ nhớ RAM", "Bộ nhớ trong (ROM)"]
+                },
+                {
+                    name: "Camera & Pin",
+                    items: ["Camera sau", "Camera trước", "Dung lượng pin", "Cổng sạc"]
+                }
+            ],
+            laptop: [
+                {
+                    name: "Bộ xử lý & Bộ nhớ",
+                    items: ["Công nghệ CPU", "Bộ nhớ RAM", "Loại RAM", "Ổ cứng (SSD/HDD)"]
+                },
+                {
+                    name: "Màn hình & Đồ họa",
+                    items: ["Kích thước màn hình", "Độ phân giải", "Card màn hình (GPU)"]
+                },
+                {
+                    name: "Thông tin chung",
+                    items: ["Hệ điều hành", "Dung lượng Pin", "Trọng lượng", "Kích thước"]
+                }
+            ],
+            accessory: [
+                {
+                    name: "Thông số chi tiết",
+                    items: ["Loại phụ kiện", "Chất liệu", "Phương thức kết nối", "Thời lượng sử dụng", "Tương thích"]
+                }
+            ]
+        };
+
+        // Nạp cấu hình mẫu
+        document.getElementById('spec-template-selector').addEventListener('change', function() {
+            const templateKey = this.value;
+            if (!templateKey) return;
+            
+            const template = specTemplates[templateKey];
+            if (!template) return;
+            
+            if (!confirm('Bạn có chắc chắn muốn nạp mẫu này? Hành động này sẽ thay thế các nhóm thông số hiện tại.')) {
+                this.value = '';
+                return;
+            }
+            
+            const container = document.getElementById('specifications-groups');
+            container.innerHTML = ''; // Xóa hết nhóm cũ
+            
+            groupIndex = 0; // Reset index
+            
+            template.forEach((group, gIdx) => {
+                let itemsHtml = '';
+                group.items.forEach((item, iIdx) => {
+                    itemsHtml += `
+                        <div class="input-group mb-2">
+                            <input type="text" name="groups[${groupIndex}][items][${iIdx}][key]" class="form-control" placeholder="Thuộc tính" value="${item}" />
+                            <input type="text" name="groups[${groupIndex}][items][${iIdx}][value]" class="form-control" placeholder="Giá trị" value="" />
+                            <button type="button" class="btn btn-outline-secondary btn-sm add-item">+</button>
+                        </div>`;
+                });
+                
+                const groupHtml = `
+                    <div class="spec-group border rounded p-3 mb-3 shadow-xs" data-index="${groupIndex}">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <input type="text" name="groups[${groupIndex}][name]" class="form-control me-2 font-weight-bold text-primary" placeholder="Tên nhóm" value="${group.name}" />
+                            <button type="button" class="btn btn-danger btn-sm remove-group">X</button>
+                        </div>
+                        <div class="spec-items">
+                            ${itemsHtml}
+                        </div>
+                    </div>`;
+                
+                container.insertAdjacentHTML('beforeend', groupHtml);
+                groupIndex++;
+            });
+            
+            this.value = ''; // Reset select
+        });
+
+        // Áp dụng nhanh giá trị cho toàn bộ biến thể
+        const btnApplyBulk = document.getElementById('btn-apply-bulk-variants');
+        if (btnApplyBulk) {
+            btnApplyBulk.addEventListener('click', function() {
+                const bulkPrice = document.getElementById('bulk-original-price').value.trim();
+                const bulkDiscount = document.getElementById('bulk-discount-pct').value.trim();
+                const bulkStart = document.getElementById('bulk-start-date').value;
+                const bulkEnd = document.getElementById('bulk-end-date').value;
+                
+                if (!bulkPrice && !bulkDiscount && !bulkStart && !bulkEnd) {
+                    alert('Vui lòng nhập ít nhất một giá trị để áp dụng!');
+                    return;
+                }
+                
+                const variantRows = document.querySelectorAll('.variant-row');
+                if (variantRows.length === 0) {
+                    alert('Chưa có biến thể nào được tạo!');
+                    return;
+                }
+                
+                if (confirm(`Bạn có chắc chắn muốn điền nhanh các giá trị này cho tất cả ${variantRows.length} biến thể?`)) {
+                    variantRows.forEach(row => {
+                        if (bulkPrice) {
+                            const priceInput = row.querySelector('input[name*="[original_price]"]');
+                            if (priceInput) priceInput.value = bulkPrice;
+                        }
+                        if (bulkDiscount) {
+                            const discountInput = row.querySelector('input[name*="[discount_percentage]"]');
+                            if (discountInput) discountInput.value = bulkDiscount;
+                        }
+                        if (bulkStart) {
+                            const startInput = row.querySelector('input[name*="[discount_start_date]"]');
+                            if (startInput) startInput.value = bulkStart;
+                        }
+                        if (bulkEnd) {
+                            const endInput = row.querySelector('input[name*="[discount_end_date]"]');
+                            if (endInput) endInput.value = bulkEnd;
+                        }
+                    });
+                }
+            });
+        }
 
         // Thêm nhóm thông số mới
         document.getElementById('add-group').addEventListener('click', function() {
@@ -609,10 +793,12 @@
         });
 
         // CKEditor for description
+        let descriptionEditor = null;
         ClassicEditor.create(document.querySelector('#description'), {
                 toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote'],
             })
             .then(editor => {
+                descriptionEditor = editor;
                 editor.ui.view.editable.element.style.maxHeight = "200px";
                 editor.ui.view.editable.element.style.overflowY = "auto";
             })
@@ -805,8 +991,11 @@
 
             // Xóa biến thể
             variantContainer.addEventListener('click', function(e) {
-                if (e.target.classList.contains('remove-variant')) {
-                    e.target.closest('.variant-row').remove();
+                const removeBtn = e.target.closest('.remove-variant');
+                if (removeBtn) {
+                    if (confirm('Bạn có chắc chắn muốn xóa biến thể này?')) {
+                        removeBtn.closest('.variant-row').remove();
+                    }
                 }
             });
 
@@ -842,6 +1031,385 @@
             } else if (isUpdateMode) {
                 updateSections();
             }
+
+            // AJAX Quick Add Category
+            const btnAddQuickCat = document.getElementById('btn-add-quick-category');
+            const formQuickCat = document.getElementById('quick-category-form');
+            if (btnAddQuickCat) {
+                btnAddQuickCat.addEventListener('click', function() {
+                    $('#quickCategoryModal').modal('show');
+                });
+            }
+            if (formQuickCat) {
+                formQuickCat.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const name = document.getElementById('quick-cat-name').value.trim();
+                    const subName = document.getElementById('quick-subcat-name').value.trim();
+                    const saveBtn = document.getElementById('btn-save-quick-cat');
+                    
+                    const originalHtml = saveBtn.innerHTML;
+                    saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Đang lưu...';
+                    saveBtn.disabled = true;
+
+                    $.ajax({
+                        url: "{{ route('admin.product.quickCategory', [], false) }}",
+                        type: 'POST',
+                        data: {
+                            name: name,
+                            sub_name: subName,
+                            _token: '{{ csrf_token() }}'
+                        },
+                        success: function(response) {
+                            saveBtn.innerHTML = originalHtml;
+                            saveBtn.disabled = false;
+                            if (response.success) {
+                                // Clear inputs
+                                document.getElementById('quick-cat-name').value = '';
+                                document.getElementById('quick-subcat-name').value = '';
+                                $('#quickCategoryModal').modal('hide');
+                                
+                                // Append and select new option
+                                const selectElement = document.getElementById('category');
+                                const newOption = new Option(response.label, response.value, true, true);
+                                selectElement.add(newOption);
+                                $(selectElement).val(response.value).trigger('change');
+                                
+                                alert('Thêm nhanh danh mục thành công!');
+                            } else {
+                                alert(response.message);
+                            }
+                        },
+                        error: function(xhr) {
+                            saveBtn.innerHTML = originalHtml;
+                            saveBtn.disabled = false;
+                            alert('Lỗi: ' + (xhr.responseJSON ? xhr.responseJSON.message : 'Không thể lưu danh mục.'));
+                        }
+                    });
+                });
+            }
+
+            // AJAX Quick Add Brand
+            const btnAddQuickBrand = document.getElementById('btn-add-quick-brand');
+            const formQuickBrand = document.getElementById('quick-brand-form');
+            if (btnAddQuickBrand) {
+                btnAddQuickBrand.addEventListener('click', function() {
+                    $('#quickBrandModal').modal('show');
+                });
+            }
+            if (formQuickBrand) {
+                formQuickBrand.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const name = document.getElementById('quick-brand-name').value.trim();
+                    const saveBtn = document.getElementById('btn-save-quick-brand');
+
+                    const originalHtml = saveBtn.innerHTML;
+                    saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Đang lưu...';
+                    saveBtn.disabled = true;
+
+                    $.ajax({
+                        url: "{{ route('admin.product.quickBrand', [], false) }}",
+                        type: 'POST',
+                        data: {
+                            name: name,
+                            _token: '{{ csrf_token() }}'
+                        },
+                        success: function(response) {
+                            saveBtn.innerHTML = originalHtml;
+                            saveBtn.disabled = false;
+                            if (response.success) {
+                                // Clear inputs
+                                document.getElementById('quick-brand-name').value = '';
+                                $('#quickBrandModal').modal('hide');
+
+                                // Append and select new option
+                                const selectElement = document.getElementById('brand_id');
+                                const newOption = new Option(response.name, response.id, true, true);
+                                selectElement.add(newOption);
+                                $(selectElement).val(response.id).trigger('change');
+
+                                alert('Thêm nhanh thương hiệu thành công!');
+                            } else {
+                                alert(response.message);
+                            }
+                        },
+                        error: function(xhr) {
+                            saveBtn.innerHTML = originalHtml;
+                            saveBtn.disabled = false;
+                            alert('Lỗi: ' + (xhr.responseJSON ? xhr.responseJSON.message : 'Không thể lưu thương hiệu.'));
+                        }
+                    });
+                });
+            }
+
+            // AJAX Web Scraper/Crawler logic
+            const btnCrawl = document.getElementById('btn-start-crawl');
+            const crawlInput = document.getElementById('crawl-url-input');
+
+            if (btnCrawl && crawlInput) {
+                btnCrawl.addEventListener('click', function() {
+                    const url = crawlInput.value.trim();
+                    if (!url) {
+                        alert('Vui lòng nhập đường dẫn URL sản phẩm cần nạp!');
+                        return;
+                    }
+
+                    // Đổi nút sang trạng thái loading
+                    const originalHtml = btnCrawl.innerHTML;
+                    btnCrawl.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Đang cào...';
+                    btnCrawl.disabled = true;
+
+                    // Ẩn vùng chọn ảnh cũ
+                    document.getElementById('crawler-image-picker-section').style.display = 'none';
+                    document.getElementById('crawler-image-grid').innerHTML = '';
+
+                    $.ajax({
+                        url: "{{ route('admin.product.crawl', [], false) }}",
+                        type: 'POST',
+                        data: {
+                            url: url,
+                            _token: '{{ csrf_token() }}'
+                        },
+                        success: function(response) {
+                            btnCrawl.innerHTML = originalHtml;
+                            btnCrawl.disabled = false;
+
+                            if (response.success) {
+                                const data = response.data;
+
+                                // 1. Điền Tên sản phẩm & tạo SKU/Slug
+                                if (data.title) {
+                                    document.getElementById('name').value = data.title;
+                                    document.getElementById('name').dispatchEvent(new Event('input'));
+                                }
+
+                                // 2. Điền Mô tả (CKEditor)
+                                if (data.description && typeof descriptionEditor !== 'undefined' && descriptionEditor) {
+                                    descriptionEditor.setData(data.description);
+                                }
+
+                                // 3. Điền Giá gốc và Giá bán (tự tính % giảm giá)
+                                if (data.original_price && document.getElementById('original_price')) {
+                                    document.getElementById('original_price').value = data.original_price;
+                                }
+                                // Nếu có giá bán khác giá gốc -> tự động tính % giảm giá
+                                if (data.sale_price && data.original_price && data.sale_price != data.original_price) {
+                                    const discountPct = Math.round((1 - data.sale_price / data.original_price) * 100);
+                                    if (discountPct > 0 && discountPct < 100) {
+                                        const discountInput = document.getElementById('discount_percentage');
+                                        if (discountInput) {
+                                            discountInput.value = discountPct;
+                                        }
+                                    }
+                                }
+
+                                // 4. Nạp thông số kỹ thuật (Specifications)
+                                if (data.specifications && data.specifications.length > 0) {
+                                    const specContainer = document.getElementById('specifications-groups');
+                                    specContainer.innerHTML = '';
+                                    groupIndex = 0;
+
+                                    data.specifications.forEach(group => {
+                                        let itemsHtml = '';
+                                        let itemIndex = 0;
+                                        for (const [key, value] of Object.entries(group.items)) {
+                                            itemsHtml += `
+                                                <div class="input-group mb-2">
+                                                    <input type="text" name="groups[${groupIndex}][items][${itemIndex}][key]" class="form-control" placeholder="Thuộc tính" value="${key}" />
+                                                    <input type="text" name="groups[${groupIndex}][items][${itemIndex}][value]" class="form-control" placeholder="Giá trị" value="${value}" />
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm add-item">+</button>
+                                                </div>`;
+                                            itemIndex++;
+                                        }
+
+                                        const groupHtml = `
+                                            <div class="spec-group border rounded p-3 mb-3 shadow-xs" data-index="${groupIndex}">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <input type="text" name="groups[${groupIndex}][name]" class="form-control me-2 font-weight-bold text-primary" placeholder="Tên nhóm" value="${group.name}" />
+                                                    <button type="button" class="btn btn-danger btn-sm remove-group">X</button>
+                                                </div>
+                                                <div class="spec-items">
+                                                    ${itemsHtml}
+                                                </div>
+                                            </div>`;
+                                        specContainer.insertAdjacentHTML('beforeend', groupHtml);
+                                        groupIndex++;
+                                    });
+                                }
+
+                                // 5. Nạp danh sách biến thể (nếu có)
+                                if (data.variants && data.variants.length > 0) {
+                                    if (productType) {
+                                        productType.value = 'variant';
+                                        updateSections();
+                                    }
+                                    
+                                    const variantContainer = document.getElementById('variant-container');
+                                    if (variantContainer) {
+                                        variantContainer.innerHTML = '';
+                                    }
+
+                                    data.variants.forEach(v => {
+                                        if (addVariantBtn) {
+                                            addVariantBtn.click();
+                                            const lastRow = variantContainer.lastElementChild;
+                                            if (lastRow) {
+                                                const nameInput = lastRow.querySelector('input[name="variants[new][name][]"]');
+                                                if (nameInput) {
+                                                    nameInput.value = v.name;
+                                                    nameInput.dispatchEvent(new Event('input'));
+                                                }
+                                                const priceInput = lastRow.querySelector('input[name="variants[new][original_price][]"]');
+                                                if (priceInput) {
+                                                    priceInput.value = v.price;
+                                                }
+                                            }
+                                        }
+                                    });
+                                } else {
+                                    if (productType) {
+                                        productType.value = 'single';
+                                        updateSections();
+                                    }
+                                }
+
+                                // 6. Hiển thị danh sách ảnh cào được để chọn trực quan
+                                if (data.images && data.images.length > 0) {
+                                    const grid = document.getElementById('crawler-image-grid');
+                                    grid.innerHTML = '';
+
+                                    data.images.forEach((imgUrl, i) => {
+                                        const col = document.createElement('div');
+                                        col.className = 'col-md-2 col-4 mb-3 text-center px-1';
+                                        col.innerHTML = `
+                                            <div class="card p-1 border shadow-xs text-center position-relative" style="height: 140px; border-radius: 6px;">
+                                                <img src="${imgUrl}" alt="Ảnh cào" style="width: 100%; height: 80px; object-fit: contain; background: #fafafa;">
+                                                <div class="mt-2 d-flex justify-content-around align-items-center">
+                                                    <label class="mb-0 d-flex flex-column align-items-center cursor-pointer" title="Chọn làm ảnh chính">
+                                                        <input type="radio" name="main_image_select" value="${imgUrl}" ${i === 0 ? 'checked' : ''} style="cursor: pointer;">
+                                                        <span class="small font-weight-bold text-primary mt-1" style="font-size: 10px;">Chính</span>
+                                                    </label>
+                                                    <label class="mb-0 d-flex flex-column align-items-center cursor-pointer" title="Chọn làm ảnh phụ">
+                                                        <input type="checkbox" name="gallery_image_select[]" value="${imgUrl}" ${i > 0 && i < 5 ? 'checked' : ''} style="cursor: pointer;">
+                                                        <span class="small font-weight-bold text-secondary mt-1" style="font-size: 10px;">Phụ</span>
+                                                    </label>
+                                                </div>
+                                            </div>`;
+                                        grid.appendChild(col);
+                                    });
+                                    document.getElementById('crawler-image-picker-section').style.display = 'block';
+                                }
+
+                                alert('Cào thông tin sản phẩm thành công! Hãy chọn ảnh chính/phụ mong muốn rồi nhấn nút "Tải & Nạp ảnh".');
+                            } else {
+                                alert('Không thể nạp dữ liệu: ' + response.message);
+                            }
+                        },
+                        error: function(xhr) {
+                            btnCrawl.innerHTML = originalHtml;
+                            btnCrawl.disabled = false;
+                            const errMessage = xhr.responseJSON ? xhr.responseJSON.message : 'Đường dẫn không hợp lệ hoặc lỗi kết nối.';
+                            alert('Đã xảy ra lỗi: ' + errMessage);
+                        }
+                    });
+                });
+            }
+
+            // AJAX Downloader logic for chosen crawled images
+            const btnImportImages = document.getElementById('btn-confirm-import-images');
+            if (btnImportImages) {
+                btnImportImages.addEventListener('click', function() {
+                    const selectedMainRadio = document.querySelector('input[name="main_image_select"]:checked');
+                    if (!selectedMainRadio) {
+                        alert('Vui lòng chọn 1 ảnh làm ảnh chính!');
+                        return;
+                    }
+                    const mainImageUrl = selectedMainRadio.value;
+
+                    const selectedGalCheckboxes = document.querySelectorAll('input[name="gallery_image_select[]"]:checked');
+                    const galleryImageUrls = [];
+                    selectedGalCheckboxes.forEach(cb => {
+                        galleryImageUrls.push(cb.value);
+                    });
+
+                    // Set button loading
+                    const originalHtml = btnImportImages.innerHTML;
+                    btnImportImages.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Đang tải ảnh về server...';
+                    btnImportImages.disabled = true;
+
+                    $.ajax({
+                        url: "{{ route('admin.product.crawl.downloadImages', [], false) }}",
+                        type: 'POST',
+                        data: {
+                            main_image: mainImageUrl,
+                            gallery_images: galleryImageUrls,
+                            _token: '{{ csrf_token() }}'
+                        },
+                        success: function(response) {
+                            btnImportImages.innerHTML = originalHtml;
+                            btnImportImages.disabled = false;
+
+                            if (response.success) {
+                                const paths = response.data;
+
+                                // Nạp Ảnh chính vào Dropzone
+                                if (paths.main && typeof dropzone !== 'undefined' && dropzone) {
+                                    dropzone.removeAllFiles(true);
+                                    var mockFile = {
+                                        name: "MainImage",
+                                        size: 12345,
+                                        accepted: true,
+                                        storedPath: paths.main
+                                    };
+                                    dropzone.emit("addedfile", mockFile);
+                                    dropzone.emit("thumbnail", mockFile, "/storage/" + paths.main);
+                                    dropzone.emit("complete", mockFile);
+                                    dropzone.files.push(mockFile);
+                                    document.getElementById('image-main-hidden').value = paths.main;
+                                    dropzone.originalImageValue = paths.main;
+                                }
+
+                                // Nạp Ảnh phụ vào Dropzone Thư viện
+                                if (typeof dropzoneThumbnail !== 'undefined' && dropzoneThumbnail) {
+                                    dropzoneThumbnail.removeAllFiles(true);
+                                    $('.thumb-hidden').remove();
+                                    dropzoneThumbnail.originalThumbnails = [];
+
+                                    paths.gallery.forEach((imgPath, index) => {
+                                        var mockThumb = {
+                                            name: "GalleryImage_" + index,
+                                            size: 12345,
+                                            accepted: true,
+                                            storedPath: imgPath
+                                        };
+                                        dropzoneThumbnail.emit("addedfile", mockThumb);
+                                        dropzoneThumbnail.emit("thumbnail", mockThumb, "/storage/" + imgPath);
+                                        dropzoneThumbnail.emit("complete", mockThumb);
+                                        dropzoneThumbnail.files.push(mockThumb);
+
+                                        let hiddenInput = document.createElement('input');
+                                        hiddenInput.type = 'hidden';
+                                        hiddenInput.name = 'imageThumbnails[]';
+                                        hiddenInput.value = imgPath;
+                                        hiddenInput.classList.add('thumb-hidden');
+                                        mockThumb._hiddenInput = hiddenInput;
+                                        document.getElementById('image-dropzone-thumbnail').appendChild(hiddenInput);
+                                        dropzoneThumbnail.originalThumbnails.push(imgPath);
+                                    });
+                                }
+
+                                alert('Tải và nạp ảnh thành công!');
+                            } else {
+                                alert('Lỗi tải ảnh: ' + response.message);
+                            }
+                        },
+                        error: function(xhr) {
+                            btnImportImages.innerHTML = originalHtml;
+                            btnImportImages.disabled = false;
+                            alert('Đã xảy ra lỗi khi tải ảnh: ' + (xhr.responseJSON ? xhr.responseJSON.message : 'Lỗi kết nối.'));
+                        }
+                    });
+                });
+            }
         });
     </script>
 
@@ -871,4 +1439,61 @@
             background-color: #f8f9fa;
         }
     </style>
+
+    <!-- Modal Thêm nhanh Danh mục -->
+    <div class="modal fade" id="quickCategoryModal" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: 1060;">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title font-weight-bold"><i class="fa-solid fa-folder-plus mr-1"></i> Thêm nhanh Danh mục</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="quick-category-form">
+                    <div class="modal-body">
+                        <div class="form-group mb-3">
+                            <label class="font-weight-bold mb-1">Tên Danh mục cha <span class="text-danger">*</span></label>
+                            <input type="text" id="quick-cat-name" class="form-control" placeholder="Ví dụ: Điện thoại, Laptop..." required>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label class="font-weight-bold mb-1">Tên Danh mục con (Tùy chọn)</label>
+                            <input type="text" id="quick-subcat-name" class="form-control" placeholder="Ví dụ: iPhone, Asus ROG...">
+                            <small class="text-muted mt-1 d-block">Nếu nhập, hệ thống sẽ tự động liên kết danh mục con này dưới danh mục cha vừa tạo.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary" id="btn-save-quick-cat">Lưu danh mục</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Thêm nhanh Thương hiệu -->
+    <div class="modal fade" id="quickBrandModal" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: 1060;">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title font-weight-bold"><i class="fa-solid fa-folder-plus mr-1"></i> Thêm nhanh Thương hiệu</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="quick-brand-form">
+                    <div class="modal-body">
+                        <div class="form-group mb-0">
+                            <label class="font-weight-bold mb-1">Tên Thương hiệu <span class="text-danger">*</span></label>
+                            <input type="text" id="quick-brand-name" class="form-control" placeholder="Ví dụ: Apple, Samsung, Dell..." required>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary" id="btn-save-quick-brand">Lưu thương hiệu</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </x-app-layout>

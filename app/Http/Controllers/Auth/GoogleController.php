@@ -29,6 +29,9 @@ class GoogleController extends Controller
                 ]
             );
 
+            // Gán vai trò Customer mặc định (ID 2)
+            $user->roles()->syncWithoutDetaching([2]);
+
             Auth::login($user);
 
             return redirect()->intended('/');

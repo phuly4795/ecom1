@@ -18,6 +18,8 @@ class ChatAIController extends Controller
     {
         $userMessage = $request->input('message');
         $isSystem = filter_var($request->input('is_system', false), FILTER_VALIDATE_BOOLEAN);
+        $userId = null;
+        $sessionId = null;
         if (Auth::check()) {
             $userId = Auth::id();
         } else {
@@ -26,8 +28,8 @@ class ChatAIController extends Controller
         if (!empty($userMessage) && !$isSystem) {
             // Lưu tin nhắn người dùng
             ChatHistory::create([
-                'user_id' => $userId ?? null,
-                'session_id' => $sessionId ?? null,
+                'user_id' => $userId,
+                'session_id' => $sessionId,
                 'sender' => 'user',
                 'message' => $userMessage
             ]);
@@ -137,15 +139,16 @@ class ChatAIController extends Controller
                 $tableHtml .= '</tbody></table></div>';
 
                 $reply .= "<br><br>" . $tableHtml;
-
-                ChatHistory::create([
-                    'user_id' => $userId ?? null,
-                    'session_id' => $sessionId ?? null,
-                    'sender' => 'ai',
-                    'message' => strip_tags($reply, '<br><strong><em><a><div><table><thead><tbody><tr><th><td>')
-                ]);
             }
         }
+
+        ChatHistory::create([
+            'user_id' => $userId,
+            'session_id' => $sessionId,
+            'sender' => 'ai',
+            'message' => strip_tags($reply, '<br><strong><em><a><div><table><thead><tbody><tr><th><td>')
+        ]);
+
         return response()->json(['reply' => $reply]);
     }
 

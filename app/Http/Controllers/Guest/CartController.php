@@ -53,7 +53,7 @@ class CartController extends Controller
         // $address = auth()->user()->defaultShippingAddress; // hoặc shippingAddress tùy quan hệ
 
         $shippingFee = $this->getShippingFee();
-        $discount = auth()->user()->cart->discount_amount ?? 0; // nếu có mã thì tính sau
+        $discount = $cart ? ($cart->discount_amount ?? 0) : 0; // nếu có mã thì tính sau
         $total = max($subtotal + $shippingFee - $discount, 0);
 
         $cartItems = $cart ? $cart->cartDetails : collect();
@@ -281,7 +281,7 @@ class CartController extends Controller
         }, 0);
 
         $shippingFee = $this->getShippingFee();
-        $discount = auth()->user()->cart->discount_amount; // nếu có mã thì tính sau
+        $discount = $cart ? ($cart->discount_amount ?? 0) : 0; // nếu có mã thì tính sau
 
         $total = max($subtotal + $shippingFee - $discount, 0);
         $userInfo = Auth::user();

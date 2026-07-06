@@ -43,8 +43,10 @@ class CheckoutController extends Controller
             'shipping_province_id' => 'required_if:use_new_shipping_address,on|exists:provinces,code|nullable',
             'shipping_district_id' => 'required_if:use_new_shipping_address,on|exists:districts,code|nullable',
             'shipping_ward_id' => 'required_if:use_new_shipping_address,on|exists:wards,code|nullable',
+            'paypal_order_id' => 'required_if:payment_method,paypal|string|nullable',
         ], [
-            'terms.accepted' => "Bạn cần đọc điều khoản và điều kiện"
+            'terms.accepted' => "Bạn cần đọc điều khoản và điều kiện",
+            'paypal_order_id.required_if' => "Thiếu mã giao dịch PayPal."
         ]);
 
         $user = Auth::user();
@@ -92,8 +94,41 @@ class CheckoutController extends Controller
             $district_id = $shippingAddress ? $shippingAddress->district_id : $request->shipping_district_id;
 
             $shippingFee = $this->getShippingFee($province_id, $district_id);
-            $discount = auth()->user()->cart->discount_amount ?? 0; // nếu có mã thì tính sau
+            $discount = $cart->discount_amount ?? 0; // nếu có mã thì tính sau
             $total = max($subtotal + $shippingFee - $discount, 0);
+
+            // Xác thực thanh toán PayPal ở phía Server
+            if ($request->payment_method === 'paypal') {
+                $paypalOrderId = $request->input('paypal_order_id');
+                if (!$paypalOrderId) {
+                    return redirect()->back()->with('error', 'Thiếu mã giao dịch PayPal.');
+                }
+
+                $provider = new \Srmklive\PayPal\Services\PayPal;
+                $provider->setApiCredentials(config('paypal'));
+                $provider->getAccessToken();
+                $paypalOrder = $provider->showOrderDetails($paypalOrderId);
+
+                if (!isset($paypalOrder['status']) || $paypalOrder['status'] !== 'COMPLETED') {
+                    if (isset($paypalOrder['status']) && $paypalOrder['status'] === 'APPROVED') {
+                        $capture = $provider->capturePaymentOrder($paypalOrderId);
+                        if (isset($capture['status']) && $capture['status'] === 'COMPLETED') {
+                            $paypalOrder = $capture;
+                        }
+                    }
+                }
+
+                if (!isset($paypalOrder['status']) || $paypalOrder['status'] !== 'COMPLETED') {
+                    return redirect()->back()->with('error', 'Thanh toán qua PayPal chưa hoàn tất hoặc không hợp lệ.');
+                }
+
+                // Kiểm tra số tiền (quy đổi tổng tiền đơn hàng VNĐ sang USD tỉ giá 24000)
+                $paypalAmount = $paypalOrder['purchase_units'][0]['amount']['value'] ?? 0;
+                $expectedAmount = round($total / 24000, 2);
+                if (abs($paypalAmount - $expectedAmount) > 0.5) {
+                    return redirect()->back()->with('error', 'Số tiền thanh toán trên PayPal không khớp với tổng tiền đơn hàng.');
+                }
+            }
 
             // Xử lý địa chỉ giao hàng
             $shippingAddressId = $request->shipping_address_id;
@@ -143,7 +178,7 @@ class CheckoutController extends Controller
                 'total_amount' => $total,
                 'coupon_code' => $cart->coupon_code,
                 'discount_amount' => $cart->discount_amount,
-                'status' => $request->payment_method == 'transfer' ? 'waiting_pay' :  'pending',
+                'status' => $request->payment_method === 'transfer' ? 'waiting_pay' : ($request->payment_method === 'paypal' ? 'processing' : 'pending'),
             ]);
 
             // Tạo chi tiết đơn hàng
