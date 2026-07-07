@@ -235,9 +235,9 @@
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label for="original_price" class="form-label">Giá gốc</label>
-                                    <input type="number" name="original_price" id="original_price"
-                                        class="form-control" placeholder="Nhập giá gốc"
-                                        value="{{ old('original_price', $product->original_price ?? '') }}">
+                                    <input type="text" name="original_price" id="original_price"
+                                        class="form-control price-format" placeholder="Nhập giá gốc"
+                                        value="{{ old('original_price', (isset($product) && $product->original_price) ? number_format($product->original_price, 0, ',', '.') : '') }}">
                                 </div>
                                 <div class="col-md-6">
                                     <label for="discount_percentage" class="form-label">Phần trăm giảm giá (%)</label>
@@ -284,7 +284,7 @@
                                 <div class="row">
                                     <div class="col-md-3 mb-2">
                                         <label class="small font-weight-bold text-muted mb-1">Giá gốc chung</label>
-                                        <input type="number" id="bulk-original-price" class="form-control form-control-sm" placeholder="Giá gốc chung">
+                                        <input type="text" id="bulk-original-price" class="form-control form-control-sm price-format" placeholder="Giá gốc chung">
                                     </div>
                                     <div class="col-md-3 mb-2">
                                         <label class="small font-weight-bold text-muted mb-1">% giảm giá chung</label>
@@ -327,10 +327,10 @@
                                                         </div>
                                                         <div class="col-md-4 mb-2">
                                                             <label class="small font-weight-bold text-dark">Giá gốc</label>
-                                                            <input type="number"
+                                                            <input type="text"
                                                                 name="variants[existing][original_price][{{ $variant->id }}]"
-                                                                class="form-control form-control-sm" placeholder="Giá gốc"
-                                                                value="{{ $variant->original_price }}">
+                                                                class="form-control form-control-sm price-format" placeholder="Giá gốc"
+                                                                value="{{ number_format($variant->original_price, 0, ',', '.') }}">
                                                         </div>
                                                         <div class="col-md-4 mb-2">
                                                             <label class="small font-weight-bold text-dark">Giá giảm (%)</label>
@@ -369,7 +369,7 @@
                                                                 name="variants[existing][qty][{{ $variant->id }}]"
                                                                 class="form-control form-control-sm bg-light" placeholder="Số lượng" readonly
                                                                 value="{{ $variant->qty }}">
-                                                            <small class="text-muted d-block mt-1" style="font-size: 10px;">Nhập qua phiếu kho</small>
+                                                             <small class="text-muted d-block mt-1" style="font-size: 10px;"><a href="{{ route('admin.warehouse.create') }}">Nhập qua phiếu kho</a></small>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -394,8 +394,8 @@
                                                 </div>
                                                 <div class="col-md-4 mb-2">
                                                     <label class="small font-weight-bold text-dark">Giá gốc biến thể</label>
-                                                    <input type="number" name="variants[new][original_price][]"
-                                                        class="form-control form-control-sm" placeholder="Giá gốc">
+                                                    <input type="text" name="variants[new][original_price][]"
+                                                        class="form-control form-control-sm price-format" placeholder="Giá gốc">
                                                 </div>
                                                 <div class="col-md-4 mb-2">
                                                     <label class="small font-weight-bold text-dark">Giá giảm (%)</label>
@@ -427,7 +427,7 @@
                                                     <label class="small font-weight-bold text-dark">Số lượng</label>
                                                     <input type="number" name="variants[new][qty][]"
                                                         class="form-control form-control-sm bg-light" readonly value="0">
-                                                    <small class="text-muted d-block mt-1" style="font-size: 10px;">Nhập qua phiếu kho</small>
+                                                    <small class="text-muted d-block mt-1" style="font-size: 10px;"><a href="{{ route('admin.warehouse.create') }}">Nhập qua phiếu kho</a></small>
                                                 </div>
                                             </div>
                                         </div>
@@ -681,7 +681,7 @@
                     variantRows.forEach(row => {
                         if (bulkPrice) {
                             const priceInput = row.querySelector('input[name*="[original_price]"]');
-                            if (priceInput) priceInput.value = bulkPrice;
+                            if (priceInput) priceInput.value = formatVND(bulkPrice);
                         }
                         if (bulkDiscount) {
                             const discountInput = row.querySelector('input[name*="[discount_percentage]"]');
@@ -1189,7 +1189,7 @@
 
                                 // 3. Điền Giá gốc và Giá bán (tự tính % giảm giá)
                                 if (data.original_price && document.getElementById('original_price')) {
-                                    document.getElementById('original_price').value = data.original_price;
+                                    document.getElementById('original_price').value = formatVND(data.original_price);
                                 }
                                 // Nếu có giá bán khác giá gốc -> tự động tính % giảm giá
                                 if (data.sale_price && data.original_price && data.sale_price != data.original_price) {
@@ -1260,7 +1260,7 @@
                                                 }
                                                 const priceInput = newRow.querySelector('input[name="variants[new][original_price][]"]');
                                                 if (priceInput) {
-                                                    priceInput.value = v.price;
+                                                    priceInput.value = formatVND(v.price);
                                                 }
                                             }
                                         }
@@ -1407,6 +1407,72 @@
                             btnImportImages.disabled = false;
                             alert('Đã xảy ra lỗi khi tải ảnh: ' + (xhr.responseJSON ? xhr.responseJSON.message : 'Lỗi kết nối.'));
                         }
+                    });
+                });
+            }
+
+            // =============================================
+            // VNĐ Price Formatting System
+            // =============================================
+            function formatVND(value) {
+                // Lấy phần số từ chuỗi, bỏ tất cả ký tự không phải số
+                let num = String(value).replace(/[^\d]/g, '');
+                if (!num || num === '0') return '';
+                // Thêm dấu chấm phân cách hàng nghìn
+                return num.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            }
+
+            function unformatVND(value) {
+                return String(value).replace(/[^\d]/g, '');
+            }
+
+            // Gắn sự kiện format cho tất cả input có class .price-format
+            function bindPriceFormat(input) {
+                if (input.dataset.priceFormatBound) return; // Tránh bind trùng
+                input.dataset.priceFormatBound = 'true';
+
+                input.addEventListener('input', function() {
+                    const pos = this.selectionStart;
+                    const oldLen = this.value.length;
+                    this.value = formatVND(this.value);
+                    const newLen = this.value.length;
+                    // Giữ vị trí con trỏ
+                    const newPos = Math.max(0, pos + (newLen - oldLen));
+                    this.setSelectionRange(newPos, newPos);
+                });
+
+                input.addEventListener('focus', function() {
+                    // Format lại khi focus (phòng trường hợp giá trị được set bằng JS)
+                    if (this.value && !this.value.includes('.')) {
+                        this.value = formatVND(this.value);
+                    }
+                });
+            }
+
+            // Bind cho tất cả input .price-format hiện có
+            document.querySelectorAll('.price-format').forEach(bindPriceFormat);
+
+            // MutationObserver để tự động bind cho các input .price-format mới (biến thể mới)
+            const priceObserver = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    mutation.addedNodes.forEach(function(node) {
+                        if (node.nodeType === 1) {
+                            if (node.classList && node.classList.contains('price-format')) {
+                                bindPriceFormat(node);
+                            }
+                            node.querySelectorAll && node.querySelectorAll('.price-format').forEach(bindPriceFormat);
+                        }
+                    });
+                });
+            });
+            priceObserver.observe(document.body, { childList: true, subtree: true });
+
+            // Trước khi submit form: chuyển tất cả input .price-format về giá trị số thuần
+            const productForm = document.getElementById('product-form');
+            if (productForm) {
+                productForm.addEventListener('submit', function() {
+                    this.querySelectorAll('.price-format').forEach(function(input) {
+                        input.value = unformatVND(input.value);
                     });
                 });
             }

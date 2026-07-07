@@ -153,9 +153,8 @@
                                 </div>
                                 <div class="row summary-row discount">
                                     <div class="col-xs-6">Giảm giá:</div>
-                                    <div class="col-xs-6 text-right text-danger">
-                                        -{{ isset($cart->discount_amount) ? number_format(abs($cart->discount_amount)) : 0 }}
-                                        vnđ
+                                    <div class="col-xs-6 text-right text-danger" id="cart-discount-value">
+                                        -{{ number_format($discount) }} vnđ
                                     </div>
                                 </div>
                                 @if (isset($cart->coupon_code))
@@ -398,6 +397,12 @@
 
                     document.querySelector('.summary-row:nth-child(1) .text-right')
                         .textContent = `${data.subtotal} vnđ`;
+                    
+                    const discountElement = document.getElementById('cart-discount-value');
+                    if (discountElement && data.discount) {
+                        discountElement.textContent = `-${data.discount} vnđ`;
+                    }
+
                     document.querySelector('.summary-row.total .text-right')
                         .textContent = `${data.total} vnđ`;
                 });

@@ -77,7 +77,7 @@ class WarehourseProductImport implements ToCollection, WithHeadingRow
             $warehouse = Warehouse::create([
                 'name'               => $this->name,
                 'user_id'            => Auth::id(),
-                'created_by'         => Auth::user()->name ?? 'System',
+                'created_by'         => Auth::id(),
             ]);
 
         foreach ($rows as $row) {
@@ -96,7 +96,7 @@ class WarehourseProductImport implements ToCollection, WithHeadingRow
                 'product_variant_id' => $productVariant->id ?? null,
                 'qty'                => $row['so_luong'],
                 'price'              => $row['gia_nhap'],
-                'created_by'         => Auth::user()->name ?? 'System',
+                'created_by'         => Auth::id(),
             ]);
 
             if ($productVariant) {

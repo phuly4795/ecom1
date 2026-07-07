@@ -12,6 +12,9 @@ use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Warehouse;
+use App\Models\WarehouseDetail;
 use Illuminate\Support\HtmlString;
 use Yajra\DataTables\DataTables;
 use Illuminate\Validation\Rule;
@@ -106,6 +109,7 @@ class ProductController extends Controller
                 $cloneUrl = route('admin.product.clone', $product);
 
                 $html = '<div class="d-flex gap-2">';
+                $html .= '<button type="button" class="btn btn-sm btn-success quick-stock-btn" data-id="' . $product->id . '" data-title="' . htmlspecialchars($product->title) . '" data-toggle="tooltip" title="Nhập kho nhanh" style="margin-right: 2%;"><i class="fas fa-warehouse"></i></button>';
                 $html .= '<a href="' . $editUrl . '" class="btn btn-sm btn-warning" data-toggle="tooltip" title="Sửa sản phẩm" style="margin-right: 2%;"><i class="fas fa-edit"></i></a>';
                 $html .= '<button type="button" class="btn btn-sm btn-info clone-product-btn" data-url="' . $cloneUrl . '" data-toggle="tooltip" title="Nhân bản sản phẩm" style="margin-right: 2%;"><i class="fas fa-copy"></i></button>';
                 $html .= '<form action="' . $deleteUrl . '" method="POST" class="d-inline" style="margin-right: 2%;">';
@@ -232,6 +236,23 @@ class ProductController extends Controller
             if (json_last_error() !== JSON_ERROR_NONE) {
                 return redirect()->back()->withErrors(['specifications' => 'Dữ liệu thông số kỹ thuật không hợp lệ (JSON không đúng định dạng).']);
             }
+        }
+
+        // Loại bỏ định dạng VNĐ (dấu chấm phân cách) khỏi các trường giá trước khi validate
+        if ($request->has('original_price')) {
+            $request->merge(['original_price' => preg_replace('/[^\d]/', '', $request->input('original_price') ?? '')]);
+        }
+        // Xử lý giá biến thể (existing + new)
+        $variants = $request->input('variants', []);
+        if (!empty($variants)) {
+            foreach (['existing', 'new'] as $type) {
+                if (isset($variants[$type]['original_price']) && is_array($variants[$type]['original_price'])) {
+                    foreach ($variants[$type]['original_price'] as $key => $val) {
+                        $variants[$type]['original_price'][$key] = preg_replace('/[^\d]/', '', $val ?? '');
+                    }
+                }
+            }
+            $request->merge(['variants' => $variants]);
         }
 
         // Validation
@@ -1286,6 +1307,123 @@ class ProductController extends Controller
                 'success' => false,
                 'message' => 'Lỗi khi tạo thương hiệu: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    public function stockInfo(Product $product)
+    {
+        $product->load('productVariants');
+        
+        $variantsData = [];
+        if ($product->product_type === 'variant') {
+            foreach ($product->productVariants as $variant) {
+                $variantsData[] = [
+                    'id' => $variant->id,
+                    'variant_name' => $variant->variant_name,
+                    'sku' => $variant->sku ?: 'N/A',
+                    'qty' => $variant->qty
+                ];
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $product->id,
+                'title' => $product->title,
+                'product_type' => $product->product_type,
+                'sku' => $product->sku ?: 'N/A',
+                'qty' => $product->qty,
+                'variants' => $variantsData
+            ]
+        ]);
+    }
+
+    public function quickStock(Request $request, Product $product)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'qty' => 'nullable|integer|min:1',
+            'price' => 'nullable|string',
+            'variants' => 'nullable|array',
+            'variants.*.qty' => 'nullable|integer|min:1',
+            'variants.*.price' => 'nullable|string',
+        ]);
+
+        $name = $request->input('name');
+        
+        DB::beginTransaction();
+        try {
+            $warehouse = Warehouse::create([
+                'name' => $name,
+                'user_id' => Auth::id(),
+                'created_by' => Auth::id(),
+            ]);
+
+            if ($product->product_type === 'variant') {
+                $variantsInput = $request->input('variants', []);
+                $hasAdded = false;
+
+                foreach ($variantsInput as $variantId => $data) {
+                    $qty = intval($data['qty'] ?? 0);
+                    $priceStr = $data['price'] ?? '';
+                    
+                    if ($qty > 0 && !empty($priceStr)) {
+                        $price = floatval(preg_replace('/[^\d]/', '', $priceStr));
+                        $variant = ProductVariant::where('product_id', $product->id)->findOrFail($variantId);
+
+                        WarehouseDetail::create([
+                            'warehouse_id' => $warehouse->id,
+                            'product_id' => $product->id,
+                            'product_variant_id' => $variant->id,
+                            'qty' => $qty,
+                            'price' => $price,
+                            'created_by' => Auth::id(),
+                        ]);
+
+                        $variant->increment('qty', $qty);
+                        $hasAdded = true;
+                    }
+                }
+
+                if (!$hasAdded) {
+                    throw new \Exception('Vui lòng nhập số lượng và giá nhập cho ít nhất một biến thể.');
+                }
+
+            } else {
+                $qty = intval($request->input('qty', 0));
+                $priceStr = $request->input('price', '');
+
+                if ($qty <= 0 || empty($priceStr)) {
+                    throw new \Exception('Vui lòng điền đầy đủ số lượng và giá nhập.');
+                }
+
+                $price = floatval(preg_replace('/[^\d]/', '', $priceStr));
+
+                WarehouseDetail::create([
+                    'warehouse_id' => $warehouse->id,
+                    'product_id' => $product->id,
+                    'product_variant_id' => null,
+                    'qty' => $qty,
+                    'price' => $price,
+                    'created_by' => Auth::id(),
+                ]);
+
+                $product->increment('qty', $qty);
+            }
+
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Nhập kho nhanh thành công!'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 422);
         }
     }
 }

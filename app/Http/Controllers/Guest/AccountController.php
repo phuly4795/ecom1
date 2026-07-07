@@ -45,20 +45,32 @@ class AccountController extends Controller
 
     public function show($id)
     {
-        $order = Order::with(['orderDetails.product', 'shippingAddress'])
-            ->where('id', $id)
-            ->where('user_id', Auth::id())
-            ->firstOrFail();
+        $order = Order::with([
+            'orderDetails.product.productImages', 
+            'orderDetails.product.productVariants', 
+            'shippingAddress.ward', 
+            'shippingAddress.district', 
+            'shippingAddress.province',
+            'billingWard',
+            'billingDistrict',
+            'billingProvince'
+        ])
+        ->where('id', $id)
+        ->where('user_id', Auth::id())
+        ->firstOrFail();
 
-        $shippingAddress = [
-            'full_name' => $order->shippingAddress->full_name ?? null,
-            'email' => $order->shippingAddress->email ?? null,
-            'telephone' => $order->shippingAddress->telephone ?? null,
-            'address' => $order->shippingAddress->address ?? null,
-            'ward' => $order->shippingAddress->ward ? ['name' => $order->shippingAddress->ward->full_name] : null,
-            'district' => $order->shippingAddress->district ? ['name' => $order->shippingAddress->district->full_name] : null,
-            'province' => $order->shippingAddress->province ? ['name' => $order->shippingAddress->province->full_name] : null,
-        ];
+        $shippingAddress = null;
+        if ($order->shippingAddress) {
+            $shippingAddress = [
+                'full_name' => $order->shippingAddress->full_name,
+                'email' => $order->shippingAddress->email,
+                'telephone' => $order->shippingAddress->telephone,
+                'address' => $order->shippingAddress->address,
+                'ward' => $order->shippingAddress->ward ? ['name' => $order->shippingAddress->ward->full_name] : null,
+                'district' => $order->shippingAddress->district ? ['name' => $order->shippingAddress->district->full_name] : null,
+                'province' => $order->shippingAddress->province ? ['name' => $order->shippingAddress->province->full_name] : null,
+            ];
+        }
 
         return response()->json([
             'order' => [
@@ -75,16 +87,27 @@ class AccountController extends Controller
                 'shippingAddress' => $shippingAddress,
             ],
             'items' => $order->orderDetails->map(function ($item) {
-                $image = $item->product->productImages->where('type', 1)->first()->image ?? '';
+                $image = '';
+                if ($item->product && $item->product->productImages) {
+                    $imgObj = $item->product->productImages->where('type', 1)->first();
+                    if ($imgObj) {
+                        $image = $imgObj->image;
+                    }
+                }
                 $imagePath = $image
                     ? asset('storage/' . $image)
                     : asset('asset/img/no-image.png');
-                $variant = isset($item->product->productVariants) && $item->product->productVariants != '[]'
-                    ? $item->product->productVariants->where('product_id', $item->product_id)->first()->variant_name
-                    : null;
+
+                $variant = null;
+                if ($item->product_variant_id && $item->product && $item->product->productVariants) {
+                    $vObj = $item->product->productVariants->firstWhere('id', $item->product_variant_id);
+                    if ($vObj) {
+                        $variant = $vObj->variant_name;
+                    }
+                }
                 return [
                     'image' => $imagePath,
-                    'name' => $item->product->title,
+                    'name' => $item->product ? $item->product->title : $item->product_name,
                     'variant_name' => $variant ?? "-",
                     'quantity' => $item->quantity,
                     'price' => number_format($item->price, 0, ',', '.') . ' VNĐ',

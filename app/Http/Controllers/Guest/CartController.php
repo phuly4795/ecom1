@@ -53,7 +53,13 @@ class CartController extends Controller
         // $address = auth()->user()->defaultShippingAddress; // hoặc shippingAddress tùy quan hệ
 
         $shippingFee = $this->getShippingFee();
-        $discount = $cart ? ($cart->discount_amount ?? 0) : 0; // nếu có mã thì tính sau
+        $discount = 0;
+        if ($cart && $cart->coupon_code) {
+            $coupon = Coupon::where('code', $cart->coupon_code)->first();
+            if ($coupon) {
+                $discount = $coupon->type === 'percent' ? round($subtotal * $coupon->value / 100) : $coupon->value;
+            }
+        }
         $total = max($subtotal + $shippingFee - $discount, 0);
 
         $cartItems = $cart ? $cart->cartDetails : collect();
@@ -278,7 +284,13 @@ class CartController extends Controller
         }, 0);
 
         $shippingFee = $this->getShippingFee();
-        $discount = $cart ? ($cart->discount_amount ?? 0) : 0; // nếu có mã thì tính sau
+        $discount = 0;
+        if ($cart && $cart->coupon_code) {
+            $coupon = Coupon::where('code', $cart->coupon_code)->first();
+            if ($coupon) {
+                $discount = $coupon->type === 'percent' ? round($subtotal * $coupon->value / 100) : $coupon->value;
+            }
+        }
 
         $total = max($subtotal + $shippingFee - $discount, 0);
         $userInfo = Auth::user();
@@ -329,13 +341,20 @@ class CartController extends Controller
             $cartItems = $cart->cartDetails;
             $subtotal = $cartItems->sum(fn($item) => $item->final_price * $item->qty);
             $shippingFee = $this->getShippingFee();
-            $discount = $cart->discount_amount ?? 0;
-            $total = $subtotal + $shippingFee - $discount;
+            $discount = 0;
+            if ($cart && $cart->coupon_code) {
+                $coupon = Coupon::where('code', $cart->coupon_code)->first();
+                if ($coupon) {
+                    $discount = $coupon->type === 'percent' ? round($subtotal * $coupon->value / 100) : $coupon->value;
+                }
+            }
+            $total = max($subtotal + $shippingFee - $discount, 0);
 
             return response()->json([
                 'success' => true,
                 'item_total' => number_format($cartItem->final_price * $qty),
                 'subtotal' => number_format($subtotal),
+                'discount' => number_format($discount),
                 'total' => number_format($total),
             ]);
         } catch (\Throwable $th) {

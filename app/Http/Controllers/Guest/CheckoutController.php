@@ -137,27 +137,36 @@ class CheckoutController extends Controller
 
             // Xử lý địa chỉ giao hàng
             $shippingAddressId = $request->shipping_address_id;
-            $useNewShippingAddress = $request->has('use_new_shipping_address');
 
-            if ($useNewShippingAddress && $user) {
-                if ($request->is_default) {
-                    ShippingAddress::where('user_id', $user->id)
-                        ->update(['is_default' => 0]);
+            // Tự động lưu địa chỉ mới vào sổ địa chỉ nếu người dùng đăng nhập và tự điền địa chỉ mới
+            if ($user && (!$shippingAddressId || $shippingAddressId === 'new')) {
+                $existingAddress = ShippingAddress::where('user_id', $user->id)
+                    ->where('full_name', $request->billing_full_name)
+                    ->where('telephone', $request->billing_telephone)
+                    ->where('address', $request->billing_address)
+                    ->where('province_id', $request->billing_province_id)
+                    ->where('district_id', $request->billing_district_id)
+                    ->where('ward_id', $request->billing_ward_id)
+                    ->first();
+
+                if (!$existingAddress) {
+                    $hasAddress = ShippingAddress::where('user_id', $user->id)->exists();
+
+                    $shippingAddress = ShippingAddress::create([
+                        'user_id' => $user->id,
+                        'full_name' => $request->billing_full_name,
+                        'email' => $request->billing_email,
+                        'telephone' => $request->billing_telephone,
+                        'address' => $request->billing_address,
+                        'province_id' => $request->billing_province_id,
+                        'district_id' => $request->billing_district_id,
+                        'ward_id' => $request->billing_ward_id,
+                        'is_default' => !$hasAddress ? 1 : 0, // Đặt làm mặc định nếu là địa chỉ đầu tiên
+                    ]);
+                    $shippingAddressId = $shippingAddress->id;
+                } else {
+                    $shippingAddressId = $existingAddress->id;
                 }
-
-                $shippingAddress = ShippingAddress::create([
-                    'user_id' => $user->id,
-                    'full_name' => $request->shipping_full_name,
-                    'email' => $request->shipping_email,
-                    'telephone' => $request->shipping_telephone,
-                    'address' => $request->shipping_address,
-                    'province_id' => $request->shipping_province_id,
-                    'district_id' => $request->shipping_district_id,
-                    'ward_id' => $request->shipping_ward_id,
-                    'is_default' => $request->is_default ? 1 : 0,
-                ]);
-
-                $shippingAddressId = $shippingAddress->id;
             }
 
             // Fix Race Condition: Lock hàng và kiểm tra tồn kho trong transaction
@@ -262,9 +271,13 @@ class CheckoutController extends Controller
 
             event(new NewNotification($notification));
             // Gửi email xác nhận đơn hàng
-            if ($order->billing_email) {
-                NotificationFacade::route('mail', $order->billing_email)
-                    ->notify(new OrderPlacedNotification($order));
+            try {
+                if ($order->billing_email) {
+                    NotificationFacade::route('mail', $order->billing_email)
+                        ->notify(new OrderPlacedNotification($order));
+                }
+            } catch (\Exception $mailEx) {
+                Log::warning('Không gửi được email xác nhận đơn hàng: ' . $mailEx->getMessage());
             }
             DB::commit();
 

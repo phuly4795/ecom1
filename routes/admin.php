@@ -96,10 +96,15 @@ Route::middleware('auth', 'verified', 'role:admin')->group(function () {
             Route::post('crawl/download', [ProductController::class, 'crawlDownloadImages'])->name('crawl.downloadImages');
             Route::post('quick-category', [ProductController::class, 'quickCreateCategory'])->name('quickCategory');
             Route::post('quick-brand', [ProductController::class, 'quickCreateBrand'])->name('quickBrand');
+            Route::get('{product}/stock-info', [ProductController::class, 'stockInfo'])->name('stockInfo');
+            Route::post('{product}/quick-stock', [ProductController::class, 'quickStock'])->name('quickStock');
         });
 
         Route::prefix('warehouse')->name('warehouse.')->group(function () {
             Route::get('/', [WarehouseController::class, 'index'])->name('index');               // Danh sách
+            Route::get('/create', [WarehouseController::class, 'create'])->name('create');
+            Route::post('/store', [WarehouseController::class, 'store'])->name('store');
+            Route::get('/search-products', [WarehouseController::class, 'searchProducts'])->name('searchProducts');
             Route::get('/{warehouse}/detail', [WarehouseController::class, 'detail'])->name('detail'); // Form cập nhật
 
             // Import Excel

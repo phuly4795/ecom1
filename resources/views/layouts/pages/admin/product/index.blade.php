@@ -257,6 +257,188 @@
                         });
                     }
                 });
+
+                // Mở modal Nhập kho nhanh
+                $(document).on('click', '.quick-stock-btn', function(e) {
+                    e.preventDefault();
+                    const productId = $(this).data('id');
+                    const productTitle = $(this).data('title');
+                    
+                    $('#quick-stock-product-id').val(productId);
+                    $('#quick-stock-product-title').text(productTitle);
+                    $('#quick-stock-name').val(`Nhập bổ sung - ${productTitle} (${new Date().toLocaleDateString('vi-VN')})`);
+                    
+                    const container = $('#quick-stock-fields-container');
+                    container.html('<div class="text-center p-3"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i> <p class="mt-2">Đang tải thông tin sản phẩm...</p></div>');
+                    
+                    $('#quickStockModal').modal('show');
+                    
+                    $.ajax({
+                        url: `/admin/product/${productId}/stock-info`,
+                        type: 'GET',
+                        success: function(response) {
+                            if (response.success) {
+                                const data = response.data;
+                                container.empty();
+                                
+                                if (data.product_type === 'variant') {
+                                    let html = `
+                                        <table class="table table-bordered table-sm mb-0">
+                                            <thead class="bg-dark text-white">
+                                                <tr>
+                                                    <th>Phiên bản (Biến thể)</th>
+                                                    <th>SKU</th>
+                                                    <th>Tồn hiện tại</th>
+                                                    <th style="width: 25%;">Số lượng nhập <span class="text-danger">*</span></th>
+                                                    <th style="width: 30%;">Giá nhập (VNĐ) <span class="text-danger">*</span></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                    `;
+                                    
+                                    data.variants.forEach(v => {
+                                        html += `
+                                            <tr>
+                                                <td class="align-middle font-weight-bold text-dark">${v.variant_name}</td>
+                                                <td class="align-middle">${v.sku}</td>
+                                                <td class="align-middle text-center">${v.qty}</td>
+                                                <td>
+                                                    <input type="number" name="variants[${v.id}][qty]" class="form-control form-control-sm" min="1" placeholder="Số lượng">
+                                                </td>
+                                                <td>
+                                                    <input type="text" name="variants[${v.id}][price]" class="form-control form-control-sm price-format" placeholder="Giá nhập">
+                                                </td>
+                                            </tr>
+                                        `;
+                                    });
+                                    
+                                    html += '</tbody></table>';
+                                    container.html(html);
+                                } else {
+                                    // Single product
+                                    let html = `
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label class="small font-weight-bold text-dark">Tồn hiện tại</label>
+                                                <input type="text" class="form-control bg-light" readonly value="${data.qty}">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label class="small font-weight-bold text-dark">Số lượng nhập <span class="text-danger">*</span></label>
+                                                <input type="number" id="quick-stock-qty" class="form-control" min="1" required placeholder="Ví dụ: 10">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label class="small font-weight-bold text-dark">Giá nhập (VNĐ) <span class="text-danger">*</span></label>
+                                                <input type="text" id="quick-stock-price" class="form-control price-format" required placeholder="Ví dụ: 25.000.000">
+                                            </div>
+                                        </div>
+                                    `;
+                                    container.html(html);
+                                }
+                                
+                                // Bind format cho giá
+                                bindModalPriceFormatting();
+                            } else {
+                                container.html(`<div class="alert alert-danger">${response.message}</div>`);
+                            }
+                        },
+                        error: function(xhr) {
+                            container.html('<div class="alert alert-danger">Không thể tải thông tin sản phẩm.</div>');
+                        }
+                    });
+                });
+
+                // Format tiền VNĐ tự động khi gõ trong modal
+                function formatVND(value) {
+                    let num = String(value).replace(/[^\d]/g, '');
+                    if (!num || num === '0') return '';
+                    return num.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                }
+
+                function unformatVND(value) {
+                    return String(value).replace(/[^\d]/g, '');
+                }
+
+                function bindModalPriceFormatting() {
+                    $('#quickStockModal .price-format').on('input', function() {
+                        const pos = this.selectionStart;
+                        const oldLen = this.value.length;
+                        this.value = formatVND(this.value);
+                        const newLen = this.value.length;
+                        const newPos = Math.max(0, pos + (newLen - oldLen));
+                        this.setSelectionRange(newPos, newPos);
+                    });
+                }
+
+                // Gửi AJAX submit form nhập kho nhanh
+                $('#quick-stock-form').submit(function(e) {
+                    e.preventDefault();
+                    
+                    const productId = $('#quick-stock-product-id').val();
+                    const saveBtn = $('#btn-save-quick-stock');
+                    const originalHtml = saveBtn.html();
+                    
+                    saveBtn.html('<i class="fas fa-spinner fa-spin mr-1"></i> Đang lưu...');
+                    saveBtn.prop('disabled', true);
+                    
+                    // Clone data và unformat giá tiền trước khi gửi
+                    let formData = {};
+                    formData._token = '{{ csrf_token() }}';
+                    formData.name = $('#quick-stock-name').val();
+                    
+                    const priceSingle = document.getElementById('quick-stock-price');
+                    if (priceSingle) {
+                        formData.qty = $('#quick-stock-qty').val();
+                        formData.price = unformatVND(priceSingle.value);
+                    } else {
+                        // Variants
+                        formData.variants = {};
+                        $('#quick-stock-fields-container tbody tr').each(function() {
+                            const row = $(this);
+                            const qtyInput = row.find('input[name*="[qty]"]');
+                            const priceInput = row.find('input[name*="[price]"]');
+                            
+                            const qty = qtyInput.val().trim();
+                            const price = unformatVND(priceInput.val());
+                            
+                            if (qty && price) {
+                                // Extract variant ID from name attribute (e.g. variants[15][qty])
+                                const nameAttr = qtyInput.attr('name');
+                                const matches = nameAttr.match(/variants\[(\d+)\]/);
+                                if (matches) {
+                                    const variantId = matches[1];
+                                    formData.variants[variantId] = {
+                                        qty: qty,
+                                        price: price
+                                    };
+                                }
+                            }
+                        });
+                    }
+                    
+                    $.ajax({
+                        url: `/admin/product/${productId}/quick-stock`,
+                        type: 'POST',
+                        data: formData,
+                        success: function(response) {
+                            saveBtn.html(originalHtml);
+                            saveBtn.prop('disabled', false);
+                            
+                            if (response.success) {
+                                $('#quickStockModal').modal('hide');
+                                table.ajax.reload(null, false); // reload giữ nguyên trang hiện tại
+                                showAlertModal(response.message, 'success');
+                            } else {
+                                showAlertModal(response.message, 'error');
+                            }
+                        },
+                        error: function(xhr) {
+                            saveBtn.html(originalHtml);
+                            saveBtn.prop('disabled', false);
+                            const msg = xhr.responseJSON ? xhr.responseJSON.message : 'Lỗi không xác định';
+                            showAlertModal('Lỗi nhập kho: ' + msg, 'error');
+                        }
+                    });
+                });
             });
         </script>
     @endpush
@@ -279,4 +461,46 @@
             margin-top: 0 !important;
         }
     </style>
+    <!-- Modal Nhập Kho Nhanh -->
+    <div class="modal fade" id="quickStockModal" tabindex="-1" role="dialog" aria-labelledby="quickStockModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title font-weight-bold" id="quickStockModalLabel"><i class="fas fa-warehouse mr-1"></i> Nhập kho nhanh</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="quick-stock-form">
+                    @csrf
+                    <input type="hidden" id="quick-stock-product-id">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label class="font-weight-bold text-dark">Tên đợt nhập kho <span class="text-danger">*</span></label>
+                            <input type="text" id="quick-stock-name" class="form-control" required placeholder="Ví dụ: Nhập bổ sung hàng hot...">
+                        </div>
+                        
+                        <div class="card bg-light border-left-info py-2 mb-3">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Sản phẩm đang chọn:</div>
+                                        <div class="h6 mb-0 font-weight-bold text-gray-800" id="quick-stock-product-title"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="quick-stock-fields-container">
+                            <!-- HTML input generated dynamically via JS -->
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-success" id="btn-save-quick-stock">Xác nhận nhập kho</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </x-app-layout>

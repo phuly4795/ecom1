@@ -3,11 +3,14 @@
     <div class="container-fluid">
         <h1 class="h3 mb-4 text-gray-800">Quản lý kho</h1>
         <div class="action" id="action">
-            {{-- <a href="{{ route('admin.shipping_fees.create') }}" class="btn btn-primary mb-3">Thêm phí vận chuyển</a> --}}
-            <!-- Nút mở modal -->
-            <button type="button" class="btn btn-success mb-3" data-toggle="modal" data-target="#importModal">
-                Thêm đợt nhập
-            </button>
+            <div>
+                <a href="{{ route('admin.warehouse.create') }}" class="btn btn-primary mb-3 mr-2">
+                    <i class="fas fa-plus fa-sm mr-1"></i> Lập phiếu nhập kho
+                </a>
+                <button type="button" class="btn btn-success mb-3" data-toggle="modal" data-target="#importModal">
+                    <i class="fas fa-file-excel fa-sm mr-1"></i> Nhập từ Excel
+                </button>
+            </div>
         </div>
         <div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel">
             <div class="modal-dialog" role="document">
@@ -78,8 +81,8 @@
                             <tr>
                                 <td>{{ $item->id }}</td>
                                 <td>{{ Str::limit($item->name, 50, '...') }}</td>
-                                <td>{{ \Carbon\Carbon::parse($item->create_at)->format('d/m/Y') }}</td>
-                                <td>{{ $item->created_by }}</td>
+                                <td>{{ $item->created_at ? $item->created_at->format('d/m/Y') : '' }}</td>
+                                <td>{{ $item->user->name ?? 'System' }}</td>
                                 <td><a href="{{ route('admin.warehouse.detail', $item) }}"
                                         class="btn btn-primary">Xem chi tiết</a>
                                     |
