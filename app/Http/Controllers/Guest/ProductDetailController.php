@@ -64,8 +64,11 @@ class ProductDetailController extends Controller
 
         $breadcrumbs = [
             ['name' => 'Trang chủ', 'url' => route('home')],
-            ['name' => $categoryParent->name, 'url' => route('category.show', $categoryParent->slug)],
         ];
+
+        if ($categoryParent) {
+            $breadcrumbs[] = ['name' => $categoryParent->name, 'url' => route('category.show', $categoryParent->slug)];
+        }
 
         if ($categoryChild) {
             $breadcrumbs[] = ['name' => $categoryChild->name, 'url' => route('subcategory.show', $categoryChild->slug)];

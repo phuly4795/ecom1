@@ -505,10 +505,10 @@
                                 bật</label>
                             <select name="is_featured" id="is_featured" class="form-control">
                                 <option value="yes"
-                                    {{ old('is_featured', $product->is_featured ?? '') == 'yes' ? 'selected' : '' }}>
+                                    {{ old('is_featured', $product->is_featured ?? false ? 'yes' : 'no') == 'yes' ? 'selected' : '' }}>
                                     Nổi bật</option>
                                 <option value="no"
-                                    {{ old('is_featured', $product->is_featured ?? '') == 'no' ? 'selected' : '' }}>
+                                    {{ old('is_featured', $product->is_featured ?? false ? 'yes' : 'no') == 'no' ? 'selected' : '' }}>
                                     Không nổi bật</option>
                             </select>
                         </div>
@@ -1245,20 +1245,20 @@
                                     
                                     const variantContainer = document.getElementById('variant-container');
                                     if (variantContainer) {
-                                        variantContainer.innerHTML = '';
+                                        variantContainer.querySelectorAll('.variant-row').forEach(el => el.remove());
                                     }
 
                                     data.variants.forEach(v => {
                                         if (addVariantBtn) {
                                             addVariantBtn.click();
-                                            const lastRow = variantContainer.lastElementChild;
-                                            if (lastRow) {
-                                                const nameInput = lastRow.querySelector('input[name="variants[new][name][]"]');
+                                            const newRow = addVariantWrapper.previousElementSibling;
+                                            if (newRow) {
+                                                const nameInput = newRow.querySelector('input[name="variants[new][name][]"]');
                                                 if (nameInput) {
                                                     nameInput.value = v.name;
                                                     nameInput.dispatchEvent(new Event('input'));
                                                 }
-                                                const priceInput = lastRow.querySelector('input[name="variants[new][original_price][]"]');
+                                                const priceInput = newRow.querySelector('input[name="variants[new][original_price][]"]');
                                                 if (priceInput) {
                                                     priceInput.value = v.price;
                                                 }
@@ -1282,7 +1282,7 @@
                                         col.className = 'col-md-2 col-4 mb-3 text-center px-1';
                                         col.innerHTML = `
                                             <div class="card p-1 border shadow-xs text-center position-relative" style="height: 140px; border-radius: 6px;">
-                                                <img src="${imgUrl}" alt="Ảnh cào" style="width: 100%; height: 80px; object-fit: contain; background: #fafafa;">
+                                                <img src="${imgUrl}" alt="Ảnh cào" onerror="this.src='{{ asset('asset/img/no-image.png') }}'; this.onerror=null;" style="width: 100%; height: 80px; object-fit: contain; background: #fafafa;">
                                                 <div class="mt-2 d-flex justify-content-around align-items-center">
                                                     <label class="mb-0 d-flex flex-column align-items-center cursor-pointer" title="Chọn làm ảnh chính">
                                                         <input type="radio" name="main_image_select" value="${imgUrl}" ${i === 0 ? 'checked' : ''} style="cursor: pointer;">

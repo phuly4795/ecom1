@@ -435,11 +435,7 @@
                         // Chọn item để hiển thị giá: nếu có variant thì dùng variant đầu tiên
                         $variant = $item->productVariants->first(fn($v) => $v->qty > 0);
                         $displayItem = $variant ?? $item;
-                        $variant =
-                            isset($item->productVariants) && $item->productVariants != '[]'
-                                ? $item->productVariants->where('product_id', $item->id)->first(fn($v) => $v->qty > 0)
-                                    ->id
-                                : null;
+                        $variantId = $item->productVariants?->first(fn($v) => $v->qty > 0)?->id;
                         $isFavorited = $item->favoritedByUsers->contains(auth()->id()); // luôn check từ $product
 
                     @endphp
@@ -497,7 +493,7 @@
                                 <div class="product-btns">
                                     @if (Auth::check())
                                         <button class="add-to-wishlist" data-id="{{ $item->id }}"
-                                            data-variant-id="{{ $variant }}">
+                                            data-variant-id="{{ $variantId ?? '' }}">
                                             <i class="fa fa-heart{{ $isFavorited ? '' : '-o' }} wishlist-icon"></i>
                                             <span
                                                 class="tooltipp">{{ $isFavorited ? 'Đã yêu thích' : 'Yêu thích' }}</span>
@@ -520,7 +516,7 @@
                                 <form action="{{ route('cart.add', $item->id) }}" method="POST">
                                     @csrf
                                     <input type="hidden" name="qty" value="1">
-                                    <input type="hidden" name="product_variant_id" value="{{ $variant }}">
+                                    <input type="hidden" name="product_variant_id" value="{{ $variantId ?? '' }}">
                                     @if ($displayItem->qty > 0)
                                         <button type="submit" class="add-to-cart-btn">
                                             <i class="fa fa-shopping-cart"></i> Thêm giỏ hàng

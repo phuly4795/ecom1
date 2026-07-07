@@ -164,7 +164,7 @@ class ProductController extends Controller
 
                 $html .= '<span class="badge badge-info">' . e($categoryName) . '</span>';
 
-                if ($product->is_featured === 'yes') {
+                if ($product->is_featured == 1 || $product->is_featured === 'yes') {
                     $html .= '<span class="badge badge-warning ml-1">Nổi bật</span>';
                 }
 
@@ -297,7 +297,11 @@ class ProductController extends Controller
 
         // Gán specifications vào validated
         $validated['specifications'] = $specificationsArray; // Lưu mảng đã giải mã thay vì chuỗi JSON
-        $validated['track_qty'] = $track_qty;
+        $validated['track_qty'] = $track_qty === 'yes' ? 1 : 0;
+        $validated['is_featured'] = $validated['is_featured'] === 'yes' ? 1 : 0;
+        $validated['price'] = $validated['original_price'] ?? 0;
+        $validated['discount_percentage'] = $validated['discount_percentage'] ?? 0;
+        $validated['qty'] = $validated['qty'] ?? 0;
 
         if ($product) {
             // Cập nhật sản phẩm
@@ -362,7 +366,7 @@ class ProductController extends Controller
                         $existingVariants[$variantId]->update([
                             'variant_name' => $name,
                             'original_price' => $existingOriginalPrices[$variantId] ?? 0,
-                            'discount_percentage' => $existingDiscountedPrices[$variantId] ?? null,
+                            'discount_percentage' => $existingDiscountedPrices[$variantId] ?? 0,
                             'discount_start_date' => $existingDiscountStartDates[$variantId] ?? null,
                             'discount_end_date' => $existingDiscountEndDates[$variantId] ?? null,
                             'sku' => $existingSkus[$variantId] ?? '',
@@ -390,7 +394,7 @@ class ProductController extends Controller
                     $product->productVariants()->create([
                         'variant_name' => $name,
                         'original_price' => $newOriginalPrices[$index] ?? 0,
-                        'discount_percentage' => $newDiscountedPrices[$index] ?? null,
+                        'discount_percentage' => $newDiscountedPrices[$index] ?? 0,
                         'discount_start_date' => $newDiscountStartDates[$index] ?? null,
                         'discount_end_date' => $newDiscountEndDates[$index] ?? null,
                         'sku' => $newSkus[$index] ?? '',
@@ -428,7 +432,7 @@ class ProductController extends Controller
                     $product->productVariants()->create([
                         'variant_name' => $name,
                         'original_price' => $newOriginalPrices[$index] ?? 0,
-                        'discount_percentage' => $newDiscountedPrices[$index] ?? null,
+                        'discount_percentage' => $newDiscountedPrices[$index] ?? 0,
                         'discount_start_date' => $newDiscountStartDates[$index] ?? null,
                         'discount_end_date' => $newDiscountEndDates[$index] ?? null,
                         'sku' => $newSkus[$index] ?? '',

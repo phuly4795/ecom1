@@ -20,7 +20,7 @@ class HomeController extends Controller
         $collectionCategory = Category::orderBy('sort', 'asc')->take(3)->get();
         $categories = Category::orderBy('name', 'asc')->get();
         $productLatest = Product::with(['productImages', 'favoritedByUsers', 'productVariants'])
-            ->where('is_featured', 'yes')
+            ->where('is_featured', true)
             ->latest()
             ->take(5)
             ->get();
